@@ -1,0 +1,8 @@
+{
+  "name": "Contenido Nacional Guinea Ecuatorial",
+  "description": "Plataforma integral para la gestión de empresas locales, oportunidades de negocio y cumplimiento normativo en el sector de hidrocarburos.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
