@@ -158,13 +158,13 @@ const WebContentManagement: React.FC = () => {
                             <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
                           </div>
                           <div>
-                            <p className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight">{cat.name.es || cat.name}</p>
+                            <p className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight">{(cat.name as any).es || cat.name}</p>
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {cat.id}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-8 px-10 max-w-[300px]">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate uppercase tracking-tight">{cat.description.es || cat.description}</p>
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate uppercase tracking-tight">{(cat.description as any).es || cat.description}</p>
                       </td>
                       <td className="py-8 px-10">
                         <div className="flex justify-center gap-2">

@@ -18,9 +18,9 @@ const ContactSidebar: React.FC = () => {
             <div>
               <p className="font-black text-[9px] text-blue-200 uppercase tracking-widest mb-1">Dirección</p>
               <p className="text-sm font-bold leading-relaxed uppercase tracking-tight">
-                Ministerio de Hidrocarburos y Desarrollo Minero<br/>
-                Malabo II, Autovía de Aeropuerto<br/>
-                Bioko Norte, Guinea Ecuatorial
+                Edificio Ministerio de Minas e Hidrocarburos<br/>
+                Malabo II, Carr del Aeropuerto<br/>
+                Malabo, Guinea Ecuatorial
               </p>
             </div>
           </div>
@@ -31,8 +31,7 @@ const ContactSidebar: React.FC = () => {
             </div>
             <div>
               <p className="font-black text-[9px] text-blue-200 uppercase tracking-widest mb-1">Teléfonos</p>
-              <p className="text-sm font-black hover:text-blue-100 cursor-pointer transition-colors">+240 333 09 00 XX</p>
-              <p className="text-sm font-black hover:text-blue-100 cursor-pointer transition-colors">+240 222 55 11 XX</p>
+              <p className="text-sm font-black hover:text-blue-100 cursor-pointer transition-colors">222271741</p>
             </div>
           </div>
 

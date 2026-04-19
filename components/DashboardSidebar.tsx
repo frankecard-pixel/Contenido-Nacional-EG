@@ -24,6 +24,12 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     navigate('/login');
   };
 
+  const getNormalizedRole = (role: string) => {
+    if (role === 'admin') return 'super_admin';
+    if (role === 'empresa') return 'empresa_local';
+    return role;
+  };
+
   if (!currentUser) return null;
 
   const menuGroups = {
@@ -43,6 +49,10 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/super_admin/opportunities', label: 'dashboard.tenders', icon: '📜' },
       { path: '/dashboard/super_admin/contracts', label: 'dashboard.contracts', icon: '📑' },
       { path: '/dashboard/super_admin/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+      { path: '/dashboard/super_admin/help-requests', label: 'Atención y Feedback', icon: '🙋' },
+      { path: '/dashboard/super_admin/campaigns', label: 'Gestión de Anuncios', icon: '📢' },
+      { path: '/dashboard/super_admin/billing', label: 'Contabilidad Publicitaria', icon: '💳' },
+      { path: '/dashboard/super_admin/analytics', label: 'Analíticas Globales', icon: '📈' },
       { path: '/dashboard/super_admin/reports', label: 'dashboard.reports', icon: '📈' },
     ],
     [UserRole.FUNCIONARIO]: [
@@ -52,11 +62,13 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/funcionario/companies', label: 'dashboard.company_files', icon: '🏢' },
       { path: '/dashboard/funcionario/opportunities', label: 'dashboard.tenders', icon: '📜' },
       { path: '/dashboard/funcionario/contracts', label: 'dashboard.contracts', icon: '📑' },
+      { path: '/dashboard/funcionario/help-requests', label: 'Atención y Feedback', icon: '🙋' },
       { path: '/dashboard/funcionario/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
     ],
     [UserRole.CUERPO_TECNICO]: [
       { path: '/dashboard/cuerpo_tecnico/overview', label: 'dashboard.overview', icon: '⚓' },
       { path: '/dashboard/cuerpo_tecnico/notifications', label: 'dashboard.field_alerts', icon: '🔔' },
+      { path: '/dashboard/cuerpo_tecnico/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/cuerpo_tecnico/inspections', label: 'dashboard.inspections', icon: '🔎' },
       { path: '/dashboard/cuerpo_tecnico/reports', label: 'dashboard.technical_reports', icon: '📋' },
       { path: '/dashboard/cuerpo_tecnico/lex', label: 'dashboard.regulatory_support', icon: '⚖️' },
@@ -67,12 +79,15 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/comunicacion/web', label: 'dashboard.web_portal', icon: '🌐' },
       { path: '/dashboard/comunicacion/notifications', label: 'dashboard.notifications', icon: '🔔' },
       { path: '/dashboard/comunicacion/messages', label: 'dashboard.press_messages', icon: '💬' },
+      { path: '/dashboard/comunicacion/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
     ],
     [UserRole.COMUNIDAD]: [
       { path: '/dashboard/comunidad/overview', label: 'dashboard.overview', icon: '🏗️' },
       { path: '/dashboard/comunidad/community', label: 'dashboard.social_impact', icon: '🌳' },
       { path: '/dashboard/comunidad/feedback', label: 'dashboard.citizen_feedback', icon: '📢' },
+      { path: '/dashboard/comunidad/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/comunidad/notifications', label: 'dashboard.notifications', icon: '🔔' },
+      { path: '/dashboard/comunidad/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
     ],
     [UserRole.PETROLERA]: [
       { path: '/dashboard/petrolera/overview', label: 'dashboard.overview', icon: '⛽' },
@@ -80,6 +95,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/petrolera/users', label: 'Usuarios y Accesos', icon: '👥' },
       { path: '/dashboard/petrolera/opportunities', label: 'dashboard.my_tenders', icon: '📜' },
       { path: '/dashboard/petrolera/csr', label: 'dashboard.csr_projects', icon: '🌱' },
+      { path: '/dashboard/petrolera/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/petrolera/notifications', label: 'dashboard.notifications', icon: '🔔' },
       { path: '/dashboard/petrolera/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
     ],
@@ -93,7 +109,9 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/company/opportunities', label: 'dashboard.tenders', icon: '🔍' },
       { path: '/dashboard/company/jobs', label: 'Gestión de Vacantes', icon: '💼' },
       { path: '/dashboard/company/contracts', label: 'dashboard.my_contracts', icon: '📑' },
+      { path: '/dashboard/company/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/company/notifications', label: 'dashboard.notifications', icon: '🔔' },
+      { path: '/dashboard/company/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
     ],
     [UserRole.EMPRESA_LOCAL]: [
       { path: '/dashboard/empresa_local/overview', label: 'dashboard.overview', icon: '💡' },
@@ -104,24 +122,31 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/empresa_local/applications', label: 'dashboard.my_applications', icon: '📄' },
       { path: '/dashboard/empresa_local/jobs', label: 'Gestión de Vacantes', icon: '💼' },
       { path: '/dashboard/empresa_local/support', label: 'dashboard.local_support', icon: '🤝' },
+      { path: '/dashboard/empresa_local/messages', label: 'dashboard.messages', icon: '💬' },
+      { path: '/dashboard/empresa_local/notifications', label: 'dashboard.notifications', icon: '🔔' },
+      { path: '/dashboard/empresa_local/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
     ],
     [UserRole.PERSONA]: [
       { path: '/dashboard/persona/overview', label: 'dashboard.overview', icon: '👷' },
       { path: '/dashboard/persona/profile', label: 'dashboard.my_digital_cv', icon: '👤' },
       { path: '/dashboard/persona/jobs', label: 'dashboard.job_board', icon: '🔍' },
       { path: '/dashboard/persona/certificates', label: 'dashboard.certifications', icon: '🎓' },
+      { path: '/dashboard/persona/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/persona/notifications', label: 'dashboard.notifications', icon: '🔔' },
+      { path: '/dashboard/persona/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
     ],
     [UserRole.ADVERTISER]: [
       { path: '/dashboard/advertiser/overview', label: 'dashboard.overview', icon: '📊' },
       { path: '/dashboard/advertiser/campaigns', label: 'dashboard.campaigns', icon: '📢' },
       { path: '/dashboard/advertiser/billing', label: 'dashboard.billing', icon: '💳' },
       { path: '/dashboard/advertiser/analytics', label: 'dashboard.analytics', icon: '📈' },
+      { path: '/dashboard/advertiser/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/advertiser/notifications', label: 'dashboard.notifications', icon: '🔔' },
+      { path: '/dashboard/advertiser/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
     ],
   };
 
-  const currentMenu = (menuGroups as any)[currentUser.role] || menuGroups[UserRole.SUPER_ADMIN];
+  const currentMenu = (menuGroups as any)[getNormalizedRole(currentUser.role)] || menuGroups[UserRole.SUPER_ADMIN];
 
   return (
     <>

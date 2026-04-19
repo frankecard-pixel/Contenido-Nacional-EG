@@ -35,8 +35,8 @@ const OpportunitiesPublicView: React.FC<OpportunitiesPublicViewProps> = ({
       <div className="max-w-[var(--layout-max-width)] mx-auto px-10 mt-20">
         {/* Filtros Públicos */}
         <div className="mb-12 rounded-[3.5rem] bg-white dark:bg-[#1a2332] p-10 shadow-sm border border-slate-100 dark:border-slate-800">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-8">
+          <div className="flex gap-8 overflow-x-auto pb-4 custom-scrollbar whitespace-nowrap">
+            <div className="min-w-[300px] flex-1">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Buscar oportunidad</label>
               <div className="relative">
                 <input 
@@ -44,12 +44,12 @@ const OpportunitiesPublicView: React.FC<OpportunitiesPublicViewProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-800 py-5 pl-14 pr-6 text-sm font-bold focus:ring-4 focus:ring-primary/10 transition-all text-slate-900 dark:text-white"
-                  placeholder="Ej: Mantenimiento de plataformas, Suministro de tuberías..."
+                  placeholder="Ej: Mantenimiento de plataformas..."
                 />
                 <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">search</span>
               </div>
             </div>
-            <div className="lg:col-span-4">
+            <div className="min-w-[200px]">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Fecha límite</label>
               <div className="relative">
                 <input 
@@ -61,15 +61,15 @@ const OpportunitiesPublicView: React.FC<OpportunitiesPublicViewProps> = ({
             </div>
           </div>
           
-          <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-8">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">Filtrar:</span>
+          <div className="mt-8 flex items-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-8 overflow-x-auto pb-4 custom-scrollbar whitespace-nowrap">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2 shrink-0">Filtrar:</span>
             {['Categoría', 'Ubicación', 'Tipo de Servicio'].map(btn => (
-              <button key={btn} className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition-all">
+              <button key={btn} className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition-all shrink-0">
                 <span>{btn}</span>
                 <span className="material-symbols-outlined text-lg">expand_more</span>
               </button>
             ))}
-            <button onClick={() => { setSearchQuery(''); setActiveCategory('all'); }} className="ml-auto text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Limpiar filtros</button>
+            <button onClick={() => { setSearchQuery(''); setActiveCategory('all'); }} className="ml-auto text-[10px] font-black text-primary hover:underline uppercase tracking-widest shrink-0 pl-4">Limpiar filtros</button>
           </div>
         </div>
 

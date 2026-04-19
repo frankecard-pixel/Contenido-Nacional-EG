@@ -15,6 +15,61 @@ import {
 } from '../types';
 
 // ==========================================
+// STORAGE
+// ==========================================
+export const uploadFile = async (bucket: string, path: string, base64Data: string, contentType: string) => {
+  // Convert base64 to Uint8Array for browser compatibility
+  const base64String = base64Data.split(',')[1];
+  const binaryString = window.atob(base64String);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  const { data, error } = await supabase.storage.from(bucket).upload(path, bytes, {
+    contentType,
+    upsert: true
+  });
+  if (error) throw error;
+  return data;
+};
+
+// ==========================================
+// ADVERTISEMENTS
+// ==========================================
+export const getAdvertisements = async () => {
+  const { data, error } = await supabase.from('advertisements').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const createAdvertisement = async (advertisementData: any) => {
+  const { data, error } = await supabase.from('advertisements').insert([advertisementData]).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const deleteAdvertisement = async (id: string) => {
+  const { error } = await supabase.from('advertisements').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const updateAdvertisement = async (id: string, adData: any) => {
+  const { data, error } = await supabase.from('advertisements').update(adData).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+
+// ==========================================
+// DOCUMENTS
+// ==========================================
+export const getDocuments = async () => {
+  const { data, error } = await supabase.from('documents').select('*');
+  if (error) throw error;
+  return data;
+};
+
+// ==========================================
 // USERS
 // ==========================================
 export const getUsers = async () => {
@@ -33,6 +88,18 @@ export const getUserById = async (id: string) => {
 export const createUser = async (userData: Partial<User>) => {
   if (!supabase) return null;
   const { data, error } = await supabase.from('users').insert([userData]).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const updateUser = async (id: string, userData: Partial<User>) => {
+  const { data, error } = await supabase.from('users').update(userData).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const updateOpportunity = async (id: string, opportunityData: Partial<Opportunity>) => {
+  const { data, error } = await supabase.from('opportunities').update(opportunityData).eq('id', id).select().single();
   if (error) throw error;
   return data;
 };
@@ -68,7 +135,7 @@ export const updateCompany = async (id: string, companyData: Partial<Company>) =
 // OPPORTUNITIES
 // ==========================================
 export const getOpportunities = async () => {
-  const { data, error } = await supabase.from('opportunities').select('*, petrolera:users(name, email)');
+  const { data, error } = await supabase.from('opportunities').select('*, petrolera:users(name, email), project:projects(name)');
   if (error) throw error;
   return data;
 };
@@ -118,7 +185,7 @@ export const createApplication = async (applicationData: Partial<Application>) =
 // CONTRACTS & MILESTONES
 // ==========================================
 export const getContracts = async () => {
-  const { data, error } = await supabase.from('contracts').select('*, company:companies(*)');
+  const { data, error } = await supabase.from('contracts').select('*, company:companies(*), opportunity:opportunities(title, project:projects(name))');
   if (error) throw error;
   return data;
 };
@@ -162,13 +229,47 @@ export const getNewsArticles = async () => {
   return data;
 };
 
-// ==========================================
-// DOCUMENTS
-// ==========================================
-export const getDocuments = async () => {
-  const { data, error } = await supabase.from('documents').select('*');
+export const createNewsArticle = async (articleData: Partial<NewsArticle>) => {
+  const { data, error } = await supabase.from('news_articles').insert([articleData]).select().single();
   if (error) throw error;
   return data;
+};
+
+export const updateNewsArticle = async (id: string, articleData: Partial<NewsArticle>) => {
+  const { data, error } = await supabase.from('news_articles').update(articleData).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const deleteNewsArticle = async (id: string) => {
+  const { error } = await supabase.from('news_articles').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// ==========================================
+// PROJECTS
+// ==========================================
+export const getProjects = async () => {
+  const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const createProject = async (projectData: any) => {
+  const { data, error } = await supabase.from('projects').insert([projectData]).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const updateProject = async (id: string, projectData: any) => {
+  const { data, error } = await supabase.from('projects').update(projectData).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const deleteProject = async (id: string) => {
+  const { error } = await supabase.from('projects').delete().eq('id', id);
+  if (error) throw error;
 };
 
 export const getDocumentsByEntity = async (entityId: string, entityType: string) => {
@@ -181,23 +282,109 @@ export const getDocumentsByEntity = async (entityId: string, entityType: string)
 // MESSAGES & CONVERSATIONS
 // ==========================================
 export const getConversations = async (userId: string) => {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('conversations')
-    .select('*, participant:users!conversations_participant_id_fkey(name, avatar_url, role)')
-    .or(`user_id.eq.${userId},participant_id.eq.${userId}`)
-    .order('timestamp', { ascending: false });
+    .select('*, participant:users!conversations_participant_1_fkey(name, avatar_url, role, is_online), participant2:users!conversations_participant_2_fkey(name, avatar_url, role, is_online)')
+    .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
+    .order('last_message_at', { ascending: false });
   if (error) throw error;
   return data;
 };
 
 export const getMessagesByConversation = async (conversationId: string) => {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('messages')
-    .select('*, sender:users(name, role)')
+    .select('*, sender:users(name, role, avatar_url)')
     .eq('conversation_id', conversationId)
     .order('timestamp', { ascending: true });
   if (error) throw error;
   return data;
+};
+
+export const sendMessage = async (messageData: any) => {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('messages')
+    .insert([messageData])
+    .select()
+    .single();
+  
+  if (error) throw error;
+
+  // Update conversation last message
+  await supabase
+    .from('conversations')
+    .update({ 
+      last_message: messageData.text,
+      last_message_at: new Date().toISOString()
+    })
+    .eq('id', messageData.conversation_id);
+
+  return data;
+};
+
+export const createConversation = async (participant1: string, participant2: string) => {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert([{ participant_1: participant1, participant_2: participant2 }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+// ==========================================
+// GROUPS (Simulated using conversations for now if schema not updated)
+// ==========================================
+export const createGroup = async (name: string, members: string[], createdBy: string) => {
+  if (!supabase) return null;
+  // This would normally go to a 'groups' table
+  // For now, let's assume we can use conversations with a type='group'
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert([{ 
+      name, 
+      type: 'group', 
+      participant_1: createdBy,
+      // In a real app, we'd have a junction table for members
+    }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+// ==========================================
+// STATUS UPDATES
+// ==========================================
+export const getStatusUpdates = async () => {
+  if (!supabase) return [];
+  // Mocking status updates for now as it's a new feature
+  return [
+    {
+      id: '1',
+      user_id: 'u1',
+      user_name: 'Juan Pérez',
+      user_avatar: 'https://picsum.photos/seed/user1/200',
+      content_url: 'https://picsum.photos/seed/status1/400/600',
+      type: 'image',
+      timestamp: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 86400000).toISOString()
+    },
+    {
+      id: '2',
+      user_id: 'u2',
+      user_name: 'María García',
+      user_avatar: 'https://picsum.photos/seed/user2/200',
+      content_url: 'https://picsum.photos/seed/status2/400/600',
+      type: 'image',
+      timestamp: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 86400000).toISOString()
+    }
+  ];
 };
 
 // ==========================================
@@ -214,6 +401,12 @@ export const getAuditLogs = async () => {
 // ==========================================
 export const getHelpRequests = async () => {
   const { data, error } = await supabase.from('help_requests').select('*, company:companies(name)').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const updateHelpRequest = async (id: string, updates: any) => {
+  const { data, error } = await supabase.from('help_requests').update(updates).eq('id', id).select().single();
   if (error) throw error;
   return data;
 };

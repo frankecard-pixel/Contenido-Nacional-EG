@@ -106,11 +106,11 @@ const PublicFooter: React.FC = () => {
             <div className="flex flex-col gap-4 p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-xl">call</span>
-                  <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">+240 333 000 000</span>
+                  <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">222271741</span>
                </div>
                <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-xl">location_on</span>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase leading-tight">Malabo II, Autovía Aeropuerto</span>
+                  <span className="text-[9px] font-bold text-slate-500 uppercase leading-tight">Edificio Ministerio de Minas e Hidrocarburos Malabo II, Carr del Aeropuerto, Malabo, Guinea Ecuatorial</span>
                </div>
             </div>
           </div>

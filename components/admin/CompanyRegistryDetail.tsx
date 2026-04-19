@@ -21,7 +21,7 @@ const CompanyRegistryDetail: React.FC<CompanyRegistryDetailProps> = ({
       <header className="p-8 border-b border-slate-50 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
         <div className="flex justify-between items-start mb-8">
           <div className="size-16 rounded-[1.25rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center p-3 shadow-inner">
-            <span className="text-2xl font-black text-primary">{selectedCompany.name.substring(0, 2).toUpperCase()}</span>
+            <span className="text-2xl font-black text-primary">{selectedCompany.name?.substring(0, 2).toUpperCase() || '??'}</span>
           </div>
           <button 
             onClick={() => setSelectedCompanyId(null)}

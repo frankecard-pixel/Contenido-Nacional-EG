@@ -59,23 +59,23 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
   }
 
   return (
-    <div className="p-6 md:p-10 space-y-10 animate-in fade-in duration-700">
+    <div className="p-4 md:p-6 lg:p-10 space-y-6 md:space-y-10 animate-in fade-in duration-700">
       {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase break-words">
             Bienvenido, {company.name}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
             Aquí está el resumen de su actividad y cumplimiento en el sector de hidrocarburos.
           </p>
         </div>
-        <div className="flex gap-4">
-          <button className="inline-flex items-center justify-center px-6 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-4 md:mt-0">
+          <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all shadow-sm">
             <span className="material-symbols-outlined text-lg mr-2">download</span>
             Reporte Mensual
           </button>
-          <button className="inline-flex items-center justify-center px-6 py-3.5 bg-primary border border-transparent rounded-2xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+          <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-primary border border-transparent rounded-2xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
             <span className="material-symbols-outlined text-lg mr-2">edit</span>
             Editar Perfil
           </button>
@@ -83,14 +83,13 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
       </div>
 
       {/* Top Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Profile Completeness (Large) */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-primary to-blue-700 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+        <div className="lg:col-span-2 bg-gradient-to-br from-primary to-blue-700 rounded-[2rem] md:rounded-[2.5rem] p-6 lg:p-10 text-white shadow-2xl relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-80 h-80 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
-          <div className="relative z-10 flex flex-col sm:flex-row gap-10 items-center">
+          <div className="relative z-10 flex flex-col sm:flex-row gap-8 lg:gap-10 items-center">
             <div 
-              className="rounded-full border-8 border-white/20 flex items-center justify-center relative shrink-0 shadow-inner bg-white/5 transition-all duration-300"
-              style={{ width: 'calc(8rem * var(--chart-scale))', height: 'calc(8rem * var(--chart-scale))' }}
+              className="rounded-full border-8 border-white/20 flex flex-shrink-0 items-center justify-center relative shadow-inner bg-white/5 transition-all duration-300 w-24 h-24 sm:w-32 sm:h-32"
             >
               <svg className="size-full -rotate-90 transform" viewBox="0 0 36 36">
                 <path className="text-white/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
@@ -112,7 +111,7 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
         </div>
 
         {/* Urgent Compliance Alert */}
-        <div className="bg-white dark:bg-slate-800 border-l-8 border-amber-500 rounded-[2.5rem] p-10 shadow-sm flex flex-col justify-between border border-slate-100 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 border-l-8 border-amber-500 rounded-[2rem] md:rounded-[2.5rem] p-6 lg:p-10 shadow-sm flex flex-col justify-between border border-slate-100 dark:border-slate-700">
           <div>
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-3 text-amber-600 dark:text-amber-500 font-black uppercase tracking-widest text-xs">
@@ -132,14 +131,14 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {[
           { label: "Aplicaciones", val: "12", trend: "+2 este mes", icon: "send", color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Ganados", val: "2", trend: "Total histórico", icon: "trophy", color: "text-purple-600", bg: "bg-purple-50" },
           { label: "Oportunidades", val: "8", trend: "3 nuevas", icon: "visibility", color: "text-orange-600", bg: "bg-orange-50" },
           { label: "Cumplimiento", val: "A-", trend: "Score General", icon: "verified", color: "text-teal-600", bg: "bg-teal-50" }
         ].map((metric, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
+          <div key={i} className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
             <div className="flex items-center gap-4 mb-4">
               <div className={`p-3 ${metric.bg} dark:bg-opacity-10 rounded-2xl ${metric.color}`}>
                 <span className="material-symbols-outlined text-2xl">{metric.icon}</span>
@@ -172,12 +171,12 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
       />
 
       {/* Main Dashboard Split */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-10">
         {/* Left Column (2/3) */}
-        <div className="lg:col-span-2 space-y-10">
+        <div className="xl:col-span-2 space-y-6 md:space-y-10">
           {/* Recommended Opportunities */}
-          <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter">
                 <span className="material-symbols-outlined text-primary text-2xl">recommend</span>
                 Oportunidades Recomendadas
@@ -186,8 +185,8 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {recommendedOpps.map(opp => (
-                <div key={opp.id} className="p-8 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-all group">
-                  <div className="flex justify-between items-start gap-6">
+                <div key={opp.id} className="p-6 md:p-8 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-all group">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4 md:gap-6">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[9px] px-3 py-1 rounded-lg font-black uppercase tracking-widest">Licitación</span>
@@ -210,7 +209,7 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
                         </span>
                       </div>
                     </div>
-                    <button className="shrink-0 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 text-slate-400 hover:text-primary hover:border-primary transition-all">
+                    <button className="shrink-0 w-full sm:w-auto mt-4 sm:mt-0 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 text-slate-400 hover:text-primary hover:border-primary transition-all flex justify-center items-center">
                       <span className="material-symbols-outlined">bookmark</span>
                     </button>
                   </div>
@@ -220,8 +219,8 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
           </div>
 
           {/* Active Applications Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-700">
               <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Estado de Aplicaciones</h2>
             </div>
             <div className="overflow-x-auto">
@@ -277,10 +276,10 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
         </div>
 
         {/* Right Column (1/3) */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6 md:gap-8 xl:col-span-1">
           {/* Messages Widget */}
-          <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-fit overflow-hidden">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-fit overflow-hidden">
+            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
               <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Mensajes</h2>
               <span className="bg-red-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest">1 Nuevo</span>
             </div>
@@ -310,7 +309,7 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
           </div>
 
           {/* Documentation Status */}
-          <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 p-8 space-y-8">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8 space-y-6 md:space-y-8">
             <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Estado Documental</h2>
             <div className="space-y-6">
               {[
@@ -341,7 +340,7 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
           </div>
 
           {/* Support Widget */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-6">
                 <div className="p-3 bg-white/10 rounded-2xl text-yellow-400 shadow-inner">

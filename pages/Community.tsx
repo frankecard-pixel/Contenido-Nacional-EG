@@ -40,8 +40,8 @@ const Community: React.FC = () => {
 
   const mapPoints = socialProjects.map(p => ({
     id: p.id,
-    lat: p.lat,
-    lng: p.lng,
+    lat: p.lat || 0,
+    lng: p.lng || 0,
     title: getTranslatedText(p.title),
     type: 'project' as const
   }));

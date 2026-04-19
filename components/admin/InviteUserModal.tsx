@@ -12,7 +12,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState('viewer');
+  const [role, setRole] = useState<string>(UserRole.FUNCIONARIO);
 
   if (!isOpen) return null;
 
@@ -21,7 +21,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
     onInvite(email, name, role);
     setEmail('');
     setName('');
-    setRole('viewer');
+    setRole(UserRole.FUNCIONARIO);
     onClose();
   };
 
@@ -67,9 +67,21 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
               onChange={(e) => setRole(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:text-white"
             >
-              <option value="admin">Administrador</option>
-              <option value="editor">Editor</option>
-              <option value="viewer">Lector</option>
+              <optgroup label="Ministerio">
+                <option value={UserRole.SUPER_ADMIN}>Super Admin</option>
+                <option value={UserRole.FUNCIONARIO}>Funcionario</option>
+                <option value={UserRole.CUERPO_TECNICO}>Cuerpo Técnico</option>
+                <option value={UserRole.COMUNICACION}>Comunicación</option>
+              </optgroup>
+              <optgroup label="Empresas">
+                <option value={UserRole.COMPANY}>Empresa (IOC)</option>
+                <option value={UserRole.EMPRESA_LOCAL}>Empresa Local (PYME)</option>
+                <option value={UserRole.PETROLERA}>Operadora Petrolera</option>
+              </optgroup>
+              <optgroup label="Otros">
+                <option value={UserRole.PERSONA}>Talento Nacional</option>
+                <option value={UserRole.ADVERTISER}>Anunciante</option>
+              </optgroup>
             </select>
           </div>
 

@@ -1,10 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, TrendingUp, Eye, MousePointerClick, TrendingDown, Calendar, Download, Filter } from 'lucide-react';
+import { BarChart3, TrendingUp, Eye, MousePointerClick, TrendingDown, Calendar, Download, Filter, Globe } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRole } from '../../types';
 
 const AdAnalyticsManagement: React.FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN || user?.role === 'admin';
 
   const performanceData = [
     { name: 'Lun', impressions: 45000, clicks: 1200 },
@@ -21,10 +25,10 @@ const AdAnalyticsManagement: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-            Analíticas de Anuncios
+            {isSuperAdmin ? 'Analíticas Globales de Publicidad' : 'Analíticas de Anuncios'}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Reportes detallados de impresiones, clics y rendimiento de campañas.
+            {isSuperAdmin ? 'Rendimiento consolidado de todos los anunciantes y campañas en la plataforma.' : 'Reportes detallados de impresiones, clics y rendimiento de campañas.'}
           </p>
         </div>
         <div className="flex gap-3">
@@ -41,10 +45,10 @@ const AdAnalyticsManagement: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: "Impresiones", val: "341.2K", trend: "+12.5%", isPositive: true, icon: <Eye className="w-5 h-5" />, color: "blue" },
-          { label: "Clics", val: "9.4K", trend: "+8.2%", isPositive: true, icon: <MousePointerClick className="w-5 h-5" />, color: "emerald" },
+          { label: isSuperAdmin ? "Impresiones Globales" : "Impresiones", val: isSuperAdmin ? "2.8M" : "341.2K", trend: "+12.5%", isPositive: true, icon: <Eye className="w-5 h-5" />, color: "blue" },
+          { label: isSuperAdmin ? "Clics Totales" : "Clics", val: isSuperAdmin ? "85.4K" : "9.4K", trend: "+8.2%", isPositive: true, icon: <MousePointerClick className="w-5 h-5" />, color: "emerald" },
           { label: "CTR Promedio", val: "2.75%", trend: "-0.4%", isPositive: false, icon: <TrendingUp className="w-5 h-5" />, color: "purple" },
-          { label: "CPC Promedio", val: "$0.45", trend: "-2.1%", isPositive: true, icon: <BarChart3 className="w-5 h-5" />, color: "amber" }
+          { label: isSuperAdmin ? "Ingresos Estimados" : "CPC Promedio", val: isSuperAdmin ? "$12,450" : "$0.45", trend: "+5.1%", isPositive: true, icon: <BarChart3 className="w-5 h-5" />, color: "amber" }
         ].map((stat, i) => (
           <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
             <div className="flex justify-between items-start mb-4">

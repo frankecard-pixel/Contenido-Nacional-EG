@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import HelpRequestManagement from '../components/admin/HelpRequestManagement';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardHeader from '../components/DashboardHeader';
-import DashboardRoleSelector from '../components/dashboard/DashboardRoleSelector';
 import LexAssistant from '../components/LexAssistant';
 import Opportunities from './Opportunities';
 import OpportunityManagement from './OpportunityManagement';
@@ -52,6 +52,7 @@ import OpportunityPostingForm from '../components/dashboard/opportunities/Opport
 import ContractCreationForm from '../components/public/contract-management/ContractCreationForm';
 import { UserRole, User, Company } from '../types';
 import { getUsers, getCompanies, getUserById } from '../services/supabaseApi';
+import { MOCK_USERS } from '../services/mockService';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -63,9 +64,14 @@ const Dashboard: React.FC = () => {
   const [dbUser, setDbUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const authUserId = authUser?.id;
+
   useEffect(() => {
     const fetchData = async () => {
+      if (!authUserId) return;
+      
       try {
+        setLoading(true);
         const [usersData, companiesData] = await Promise.all([
           getUsers(),
           getCompanies()
@@ -73,25 +79,28 @@ const Dashboard: React.FC = () => {
         setUsers(usersData as any);
         setCompanies(companiesData as any);
 
-        if (authUser) {
-          const userData = await getUserById(authUser.id);
-          setDbUser(userData as any);
-        }
+        const userData = await getUserById(authUserId);
+        setDbUser(userData as any);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
+
     if (!authLoading) {
       fetchData();
     }
-  }, [authLoading, authUser]);
+  }, [authLoading, authUserId]);
 
   // Use authenticated user or fallback to mock for demo
   const currentUser = useMemo(() => {
     if (dbUser) return dbUser;
-    return users.find(u => u.id === localStorage.getItem('user_id')) || users[0];
+    const foundUser = users.find(u => u.id === localStorage.getItem('user_id'));
+    if (foundUser) return foundUser;
+    if (users.length > 0) return users[0];
+    // Fallback to mock users if database is empty (for demo purposes)
+    return MOCK_USERS.find((u: any) => u.id === localStorage.getItem('user_id')) || MOCK_USERS[0];
   }, [dbUser, users]);
 
   const currentUserId = useMemo(() => currentUser?.id || 'u-1', [currentUser]);
@@ -102,14 +111,20 @@ const Dashboard: React.FC = () => {
     return companies.find(c => c.id === cid) || companies[0];
   }, [currentUser, companies]);
 
-  const handleRoleChange = (userId: string) => {
+  const getNormalizedRole = React.useCallback((role: string) => {
+    if (role === 'admin') return 'super_admin';
+    if (role === 'empresa') return 'empresa_local';
+    return role;
+  }, []);
+
+  const handleRoleChange = React.useCallback((userId: string) => {
     const user = users.find(u => u.id === userId);
     if (user) {
       localStorage.setItem('user_id', userId);
       setIsSidebarOpen(false);
-      navigate(`/dashboard/${user.role}/overview`);
+      navigate(`/dashboard/${getNormalizedRole(user.role)}/overview`);
     }
-  };
+  }, [users, navigate, getNormalizedRole]);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -147,25 +162,26 @@ const Dashboard: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark">
         {/* Pasamos el usuario dinámico aquí */}
         <DashboardHeader user={currentUser} onToggleSidebar={toggleSidebar} />
-        
-        <DashboardRoleSelector 
-          currentUserId={currentUserId}
-          handleRoleChange={handleRoleChange}
-          isOnline={currentUser.isOnline}
-        />
 
         <main className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
           <div className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col transition-all duration-300">
             <Routes>
             {/* 1. SUPER ADMIN */}
             <Route path="super_admin/overview" element={<AdminDashboardOverview user={currentUser} />} />
+            <Route path="admin/overview" element={<Navigate to="/dashboard/super_admin/overview" replace />} />
             <Route path="super_admin/users" element={<AdminUserManagementPage />} />
+            <Route path="admin/users" element={<Navigate to="/dashboard/super_admin/users" replace />} />
             <Route path="super_admin/companies" element={<CompanyRegistry />} />
+            <Route path="admin/companies" element={<Navigate to="/dashboard/super_admin/companies" replace />} />
             <Route path="super_admin/opportunities" element={<OpportunityManagement />} />
+            <Route path="admin/opportunities" element={<Navigate to="/dashboard/super_admin/opportunities" replace />} />
             <Route path="super_admin/contracts" element={<ContractManagement />} />
+            <Route path="admin/contracts" element={<Navigate to="/dashboard/super_admin/contracts" replace />} />
             <Route path="super_admin/contracts/new" element={<ContractCreationForm />} />
             <Route path="super_admin/reports" element={<AuditReports />} />
+            <Route path="admin/reports" element={<Navigate to="/dashboard/super_admin/reports" replace />} />
             <Route path="super_admin/messages" element={<Messages />} />
+            <Route path="admin/messages" element={<Navigate to="/dashboard/super_admin/messages" replace />} />
             <Route path="super_admin/community" element={<CommunityManagement />} />
             <Route path="super_admin/web" element={<WebContentManagement />} />
             <Route path="super_admin/newsletter" element={<NewsletterManagement />} />
@@ -173,12 +189,18 @@ const Dashboard: React.FC = () => {
             <Route path="super_admin/registrations" element={<AdminRegistrationManagement />} />
             <Route path="super_admin/contract-templates" element={<ContractTemplates />} />
             <Route path="super_admin/news" element={<NewsManagement />} />
+            <Route path="super_admin/help-requests" element={<HelpRequestManagement />} />
+            <Route path="super_admin/campaigns" element={<CampaignManagement />} />
+            <Route path="super_admin/billing" element={<BillingManagement />} />
+            <Route path="super_admin/analytics" element={<AdAnalyticsManagement />} />
+            <Route path="admin/news" element={<Navigate to="/dashboard/super_admin/news" replace />} />
             
             {/* 2. FUNCIONARIO ADMINISTRATIVO */}
             <Route path="funcionario/overview" element={<AdminDashboardOverview user={currentUser} />} />
             <Route path="funcionario/companies" element={<CompanyRegistry />} />
             <Route path="funcionario/opportunities" element={<OpportunityManagement />} />
             <Route path="funcionario/contracts" element={<ContractManagement />} />
+            <Route path="funcionario/help-requests" element={<HelpRequestManagement />} />
             <Route path="funcionario/messages" element={<Messages />} />
 
             {/* 3. CUERPO TÉCNICO / AUDITORÍA */}
@@ -207,6 +229,7 @@ const Dashboard: React.FC = () => {
 
             {/* 7. EMPRESAS DE SERVICIOS (GRANDES) */}
             <Route path="company/overview" element={currentCompany ? <CompanyDashboardOverview company={currentCompany} /> : <div>Cargando empresa...</div>} />
+            <Route path="empresa/overview" element={<Navigate to="/dashboard/company/overview" replace />} />
             <Route path="company/network" element={<SectorNetworkPage />} />
             <Route path="company/users" element={<CompanyUserManagementPage />} />
             <Route path="company/profile" element={<CompanyProfileManagement />} />
@@ -221,21 +244,35 @@ const Dashboard: React.FC = () => {
             
             {/* 8. PYMES NACIONALES / SOPORTE LOCAL */}
             <Route path="empresa_local/overview" element={currentCompany ? <CompanyDashboardOverview company={currentCompany} /> : <div>Cargando empresa...</div>} />
+            <Route path="empresa/overview" element={<Navigate to="/dashboard/empresa_local/overview" replace />} />
             <Route path="empresa_local/network" element={<SectorNetworkPage />} />
+            <Route path="empresa/network" element={<Navigate to="/dashboard/empresa_local/network" replace />} />
             <Route path="empresa_local/users" element={<CompanyUserManagementPage />} />
+            <Route path="empresa/users" element={<Navigate to="/dashboard/empresa_local/users" replace />} />
             <Route path="empresa_local/profile" element={<CompanyProfileManagement />} />
+            <Route path="empresa/profile" element={<Navigate to="/dashboard/empresa_local/profile" replace />} />
             <Route path="empresa_local/opportunities" element={<Opportunities isDashboard />} />
+            <Route path="empresa/opportunities" element={<Navigate to="/dashboard/empresa_local/opportunities" replace />} />
             <Route path="empresa_local/opportunities/new" element={<OpportunityPostingForm />} />
             <Route path="empresa_local/applications" element={<ApplicationsTracking />} />
+            <Route path="empresa/applications" element={<Navigate to="/dashboard/empresa_local/applications" replace />} />
             <Route path="empresa_local/documents" element={<DocumentManagement />} />
+            <Route path="empresa/documents" element={<Navigate to="/dashboard/empresa_local/documents" replace />} />
             <Route path="empresa_local/jobs" element={currentCompany ? <JobManagement company={currentCompany} /> : <div>Cargando empresa...</div>} />
+            <Route path="empresa/jobs" element={<Navigate to="/dashboard/empresa_local/jobs" replace />} />
             <Route path="empresa_local/jobs/new" element={<JobPostingForm />} />
             <Route path="empresa_local/messages" element={<Messages user={currentUser} />} />
+            <Route path="empresa/messages" element={<Navigate to="/dashboard/empresa_local/messages" replace />} />
             <Route path="empresa_local/support" element={<TechnicalSupportManagement />} />
+            <Route path="empresa/support" element={<Navigate to="/dashboard/empresa_local/support" replace />} />
 
             {/* 9. TALENTO NACIONAL / INDIVIDUOS */}
             <Route path="persona/overview" element={<TalentoDashboardOverview user={currentUser} />} />
-            <Route path="persona/profile" element={<TalentProfileManagement user={currentUser} />} />
+            <Route path="persona/profile" element={<TalentProfileManagement user={currentUser} onUpdate={() => {
+              if (authUserId) {
+                getUserById(authUserId).then(userData => setDbUser(userData as any));
+              }
+            }} />} />
             <Route path="persona/jobs" element={<Jobs />} />
             <Route path="persona/messages" element={<Messages user={currentUser} />} />
             <Route path="persona/certificates" element={<CertificationsManagement user={currentUser} />} />
@@ -253,7 +290,8 @@ const Dashboard: React.FC = () => {
             <Route path=":role/lex" element={<div className="p-12 h-full max-w-5xl mx-auto"><LexAssistant /></div>} />
             
             {/* REDIRECCIÓN POR DEFECTO */}
-            <Route path="*" element={<Navigate to="overview" replace />} />
+            <Route index element={<Navigate to={`/dashboard/${getNormalizedRole(currentUser.role)}/overview`} replace />} />
+            <Route path="*" element={<Navigate to={`/dashboard/${getNormalizedRole(currentUser.role)}/overview`} replace />} />
           </Routes>
           </div>
         </main>

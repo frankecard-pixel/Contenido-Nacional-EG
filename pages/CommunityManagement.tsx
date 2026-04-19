@@ -139,7 +139,7 @@ const CommunityManagement: React.FC = () => {
                 <div key={work.id} className="p-10 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all group">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">{work.title.es || work.title}</h3>
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">{(work.title as any).es || work.title}</h3>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Empresa Responsable: <span className="text-slate-600 dark:text-slate-300">{work.petrolera?.name || 'Operadora Local'}</span></p>
                     </div>
                     {getStatusBadge(work.status)}
@@ -291,7 +291,7 @@ const CommunityManagement: React.FC = () => {
                 <div key={i} className="flex gap-5 p-4 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-all cursor-pointer group">
                   <div className="relative shrink-0">
                     <div className="size-12 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-black text-xs text-slate-400">
-                      {msg.name.charAt(0)}
+                      {msg.name?.charAt(0) || '?'}
                     </div>
                     {msg.online && <div className="absolute -bottom-1 -right-1 size-4 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-800"></div>}
                   </div>

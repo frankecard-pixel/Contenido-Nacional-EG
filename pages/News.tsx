@@ -1,12 +1,31 @@
 
-import React from 'react';
-import { MOCK_NEWS_ARTICLES } from '../services/mockService';
+import React, { useState, useEffect } from 'react';
+import { getNewsArticles } from '../services/supabaseApi';
 import NewsMainContent from '../components/public/news/NewsMainContent';
 import NewsSidebar from '../components/public/news/NewsSidebar';
 import PublicBanner from '../components/public/PublicBanner';
 import MinisterialCertification from '../components/public/MinisterialCertification';
+import { NewsArticle } from '../types';
+import { Loader2 } from 'lucide-react';
 
 const News: React.FC = () => {
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const data = await getNewsArticles();
+        setNews(data as NewsArticle[]);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
   return (
     <div className="pb-24 bg-white">
       <PublicBanner 
@@ -21,7 +40,13 @@ const News: React.FC = () => {
       <div className="mx-auto px-6 mt-20" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Noticia Principal */}
-          <NewsMainContent newsItems={MOCK_NEWS_ARTICLES} />
+          {loading ? (
+            <div className="lg:col-span-8 flex items-center justify-center py-20">
+              <Loader2 className="animate-spin text-primary" size={48} />
+            </div>
+          ) : (
+            <NewsMainContent newsItems={news} />
+          )}
 
           {/* Sidebar de Boletines */}
           <NewsSidebar />

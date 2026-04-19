@@ -37,9 +37,15 @@ const LoginForm: React.FC = () => {
         if (roleError) throw roleError;
 
         const role = userData?.role || 'persona';
+        const getNormalizedRole = (r: string) => {
+          if (r === 'admin') return 'super_admin';
+          if (r === 'empresa') return 'empresa_local';
+          return r;
+        };
+        const normalizedRole = getNormalizedRole(role);
         localStorage.setItem('user_session', 'active');
         localStorage.setItem('user_role', role);
-        navigate(`/dashboard/${role}/overview`);
+        navigate(`/dashboard/${normalizedRole}/overview`);
       }
     } catch (err: any) {
       console.error('Login error:', err);

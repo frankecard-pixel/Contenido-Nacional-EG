@@ -26,7 +26,7 @@ const NewsDetail: React.FC = () => {
   // Normalize data for display
   const title = typeof newsItem.title === 'string' ? newsItem.title : newsItem.title.es;
   const image = 'image' in newsItem ? newsItem.image : newsItem.featuredImage;
-  const date = 'date' in newsItem ? newsItem.date : newsItem.publishDate;
+  const date = 'date' in newsItem ? newsItem.date : newsItem.publish_date;
   const content = 'content' in newsItem ? newsItem.content.es : `<p>${newsItem.excerpt}</p><p>Contenido detallado en desarrollo...</p>`;
   const category = newsItem.category;
 

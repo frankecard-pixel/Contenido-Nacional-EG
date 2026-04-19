@@ -43,19 +43,19 @@ const TalentoDashboardOverview: React.FC<TalentoDashboardOverviewProps> = ({ use
   }
 
   return (
-    <div className="p-6 md:p-10 space-y-10 animate-in fade-in duration-700">
+    <div className="p-4 md:p-6 lg:p-10 space-y-6 md:space-y-10 animate-in fade-in duration-700">
       {/* Profile Welcome */}
-      <div className="bg-white dark:bg-slate-800 rounded-[3rem] p-10 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center gap-10">
-         <div className="size-32 rounded-[2rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white text-5xl font-black shadow-2xl relative shrink-0">
-            {user.name.substring(0, 2).toUpperCase()}
+      <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+         <div className="size-24 md:size-32 rounded-[1.5rem] md:rounded-[2rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white text-4xl md:text-5xl font-black shadow-2xl relative shrink-0">
+            {user.name?.substring(0, 2).toUpperCase() || '??'}
             <div className={`absolute -bottom-2 -right-2 size-8 ${user.isOnline ? 'bg-green-500' : 'bg-slate-400'} rounded-full border-4 border-white dark:border-slate-800`}></div>
          </div>
-         <div className="flex-1 text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
-               <h1 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{user.name}</h1>
-               <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest border border-blue-100">Candidato Verificado</span>
+         <div className="flex-1 text-center md:text-left w-full">
+            <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2 md:gap-4 mb-2">
+               <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter break-words text-center md:text-left">{user.name}</h1>
+               <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest border border-blue-100 inline-block">Candidato Verificado</span>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 font-medium italic mb-6 uppercase text-sm tracking-tight">{user.role === 'persona' ? 'Talento Nacional' : user.role} • {user.email}</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium italic mb-4 md:mb-6 uppercase text-xs md:text-sm tracking-tight break-all">{user.role === 'persona' ? 'Talento Nacional' : user.role} • {user.email}</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
                {['Mecánica', 'Soldadura Submarina', 'Francés Técnico'].map(skill => (
                  <span key={skill} className="px-4 py-2 bg-slate-50 dark:bg-slate-900 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700">{skill}</span>
@@ -85,25 +85,25 @@ const TalentoDashboardOverview: React.FC<TalentoDashboardOverviewProps> = ({ use
       />
 
       {/* Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
          {/* Applications Tracking */}
-         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-            <div className="p-8 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center">
+         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+            <div className="p-6 md:p-8 border-b border-slate-50 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                <h3 className="text-lg font-black uppercase tracking-tight">Mis Candidaturas Activas</h3>
                <span className="bg-primary/10 text-primary text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{applications.length} Procesos</span>
             </div>
             <div className="divide-y divide-slate-50 dark:divide-slate-700">
                {applications.length > 0 ? (
                  applications.slice(0, 3).map((app, i) => (
-                   <div key={i} className="p-8 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all group">
-                      <div className="flex items-center gap-6">
-                         <div className="size-12 rounded-2xl bg-blue-50 flex items-center justify-center font-black text-primary text-sm shadow-inner uppercase">{(app.company as any)?.name?.substring(0, 2) || 'AP'}</div>
-                         <div>
-                            <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{(app.opportunity as any)?.title?.es || 'Candidatura'}</h4>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{(app.company as any)?.name || 'Empresa'} • {new Date(app.submitted_at).toLocaleDateString()}</p>
+                   <div key={i} className="p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all group gap-4">
+                      <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
+                         <div className="size-10 md:size-12 shrink-0 rounded-2xl bg-blue-50 flex items-center justify-center font-black text-primary text-xs md:text-sm shadow-inner uppercase">{(app.company as any)?.name?.substring(0, 2) || 'AP'}</div>
+                         <div className="min-w-0">
+                            <h4 className="text-xs md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{(app.opportunity as any)?.title?.es || 'Candidatura'}</h4>
+                            <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{(app.company as any)?.name || 'Empresa'} • {new Date(app.submitted_at).toLocaleDateString()}</p>
                          </div>
                       </div>
-                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full uppercase tracking-widest border border-emerald-100">{app.status}</span>
+                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full uppercase tracking-widest border border-emerald-100 self-start sm:self-auto shrink-0">{app.status}</span>
                    </div>
                  ))
                ) : (
@@ -113,7 +113,7 @@ const TalentoDashboardOverview: React.FC<TalentoDashboardOverviewProps> = ({ use
          </div>
 
          {/* Training and Certificates */}
-         <div className="bg-white dark:bg-slate-800 rounded-[3rem] p-8 shadow-sm border border-slate-100 dark:border-slate-700 space-y-8">
+         <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-700 space-y-6 md:space-y-8">
             <h3 className="text-lg font-black uppercase tracking-tight">Capacitación</h3>
             <div className="space-y-6">
                {[

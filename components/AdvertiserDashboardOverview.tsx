@@ -13,17 +13,17 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
   const { t } = useTranslation();
 
   return (
-    <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-4 md:p-6 lg:p-10 space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight break-words">
             Bienvenido, {user.name}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Resumen de rendimiento de sus campañas publicitarias.
           </p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2">
+        <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
           <Megaphone className="w-4 h-4" />
           Nueva Campaña
         </button>
@@ -61,10 +61,10 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl p-4 md:p-6 border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-slate-900 dark:text-white">Rendimiento de Campañas Activas</h3>
-            <button className="text-sm text-blue-600 font-semibold hover:underline">Ver todas</button>
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm md:text-base line-clamp-1">Rendimiento de Campañas Activas</h3>
+            <button className="text-xs md:text-sm text-blue-600 font-semibold hover:underline shrink-0">Ver todas</button>
           </div>
           <div className="space-y-4">
             {[
@@ -72,15 +72,15 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
               { name: 'Promoción Equipos de Perforación', status: 'active', impressions: '320K', clicks: '8.5K', spend: '$850', progress: 45 },
               { name: 'Webinar Seguridad Industrial', status: 'pending', impressions: '-', clicks: '-', spend: '-', progress: 0 },
             ].map((campaign, i) => (
-              <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
                     campaign.status === 'active' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'
                   }`}>
                     <Megaphone className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">{campaign.name}</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2">{campaign.name}</h4>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         campaign.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
@@ -91,18 +91,18 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
                   </div>
                 </div>
                 {campaign.status === 'active' && (
-                  <div className="hidden md:flex items-center gap-8">
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Impresiones</p>
-                      <p className="font-bold text-slate-900 dark:text-white">{campaign.impressions}</p>
+                  <div className="flex items-center justify-between sm:justify-end gap-4 md:gap-8 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200 dark:border-slate-700">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">Impresiones</p>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{campaign.impressions}</p>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">Clics</p>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{campaign.clicks}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Clics</p>
-                      <p className="font-bold text-slate-900 dark:text-white">{campaign.clicks}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Gasto</p>
-                      <p className="font-bold text-slate-900 dark:text-white">{campaign.spend}</p>
+                      <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">Gasto</p>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{campaign.spend}</p>
                     </div>
                   </div>
                 )}
@@ -111,7 +111,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 md:p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <h3 className="font-bold text-slate-900 dark:text-white mb-6">Slots de Publicidad</h3>
           <div className="space-y-4">
             <div className="p-4 rounded-2xl border-2 border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10">

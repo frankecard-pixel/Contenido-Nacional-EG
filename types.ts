@@ -1,10 +1,12 @@
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
+  ADMIN = 'admin',
   FUNCIONARIO = 'funcionario',
   CUERPO_TECNICO = 'cuerpo_tecnico',
   PETROLERA = 'petrolera',
   COMPANY = 'company',
+  EMPRESA = 'empresa',
   EMPRESA_LOCAL = 'empresa_local',
   PERSONA = 'persona',
   COMUNICACION = 'comunicacion',
@@ -24,13 +26,19 @@ export interface User {
   role: UserRole;
   name: string;
   avatar?: string;
+  avatar_url?: string;
   isOnline: boolean;
+  is_online?: boolean; // Added for Supabase consistency
   permissions: string[];
   department?: string;
   status?: UserStatus;
   position?: string;
   companyId?: string;
   companyRole?: CompanyUserRole;
+  bio?: string;
+  phone?: string;
+  cv_url?: string;
+  last_seen?: string; // Added for WhatsApp-like features
 }
 
 export interface AuditActivity {
@@ -61,7 +69,13 @@ export interface HelpRequest {
   type: 'legal' | 'technical' | 'financial';
   date: string;
   urgency: 'high' | 'medium' | 'low';
-  status: 'pending' | 'reviewed';
+  status: 'pending' | 'reviewed' | 'resolved' | 'completed' | 'open' | 'in-progress';
+  title?: string;
+  description?: string;
+  user_email?: string;
+  category?: string;
+  created_at?: string;
+  company?: { name: string };
 }
 
 export interface WebCategory {
@@ -71,6 +85,7 @@ export interface WebCategory {
   icon: string;
   status: 'published' | 'draft';
   availableLanguages: Language[];
+  available_languages?: Language[];
 }
 
 export interface Notification {
@@ -131,13 +146,7 @@ export type InspectionExt = Inspection & {
   site?: string;
   priority?: 'high' | 'medium' | 'low';
 };
-export type ConversationExt = Conversation & {
-  participant?: {
-    name: string;
-    avatar_url: string;
-    role: string;
-  };
-};
+export type ConversationExt = Conversation;
 export type MessageExt = Message;
 
 export interface AuditLog {
@@ -146,6 +155,9 @@ export interface AuditLog {
   officer: string;
   result: 'passed' | 'failed' | 'conditional';
   notes: string;
+  action?: string;
+  entity_id?: string;
+  timestamp?: string;
 }
 
 export enum BadgeType {
@@ -153,6 +165,15 @@ export enum BadgeType {
   COMPLIANT = 'compliant',
   TOP_EMPLOYER = 'top_employer',
   ESG_COMMITTED = 'esg_committed'
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  company_id?: string;
+  status?: string;
+  created_at?: string;
 }
 
 export interface Opportunity {
@@ -169,6 +190,9 @@ export interface Opportunity {
   image?: string;
   ref?: string;
   tag?: string;
+  projectId?: string;
+  awardedAmount?: number;
+  scopeOfWork?: string;
 }
 
 export type OpportunityExt = Opportunity;
@@ -179,6 +203,7 @@ export interface Application {
   companyId: string;
   status: 'submitted' | 'under_review' | 'shortlisted' | 'awarded' | 'rejected';
   submittedAt: string;
+  submitted_at?: string;
   documents: string[];
   feedback?: string;
   ref: string;
@@ -186,6 +211,8 @@ export interface Application {
   step: number;
   ministerComment?: string;
   actionRequired?: boolean;
+  company?: { name: string };
+  opportunity?: { title: Record<Language, string> };
 }
 
 export type ApplicationExt = Application;
@@ -198,8 +225,10 @@ export interface JobOffer {
   salary?: string;
   tags: string[];
   postedAt: string;
+  posted_at?: string;
   description: Record<Language, string>;
   category: string;
+  status?: 'published' | 'draft' | 'closed' | 'active';
 }
 
 export interface CandidateProfile {
@@ -225,13 +254,18 @@ export interface SocialProject {
   location: string;
   image: string;
   petroleraId: string;
-  status: 'proposed' | 'active' | 'completed';
+  status: 'proposed' | 'active' | 'completed' | 'in-progress' | 'delayed';
   budget: number;
   progress: number;
   endDate: string;
   investor: string;
   lat: number;
   lng: number;
+  beneficiaries?: number;
+  category?: string;
+  petrolera?: { name: string };
+  delivery_date?: string;
+  deliveryDate?: string;
 }
 
 export type SocialProjectExt = SocialProject;
@@ -244,7 +278,7 @@ export interface NewsArticle {
   category: string;
   status: 'draft' | 'pending' | 'published';
   author: string;
-  publishDate: string;
+  publish_date: string;
   featuredImage?: string;
   attachments: NewsAttachment[];
 }
@@ -262,23 +296,64 @@ export interface Conversation {
   participantRole: string;
   avatar: string;
   lastMessage: string;
+  last_message?: string;
   timestamp: string;
   unreadCount: number;
+  unread_count?: number;
   isOnline: boolean;
+  is_online?: boolean;
+  type?: 'direct' | 'group';
+  name?: string;
+  avatar_url?: string;
+  participant_1?: string;
+  participant_2?: string;
+  last_message_at?: string;
+  participant?: {
+    name: string;
+    avatar_url: string;
+    role: string;
+    is_online?: boolean;
+  };
+  participant2?: {
+    name: string;
+    avatar_url: string;
+    role: string;
+    is_online?: boolean;
+  };
 }
 
 export interface Message {
   id: string;
   conversationId: string;
+  conversation_id?: string;
   senderId: string;
+  sender_id?: string;
   text: string;
   timestamp: string;
   isRead: boolean;
+  is_read?: boolean;
   attachment?: {
     name: string;
     size: string;
     type: string;
-  }
+  };
+  sender?: {
+    name: string;
+    avatar_url: string;
+    role: string;
+  };
+}
+
+export interface UserStatusUpdate {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar: string;
+  content_url: string;
+  type: 'image' | 'video' | 'text';
+  text_content?: string;
+  timestamp: string;
+  expires_at: string;
 }
 
 export interface SystemSettings {
@@ -298,7 +373,7 @@ export interface Milestone {
 export interface Contract {
   id: string;
   ref: string;
-  title: string;
+  title: string | Record<Language, string>;
   awardedTo: string;
   companyId: string;
   status: 'execution' | 'pending' | 'completed' | 'canceled';
@@ -314,6 +389,7 @@ export interface Contract {
     localGoodsReq: number;
   };
   milestones: Milestone[];
+  company?: { name: string };
 }
 
 export interface Certification {
@@ -332,7 +408,7 @@ export interface Inspection {
   companyId: string;
   date: string;
   type: string;
-  status: 'scheduled' | 'completed' | 'canceled';
+  status: 'scheduled' | 'completed' | 'canceled' | 'pending';
   officer: string;
   notes?: string;
 }

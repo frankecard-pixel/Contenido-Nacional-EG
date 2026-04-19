@@ -25,10 +25,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ points, center = [2.5, 
   // Inicialización única del mapa
   useEffect(() => {
     if (mapRef.current && !mapInstance.current) {
+      const validCenter = (Array.isArray(center) && center.length === 2 && typeof center[0] === 'number' && typeof center[1] === 'number' && !isNaN(center[0]) && !isNaN(center[1])) 
+        ? center 
+        : [2.5, 9.0] as [number, number];
+
       mapInstance.current = L.map(mapRef.current, {
         scrollWheelZoom: false,
         zoomControl: true,
-      }).setView(center, zoom);
+      }).setView(validCenter, zoom);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
@@ -59,6 +63,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ points, center = [2.5, 
       };
 
       points.forEach(point => {
+        if (typeof point.lat !== 'number' || typeof point.lng !== 'number' || isNaN(point.lat) || isNaN(point.lng)) {
+          console.warn(`InteractiveMap: Skipping point with invalid coordinates`, point);
+          return;
+        }
         L.marker([point.lat, point.lng], { icon: icons[point.type] || icons.company })
           .addTo(markersLayer.current!)
           .bindPopup(`

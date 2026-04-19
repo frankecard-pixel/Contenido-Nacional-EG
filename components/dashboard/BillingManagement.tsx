@@ -1,9 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, Download, ExternalLink, Plus, Search, Filter, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { CreditCard, Download, ExternalLink, Plus, Search, Filter, CheckCircle, Clock, AlertCircle, TrendingUp, DollarSign, Users } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRole } from '../../types';
 
 const BillingManagement: React.FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN || user?.role === 'admin';
 
   const invoices = [
     { id: 'INV-001', date: '2024-03-01', amount: '$1,200.00', status: 'paid', method: 'Visa •••• 4242' },
@@ -17,57 +21,102 @@ const BillingManagement: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-            Facturación y Pagos
+            {isSuperAdmin ? 'Contabilidad y Finanzas Publicitarias' : 'Facturación y Pagos'}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Control de pagos, facturas y presupuestos de publicidad.
+            {isSuperAdmin ? 'Control global de ingresos, facturación y estados de cuenta de anunciantes.' : 'Control de pagos, facturas y presupuestos de publicidad.'}
           </p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Añadir Método de Pago
-        </button>
+        {!isSuperAdmin && (
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Añadir Método de Pago
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-8">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-10 transform group-hover:scale-110 transition-transform duration-500">
-              <CreditCard className="w-32 h-32" />
-            </div>
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-8">Método de Pago Predeterminado</p>
-              <div className="flex items-center gap-4 mb-8">
-                <div className="size-12 rounded-xl bg-white/20 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6" />
+          {isSuperAdmin ? (
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-lg font-black tracking-tight">Visa Platinum</p>
-                  <p className="text-xs font-bold opacity-60">•••• •••• •••• 4242</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ingresos Totales (MTD)</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">$42,500.00</p>
                 </div>
               </div>
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Expira</p>
-                  <p className="text-sm font-black">12/26</p>
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center">
+                  <Users className="w-6 h-6" />
                 </div>
-                <button className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition-all">Editar</button>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Anunciantes Activos</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">124</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Facturas Pendientes</p>
+                  <p className="text-2xl font-black text-rose-600 tracking-tighter">12</p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-10 transform group-hover:scale-110 transition-transform duration-500">
+                <CreditCard className="w-32 h-32" />
+              </div>
+              <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-8">Método de Pago Predeterminado</p>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="size-12 rounded-xl bg-white/20 flex items-center justify-center">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-black tracking-tight">Visa Platinum</p>
+                    <p className="text-xs font-bold opacity-60">•••• •••• •••• 4242</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Expira</p>
+                    <p className="text-sm font-black">12/26</p>
+                  </div>
+                  <button className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition-all">Editar</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase mb-6 tracking-tight">Resumen de Saldo</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase mb-6 tracking-tight">
+              {isSuperAdmin ? 'Acciones Administrativas' : 'Resumen de Saldo'}
+            </h3>
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Saldo Pendiente</p>
-                <p className="text-xl font-black text-rose-600 tracking-tighter">$1,500.00</p>
-              </div>
-              <div className="flex justify-between items-center">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Crédito Disponible</p>
-                <p className="text-xl font-black text-emerald-600 tracking-tighter">$500.00</p>
-              </div>
-              <button className="w-full py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20">Pagar Ahora</button>
+              {isSuperAdmin ? (
+                <>
+                  <button className="w-full py-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-100 transition-all border border-slate-100 dark:border-slate-700">Generar Reporte Fiscal</button>
+                  <button className="w-full py-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-100 transition-all border border-slate-100 dark:border-slate-700">Conciliar Pagos</button>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Saldo Pendiente</p>
+                    <p className="text-xl font-black text-rose-600 tracking-tighter">$1,500.00</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Crédito Disponible</p>
+                    <p className="text-xl font-black text-emerald-600 tracking-tighter">$500.00</p>
+                  </div>
+                  <button className="w-full py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20">Pagar Ahora</button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -21,15 +21,15 @@ export const MOCK_NEWS_ARTICLES: NewsArticle[] = [
     category: 'Resolución',
     status: 'published',
     author: 'María Nchama',
-    publishDate: '15 NOV 2024',
+    publish_date: '2024-11-15T10:00:00Z',
     featuredImage: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=2074&auto=format&fit=crop',
     attachments: [{ id: 'att-1', name: 'Decreto_2023_Hidrocarburos.pdf', size: '2.4 MB', format: 'PDF' }]
   }
 ];
 
 export const MOCK_NEWS_DRAFTS: Partial<NewsArticle>[] = [
-  { id: 'd-1', title: { es: 'Reunión bilateral con delegación de Nigeria sobre gasoductos', en: '', fr: '' }, status: 'draft', publishDate: 'Hace 2 horas' },
-  { id: 'd-2', title: { es: 'Informe trimestral de producción 2023', en: '', fr: '' }, status: 'pending', publishDate: 'Ayer' },
+  { id: 'd-1', title: { es: 'Reunión bilateral con delegación de Nigeria sobre gasoductos', en: '', fr: '' }, status: 'draft', publish_date: new Date().toISOString() },
+  { id: 'd-2', title: { es: 'Informe trimestral de producción 2023', en: '', fr: '' }, status: 'pending', publish_date: new Date().toISOString() },
 ];
 
 export const MOCK_CONTRACTS: Contract[] = [

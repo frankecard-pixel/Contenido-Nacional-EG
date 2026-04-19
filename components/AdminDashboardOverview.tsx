@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { getCompanies, getOpportunities, getHelpRequests } from '../services/supabaseApi';
 import { Company, OpportunityExt, User, HelpRequest } from '../types';
 import CommodityWidget from './dashboard/CommodityWidget';
@@ -68,9 +69,9 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
   }
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-700">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-700">
       {/* Welcome Banner */}
-      <div className="rounded-[2.5rem] bg-gradient-to-r from-[#101622] to-[#1e293b] p-10 relative overflow-hidden shadow-2xl">
+      <div className="rounded-[2rem] md:rounded-[2.5rem] bg-gradient-to-r from-[#101622] to-[#1e293b] p-6 md:p-10 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-[400px] h-full opacity-20" style={{ background: 'radial-gradient(circle at center, #135bec 0%, transparent 70%)' }}></div>
         <div className="relative z-10 flex flex-col gap-2">
           <h2 className="text-white text-3xl font-black tracking-tighter uppercase">Bienvenido, {user.name}</h2>
@@ -81,9 +82,9 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Empresas Card */}
-        <div className="flex flex-col bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-8 shadow-sm hover:shadow-xl transition-all group">
+        <div className="flex flex-col bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-6 md:p-8 shadow-sm hover:shadow-xl transition-all group">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="bg-blue-50 dark:bg-blue-900/20 text-primary p-3 rounded-2xl">
@@ -118,7 +119,7 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
         </div>
 
         {/* Oportunidades Card */}
-        <div className="flex flex-col bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-8 shadow-sm hover:shadow-xl transition-all group">
+        <div className="flex flex-col bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-6 md:p-8 shadow-sm hover:shadow-xl transition-all group">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="bg-purple-50 dark:bg-purple-900/20 text-purple-600 p-3 rounded-2xl">
@@ -144,7 +145,7 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
         </div>
 
         {/* Tareas Card */}
-        <div className="flex flex-col bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-8 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group">
+        <div className="flex flex-col bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-6 md:p-8 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group sm:col-span-2 lg:col-span-1">
           <div className="absolute right-0 top-0 w-32 h-32 bg-orange-50 dark:bg-orange-900/10 rounded-bl-full -mr-6 -mt-6 z-0"></div>
           <div className="relative z-10">
             <div className="flex items-center gap-4 mb-6">
@@ -158,9 +159,12 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
               <span className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">tareas urgentes</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-8 font-medium uppercase tracking-tight">Peticiones y validaciones pendientes que requieren acción inmediata.</p>
-            <button className="w-full py-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-sm">
+            <Link 
+              to={`/dashboard/${user.role === 'admin' ? 'super_admin' : user.role}/help-requests`}
+              className="w-full py-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-sm flex items-center justify-center"
+            >
               Ver todas las tareas
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -171,10 +175,10 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
         {/* Left Column: Activity Table */}
-        <div className="lg:col-span-2 flex flex-col bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-10 py-8 border-b border-slate-50 dark:border-slate-700">
+        <div className="xl:col-span-2 flex flex-col bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-slate-50 dark:border-slate-700 gap-4">
             <h3 className="text-slate-900 dark:text-white font-black text-xl uppercase tracking-tighter">Registros Recientes</h3>
             <button className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline">Ver todo el directorio</button>
           </div>
@@ -196,7 +200,7 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
                       <td className="px-10 py-6 font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">
                         <div className="flex items-center gap-4">
                           <div className="size-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-primary font-black text-xs">
-                            {company.name.substring(0, 2).toUpperCase()}
+                            {company.name?.substring(0, 2).toUpperCase() || '??'}
                           </div>
                           {company.name}
                         </div>
@@ -241,8 +245,8 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
         </div>
 
         {/* Right Column: Pending Tasks List */}
-        <div className="lg:col-span-1 flex flex-col bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-8 py-8 border-b border-slate-50 dark:border-slate-700">
+        <div className="xl:col-span-1 flex flex-col bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 md:px-8 py-6 md:py-8 border-b border-slate-50 dark:border-slate-700">
             <h3 className="text-slate-900 dark:text-white font-black text-xl uppercase tracking-tighter">Lista de Tareas</h3>
             <button className="text-slate-400 hover:text-primary transition-all"><span className="material-symbols-outlined">filter_list</span></button>
           </div>
@@ -280,9 +284,9 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
       </div>
 
       {/* Footer Internal */}
-      <footer className="flex flex-col md:flex-row items-center justify-between py-10 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-t border-slate-50 dark:border-slate-700">
+      <footer className="flex flex-col sm:flex-row items-center justify-between py-6 md:py-10 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-t border-slate-50 dark:border-slate-700 gap-4 text-center sm:text-left">
         <p>© 2024 Ministerio de Hidrocarburos y Desarrollo Minero. República de Guinea Ecuatorial.</p>
-        <div className="flex gap-8 mt-4 md:mt-0">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-4 md:mt-0">
           <a className="hover:text-primary transition-all" href="#">Privacidad</a>
           <a className="hover:text-primary transition-all" href="#">Términos de Uso</a>
           <a className="hover:text-primary transition-all" href="#">Soporte Técnico</a>

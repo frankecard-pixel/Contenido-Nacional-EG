@@ -73,8 +73,8 @@ const ContractTemplates: React.FC = () => {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nombre del Template</label>
               <input
                 type="text"
-                value={editingTemplate.name}
-                onChange={e => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+                value={editingTemplate.title || editingTemplate.name || ''}
+                onChange={e => setEditingTemplate({ ...editingTemplate, title: e.target.value, name: e.target.value })}
                 className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary transition-all dark:text-white"
                 placeholder="Contrato de Registro de Empresa"
               />
@@ -122,7 +122,7 @@ const ContractTemplates: React.FC = () => {
                 <div className="size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
                   <FileText className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">{t.name}</h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">{t.title || t.name}</h3>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8 line-clamp-2">{t.content}</p>
                 <div className="flex justify-between items-center pt-6 border-t border-slate-50 dark:border-slate-700">
                   <button onClick={() => setEditingTemplate(t)} className="text-primary hover:text-blue-700 p-2 transition-colors">

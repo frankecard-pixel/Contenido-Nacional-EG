@@ -13,8 +13,8 @@ const Training: React.FC = () => {
 
   const mapPoints = MOCK_TRAINING_CENTERS.map(tc => ({
     id: tc.id,
-    lat: tc.lat,
-    lng: tc.lng,
+    lat: tc.lat || 0,
+    lng: tc.lng || 0,
     title: tc.name,
     type: 'training' as const
   }));

@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# System/Generated files
+migrated_prompt_history
+package-lock.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

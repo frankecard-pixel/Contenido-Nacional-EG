@@ -6,6 +6,7 @@ import { User, UserRole, UserStatus, Company } from '../types';
 import UserFilters from '../components/admin/UserFilters';
 import UserTable from '../components/admin/UserTable';
 import InviteUserModal from '../components/admin/InviteUserModal';
+import { createUser } from '../services/supabaseApi';
 
 const AdminUserManagementPage: React.FC = () => {
   const { t } = useTranslation();
@@ -20,31 +21,58 @@ const AdminUserManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'admin' | 'companies'>('admin');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const [users, companies] = await Promise.all([getUsers(), getCompanies()]);
-        if (users) {
-          setUsersData(users as unknown as User[]);
-        }
-        if (companies) {
-          setCompaniesData(companies as unknown as Company[]);
-        }
-      } catch (error) {
-        console.error('Error fetching data from Supabase:', error);
-        setError('Error al cargar los datos. Por favor, intenta de nuevo.');
-      } finally {
-        setIsLoading(false);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [users, companies] = await Promise.all([getUsers(), getCompanies()]);
+      if (users) {
+        setUsersData(users as unknown as User[]);
       }
-    };
+      if (companies) {
+        setCompaniesData(companies as unknown as Company[]);
+      }
+    } catch (error) {
+      console.error('Error fetching data from Supabase:', error);
+      setError('Error al cargar los datos. Por favor, intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const handleInviteUser = async (email: string, name: string, role: string) => {
+    try {
+      setIsLoading(true);
+      // Map the simple roles from modal to UserRole if needed
+      // For now, let's assume the modal provides the correct role string or we map it
+      const newUser: Partial<User> = {
+        email,
+        name,
+        role: role as UserRole,
+        status: 'pending',
+        isOnline: false,
+        permissions: []
+      };
+      
+      await createUser(newUser);
+      await fetchData(); // Refresh list
+      setIsInviteModalOpen(false);
+    } catch (err: any) {
+      console.error('Error creating user:', err);
+      setError('Error al crear el usuario: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const adminUsers = useMemo(() => {
     return usersData.filter(u => 
       u.role === UserRole.SUPER_ADMIN || 
+      u.role === UserRole.ADMIN || 
       u.role === UserRole.FUNCIONARIO || 
       u.role === UserRole.CUERPO_TECNICO ||
       u.role === UserRole.COMUNICACION
@@ -54,6 +82,7 @@ const AdminUserManagementPage: React.FC = () => {
   const companyUsers = useMemo(() => {
     return usersData.filter(u => 
       u.role === UserRole.COMPANY || 
+      u.role === UserRole.EMPRESA || 
       u.role === UserRole.EMPRESA_LOCAL || 
       u.role === UserRole.PETROLERA
     );
@@ -130,7 +159,11 @@ const AdminUserManagementPage: React.FC = () => {
     <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-700">
       {/* Invite User Modal */}
       {isInviteModalOpen && (
-        <InviteUserModal onClose={() => setIsInviteModalOpen(false)} />
+        <InviteUserModal 
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)} 
+          onInvite={handleInviteUser}
+        />
       )}
 
       {error && (

@@ -12,7 +12,7 @@ const JobsList: React.FC<JobsListProps> = ({ jobs }) => {
   const getTranslatedText = (obj: any) => obj[i18n.language] || obj.es;
 
   return (
-    <div className="lg:col-span-9 space-y-6">
+    <div className="lg:col-span-12 space-y-6">
       {jobs.map(job => (
         <div key={job.id} className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:shadow-xl transition-all group relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between">

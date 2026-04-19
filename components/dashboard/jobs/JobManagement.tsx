@@ -62,10 +62,10 @@ const JobManagement: React.FC<JobManagementProps> = ({ company }) => {
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {jobs.map((job) => (
               <tr key={job.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                <td className="p-6 font-bold text-slate-900 dark:text-white">{job.title}</td>
+                <td className="p-6 font-bold text-slate-900 dark:text-white">{(job.title as any).es || job.title}</td>
                 <td className="p-6">
-                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {job.status === 'active' ? 'Activo' : 'Cerrado'}
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${job.status === 'active' || job.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {job.status === 'active' || job.status === 'published' ? 'Activo' : 'Cerrado'}
                   </span>
                 </td>
                 <td className="p-6 font-bold text-slate-900 dark:text-white">{(job as any).applicants_count || 0}</td>

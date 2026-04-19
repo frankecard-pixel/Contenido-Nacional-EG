@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
+      <Toaster position="top-right" richColors />
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />

@@ -30,12 +30,18 @@ const CommodityWidget: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-full px-8 py-4 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between gap-8 my-6">
+    <div className="bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-full p-4 md:px-8 md:py-4 shadow-sm border border-slate-100 dark:border-slate-700 grid grid-cols-2 md:flex md:items-center md:justify-between gap-3 md:gap-8 my-6 w-full max-w-full overflow-hidden">
       {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <item.icon className={`size-4 ${item.color}`} />
-          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{item.label}</span>
-          <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">${item.value}</span>
+        <div key={i} className="flex items-center gap-2 md:gap-3 min-w-0">
+          <item.icon className={`size-4 shrink-0 ${item.color}`} />
+          <div className="flex flex-col xl:flex-row xl:items-center gap-0 xl:gap-2 truncate">
+            <span className="text-[9px] md:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
+              {item.label}
+            </span>
+            <span className="text-xs md:text-sm font-black text-slate-900 dark:text-white tracking-tight leading-loose md:leading-none">
+              ${item.value}
+            </span>
+          </div>
         </div>
       ))}
     </div>

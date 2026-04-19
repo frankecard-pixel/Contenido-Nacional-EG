@@ -41,7 +41,7 @@ const ContractManagement: React.FC = () => {
 
   const filteredContracts = useMemo(() => 
     contracts.filter(c => 
-      (c.title?.es || c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+      ((c.title as any)?.es || c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
       (c.ref || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.company?.name || c.awardedTo || '').toLowerCase().includes(searchQuery.toLowerCase())
     )

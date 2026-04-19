@@ -49,28 +49,28 @@ const HomeHero: React.FC = () => {
       ))}
 
       <div className="relative flex min-h-[700px] w-full flex-col items-center justify-center px-4 py-20 text-center z-30">
-        <div className="relative z-20 flex max-w-5xl flex-col items-center gap-12">
+        <div className="relative z-20 flex max-w-5xl flex-col items-center gap-8 md:gap-10">
           
-          <div className="w-full h-[240px] md:h-[400px] flex flex-col justify-center">
-            <div className={`transition-all duration-700 transform ${fade ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <div className="inline-flex items-center rounded-full bg-blue-500/20 px-4 py-2 text-xs md:text-sm font-black text-blue-100 backdrop-blur-md border border-blue-400/30 uppercase tracking-[0.2em]">
+            <span className="mr-3 h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
+            Plataforma Oficial del Ministerio de Hidrocarburos y Desarrollo Minero
+          </div>
+
+          <p className="max-w-2xl text-lg text-slate-200 md:text-xl font-medium leading-relaxed mt-2 -mb-4">
+            Conectamos empresas locales con oportunidades globales. La plataforma centralizada para la gestión, cumplimiento y crecimiento del sector de hidrocarburos y minería.
+          </p>
+
+          <div className="w-full h-[240px] md:h-[380px] flex flex-col justify-center items-center">
+            <div className={`transition-all duration-700 text-center transform ${fade ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
               <h1 className="text-4xl font-black leading-tight tracking-tighter text-white md:text-7xl lg:text-8xl uppercase">
                 <span className="block">{heroTexts[textIndex].line1}</span>
                 <span className="block text-blue-500">{heroTexts[textIndex].line2}</span>
-                <span className="block text-blue-400 text-2xl md:text-4xl mt-2 min-h-[1.2em]">
+                <span className="block text-blue-400 text-2xl md:text-4xl mt-4 min-h-[1.2em]">
                   {heroTexts[textIndex].line3 || '\u00A0'}
                 </span>
               </h1>
             </div>
           </div>
-
-          <div className="inline-flex items-center rounded-full bg-blue-500/20 px-4 py-1.5 text-xs md:text-sm font-black text-blue-100 backdrop-blur-md border border-blue-400/30 uppercase tracking-[0.2em]">
-            <span className="mr-3 h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
-            Plataforma Oficial del Ministerio de Hidrocarburos y Desarrollo Minero
-          </div>
-
-          <p className="max-w-2xl text-lg text-slate-200 md:text-xl font-medium leading-relaxed">
-            Conectamos empresas locales con oportunidades globales. La plataforma centralizada para la gestión, cumplimiento y crecimiento del sector de hidrocarburos y minería.
-          </p>
 
           <div className="flex flex-wrap justify-center gap-6 mt-4">
             <Link to="/register" className="flex h-14 min-w-[200px] items-center justify-center gap-2 rounded-2xl bg-primary px-8 text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-105 hover:bg-blue-700 shadow-xl shadow-blue-600/20">

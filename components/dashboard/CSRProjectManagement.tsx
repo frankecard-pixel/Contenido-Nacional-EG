@@ -26,7 +26,7 @@ const CSRProjectManagement: React.FC = () => {
   const stats = useMemo(() => {
     const totalBudget = projects.reduce((acc, p) => acc + (p.budget || 0), 0);
     const totalBeneficiaries = projects.reduce((acc, p) => {
-      const match = (p.beneficiaries || '').match(/\d+/);
+      const match = String(p.beneficiaries || '').match(/\d+/);
       return acc + (match ? parseInt(match[0]) : 0);
     }, 0);
     return {

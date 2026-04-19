@@ -23,7 +23,7 @@ const HomeInteractive: React.FC = () => {
                 <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Geolocalización Industrial</h3>
                 <Link to="/directory" className="text-[10px] font-black text-primary uppercase border-b-2 border-primary pb-1 tracking-widest">Ver Directorio Completo</Link>
               </div>
-              <InteractiveMap points={MOCK_COMPANIES.map(c => ({ id: c.id, lat: c.lat, lng: c.lng, title: c.name, type: 'company' }))} height="600px" />
+              <InteractiveMap points={MOCK_COMPANIES.map(c => ({ id: c.id, lat: c.lat || 0, lng: c.lng || 0, title: c.name, type: 'company' }))} height="600px" />
             </div>
             <div className="lg:col-span-4 space-y-10">
                <div className="bg-primary p-12 rounded-[4rem] text-white shadow-2xl">

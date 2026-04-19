@@ -39,7 +39,7 @@ const StatCard: React.FC<StatCardProps> = ({
     const iconBg = colorClasses[color] || 'bg-slate-50 dark:bg-slate-900/50 text-slate-600';
 
     return (
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300 group">
+      <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300 group">
         <div className="flex justify-between items-start mb-4">
           <div className={`p-3 rounded-2xl transition-transform group-hover:scale-110 duration-300 ${iconBg}`}>
             {icon}
@@ -71,7 +71,7 @@ const StatCard: React.FC<StatCardProps> = ({
   
   // Simple version for backward compatibility
   return (
-    <div className={`${color} p-8 rounded-2xl shadow-lg border ${isDark ? 'border-blue-600' : 'border-slate-100'} flex flex-col justify-center transform hover:-translate-y-1 transition-all duration-300`}>
+    <div className={`${color} p-6 md:p-8 rounded-xl md:rounded-2xl shadow-lg border ${isDark ? 'border-blue-600' : 'border-slate-100'} flex flex-col justify-center transform hover:-translate-y-1 transition-all duration-300`}>
       <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isDark ? 'text-blue-200' : 'text-slate-400'}`}>
         {displayTitle}
       </p>

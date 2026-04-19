@@ -54,7 +54,7 @@ const ContractManagementSidebar: React.FC<ContractManagementSidebarProps> = ({
                 {cnt.ref}
               </p>
               <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-1 pr-8 leading-tight">
-                {cnt.title}
+                {(cnt.title as any).es || cnt.title}
               </h4>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">{cnt.awardedTo}</p>
               <div className="flex justify-between items-end">

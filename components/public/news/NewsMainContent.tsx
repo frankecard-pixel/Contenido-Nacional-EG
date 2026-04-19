@@ -34,7 +34,7 @@ const NewsMainContent: React.FC<NewsMainContentProps> = ({ newsItems }) => {
             <div className="p-10">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest">{news.category}</span>
-                <span className="text-[10px] font-bold text-slate-400">{news.publishDate}</span>
+                <span className="text-[10px] font-bold text-slate-400">{news.publish_date}</span>
               </div>
               <h3 className="text-xl font-black text-slate-900 mb-4 tracking-tight leading-tight">{news.title.es}</h3>
               <p className="text-slate-500 text-sm line-clamp-3 mb-8">{news.summary.es}</p>

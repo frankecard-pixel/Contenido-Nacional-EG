@@ -40,7 +40,7 @@ const CompanyRegistryTable: React.FC<CompanyRegistryTableProps> = ({
                 <td className="py-8 px-10">
                   <div className="flex items-center gap-6">
                     <div className="size-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 flex items-center justify-center p-1.5 shadow-sm">
-                       <span className="text-sm font-black text-primary">{c.name.substring(0, 2).toUpperCase()}</span>
+                       <span className="text-sm font-black text-primary">{c.name?.substring(0, 2).toUpperCase() || '??'}</span>
                     </div>
                     <div>
                       <p className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight">{c.name}</p>
