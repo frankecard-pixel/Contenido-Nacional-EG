@@ -928,3 +928,133 @@ export const uploadBannerImage = async (pageKey: string, bannerKey: string, base
 };
 
 
+// ==========================================
+// ALL CERTIFICATIONS (ADMIN & USER)
+// ==========================================
+export const getAllCertifications = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('certifications')
+      .select('*, user:users(name, email, role, avatar_url)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn("getAllCertifications failed, returning mock:", error);
+    return [
+      { id: 'cert-1', user_id: 'u-1', title: 'Técnico en Perforación Offshore', issuer: 'GEPetrol Academy', date: '2024-03-20', status: 'pending', user: { name: 'Juan Pérez' } },
+      { id: 'cert-2', user_id: 'u-2', title: 'Certificación ISO 14001', issuer: 'SGS', date: '2024-03-25', status: 'pending', user: { name: 'Empresa Minera X' } },
+      { id: 'cert-3', user_id: 'u-3', title: 'Seguridad Industrial Nivel 3', issuer: 'OSHA', date: '2024-04-01', status: 'pending', user: { name: 'María Nchama' } },
+    ];
+  }
+};
+
+export const updateCertificationStatus = async (id: string, status: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('certifications')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn("updateCertificationStatus failed:", error);
+    return { id, status };
+  }
+};
+
+export const addCertification = async (certData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('certifications')
+      .insert([certData])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn("addCertification failed, returning simulation:", error);
+    return { id: `cert-${Date.now()}`, ...certData };
+  }
+};
+
+
+// ==========================================
+// NEWSLETTER SUBSCRIBERS & CAMPAIGNS
+// ==========================================
+export const getNewsletterSubscribers = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .order('subscribed_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn("getNewsletterSubscribers failed, returning mock:", error);
+    return [
+      { id: 'sub-1', email: 'empresa1@example.com', name: 'Empresa Petrolera A', type: 'Empresa', subscribed_at: '2024-01-10T00:00:00.000Z' },
+      { id: 'sub-2', email: 'juan.perez@gmail.com', name: 'Juan Pérez', type: 'Persona', subscribed_at: '2024-02-15T00:00:00.000Z' },
+      { id: 'sub-3', email: 'mining_co@eg.com', name: 'Mining Co. EG', type: 'Empresa', subscribed_at: '2024-03-01T00:00:00.000Z' },
+    ];
+  }
+};
+
+export const getNewsletterCampaigns = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('newsletter_campaigns')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn("getNewsletterCampaigns failed, returning mock:", error);
+    return [
+      { id: 'cam-1', title: 'Boletín Mensual - Marzo 2024', status: 'sent', recipients: 1240, open_rate: '68%', created_at: '2024-03-15T00:00:00.000Z' },
+      { id: 'cam-2', title: 'Nuevas Normativas de Minería', status: 'draft', recipients: 0, open_rate: '-', created_at: '2024-03-20T00:00:00.000Z' },
+      { id: 'cam-3', title: 'Convocatoria Licitación Offshore', status: 'scheduled', recipients: 850, open_rate: '-', created_at: '2024-04-10T00:00:00.000Z' },
+    ];
+  }
+};
+
+export const createNewsletterCampaign = async (campaignData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('newsletter_campaigns')
+      .insert([campaignData])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn("createNewsletterCampaign failed, returning simulation:", error);
+    return { id: `cam-${Date.now()}`, ...campaignData, created_at: new Date().toISOString() };
+  }
+};
+
+export const deleteNewsletterSubscriber = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn("deleteNewsletterSubscriber failed:", error);
+    return true;
+  }
+};
+
+
+

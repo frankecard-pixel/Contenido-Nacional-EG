@@ -57,6 +57,7 @@ import { MOCK_USERS } from '../services/mockService';
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: authUser, loading: authLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -164,7 +165,7 @@ const Dashboard: React.FC = () => {
         <DashboardHeader user={currentUser} onToggleSidebar={toggleSidebar} />
 
         <main className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
-          <div className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col transition-all duration-300">
+          <div key={location.pathname} className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col transition-all duration-300 animate-in fade-in duration-700">
             <Routes>
             {/* 1. SUPER ADMIN */}
             <Route path="super_admin/overview" element={<AdminDashboardOverview user={currentUser} />} />
@@ -180,7 +181,7 @@ const Dashboard: React.FC = () => {
             <Route path="super_admin/contracts/new" element={<ContractCreationForm />} />
             <Route path="super_admin/reports" element={<AuditReports />} />
             <Route path="admin/reports" element={<Navigate to="/dashboard/super_admin/reports" replace />} />
-            <Route path="super_admin/messages" element={<Messages />} />
+            <Route path="super_admin/messages" element={<Messages user={currentUser} />} />
             <Route path="admin/messages" element={<Navigate to="/dashboard/super_admin/messages" replace />} />
             <Route path="super_admin/community" element={<CommunityManagement />} />
             <Route path="super_admin/web" element={<WebContentManagement user={currentUser} />} />
@@ -201,7 +202,7 @@ const Dashboard: React.FC = () => {
             <Route path="funcionario/opportunities" element={<OpportunityManagement />} />
             <Route path="funcionario/contracts" element={<ContractManagement />} />
             <Route path="funcionario/help-requests" element={<HelpRequestManagement />} />
-            <Route path="funcionario/messages" element={<Messages />} />
+            <Route path="funcionario/messages" element={<Messages user={currentUser} />} />
 
             {/* 3. CUERPO TÉCNICO / AUDITORÍA */}
             <Route path="cuerpo_tecnico/overview" element={<CuerpoTecnicoDashboardOverview />} />
@@ -212,7 +213,7 @@ const Dashboard: React.FC = () => {
             <Route path="comunicacion/overview" element={<ComunicacionDashboardOverview user={currentUser} />} />
             <Route path="comunicacion/news" element={<NewsManagement user={currentUser} />} />
             <Route path="comunicacion/web" element={<WebContentManagement user={currentUser} />} />
-            <Route path="comunicacion/messages" element={<Messages />} />
+            <Route path="comunicacion/messages" element={<Messages user={currentUser} />} />
 
             {/* 5. DESARROLLO SOCIAL / COMUNIDAD */}
             <Route path="comunidad/overview" element={<ComunidadDashboardOverview user={currentUser} />} />
@@ -225,7 +226,7 @@ const Dashboard: React.FC = () => {
             <Route path="petrolera/users" element={<CompanyUserManagementPage />} />
             <Route path="petrolera/opportunities" element={<OpportunityManagement />} />
             <Route path="petrolera/csr" element={<CSRProjectManagement />} />
-            <Route path="petrolera/messages" element={<Messages />} />
+            <Route path="petrolera/messages" element={<Messages user={currentUser} />} />
 
             {/* 7. EMPRESAS DE SERVICIOS (GRANDES) */}
             <Route path="company/overview" element={currentCompany ? <CompanyDashboardOverview company={currentCompany} /> : <div>Cargando empresa...</div>} />

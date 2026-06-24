@@ -59,3 +59,62 @@ ALTER TABLE public.web_banners ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public select for web_banners" ON public.web_banners FOR SELECT USING (true);
 CREATE POLICY "Allow all for authenticated users on web_banners" ON public.web_banners FOR ALL TO authenticated USING (true);
 
+
+-- 6. Certifications Table (Revised with all required properties)
+CREATE TABLE IF NOT EXISTS public.certifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    issuer TEXT,
+    status TEXT DEFAULT 'pending', -- 'pending', 'valid', 'expired', 'rejected'
+    date DATE DEFAULT CURRENT_DATE,
+    expiry_date DATE,
+    file_url TEXT,
+    category TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Enable RLS for certifications
+ALTER TABLE public.certifications ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for certifications
+CREATE POLICY "Allow public select for certifications" ON public.certifications FOR SELECT USING (true);
+CREATE POLICY "Allow all for authenticated users on certifications" ON public.certifications FOR ALL USING (true);
+
+
+-- 7. Newsletter Subscribers Table
+CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    type TEXT DEFAULT 'Persona', -- 'Persona' or 'Empresa'
+    subscribed_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Enable RLS for newsletter_subscribers
+ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for newsletter_subscribers
+CREATE POLICY "Allow all for newsletter_subscribers" ON public.newsletter_subscribers FOR ALL USING (true);
+
+
+-- 8. Newsletter Campaigns Table
+CREATE TABLE IF NOT EXISTS public.newsletter_campaigns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    content TEXT,
+    status TEXT DEFAULT 'draft', -- 'draft', 'scheduled', 'sent'
+    recipients INTEGER DEFAULT 0,
+    open_rate TEXT DEFAULT '-',
+    scheduled_at TIMESTAMP WITH TIME ZONE,
+    sent_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Enable RLS for newsletter_campaigns
+ALTER TABLE public.newsletter_campaigns ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for newsletter_campaigns
+CREATE POLICY "Allow all for newsletter_campaigns" ON public.newsletter_campaigns FOR ALL USING (true);
+
+

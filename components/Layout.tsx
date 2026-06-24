@@ -16,7 +16,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 pt-24">
+      <main key={pathname} className="flex-1 pt-24 animate-in fade-in duration-700 flex flex-col">
         {children}
       </main>
       <PublicFooter />
