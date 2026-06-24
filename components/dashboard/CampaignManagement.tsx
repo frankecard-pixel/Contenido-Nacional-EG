@@ -4,6 +4,7 @@ import { Megaphone, Plus, Search, Filter, Eye, MousePointerClick, TrendingUp, Mo
 import { getAdvertisements, createAdvertisement, deleteAdvertisement, uploadFile, updateAdvertisement } from '../../services/supabaseApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types';
+import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
 
 const CampaignManagement: React.FC = () => {
   const { t } = useTranslation();
@@ -12,6 +13,7 @@ const CampaignManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showUploader, setShowUploader] = useState(false);
   const [newAd, setNewAd] = useState({
     title: '',
     description: '',
@@ -20,7 +22,6 @@ const CampaignManagement: React.FC = () => {
     status: 'active',
     budget: 0
   });
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchAds();
@@ -38,25 +39,28 @@ const CampaignManagement: React.FC = () => {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Data = reader.result as string;
-      try {
-        const fileName = `ad_${Date.now()}_${file.name}`;
-        await uploadFile('advertisements', fileName, base64Data, file.type);
-        const imageUrl = `${process.env.VITE_SUPABASE_URL}/storage/v1/object/public/advertisements/${fileName}`;
-        setNewAd({ ...newAd, image_url: imageUrl });
-        alert("Imagen subida con éxito");
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        alert("Error al subir la imagen");
+  const handleConfirmImage = async (data: { base64?: string; url?: string; fileName?: string }) => {
+    try {
+      let imageUrl = '';
+      if (data.url) {
+        imageUrl = data.url;
+      } else if (data.base64) {
+        const fileType = data.base64.split(';')[0].split(':')[1] || 'image/png';
+        const fileName = `ad_${Date.now()}_${data.fileName || 'banner'}`;
+        await uploadFile('advertisements', fileName, data.base64, fileType);
+        imageUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/advertisements/${fileName}`;
       }
-    };
-    reader.readAsDataURL(file);
+      
+      if (imageUrl) {
+        setNewAd({ ...newAd, image_url: imageUrl });
+        alert("Imagen de banner lista y cargada");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Error al subir la imagen");
+    } finally {
+      setShowUploader(false);
+    }
   };
 
   const handleCreateAd = async () => {
@@ -138,7 +142,7 @@ const CampaignManagement: React.FC = () => {
               <div className="space-y-4">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Imagen del Anuncio</label>
                 <div 
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setShowUploader(true)}
                   className="border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-3xl p-10 flex flex-col items-center justify-center text-center gap-6 group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-all"
                 >
                   {newAd.image_url ? (
@@ -149,12 +153,11 @@ const CampaignManagement: React.FC = () => {
                         <Upload size={32} />
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">Cargar Banner</p>
+                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">Cargar Banner (Base64/URL)</p>
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Recomendado: 1200x400px</p>
                       </div>
                     </>
                   )}
-                  <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
                 </div>
               </div>
 
@@ -319,6 +322,15 @@ const CampaignManagement: React.FC = () => {
           </table>
         </div>
       </div>
+      {showUploader && (
+        <FileUploaderWithPreview
+          title="Cargar Banner Publicitario"
+          allowedTypes="image/*"
+          initialUrl={newAd.image_url}
+          onConfirm={handleConfirmImage}
+          onCancel={() => setShowUploader(false)}
+        />
+      )}
     </div>
   );
 };

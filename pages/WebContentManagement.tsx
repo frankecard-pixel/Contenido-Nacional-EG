@@ -1,30 +1,92 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getWebCategories } from '../services/supabaseApi';
+import { getWebCategories, getWebBanners, updateWebBanner, uploadBannerImage } from '../services/supabaseApi';
 import { WebCategory, Language } from '../types';
 
-const WebContentManagement: React.FC = () => {
+interface WebContentManagementProps {
+  user?: any;
+}
+
+const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<WebCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Categorías');
   const [editingCategory, setEditingCategory] = useState<WebCategory | null>(null);
   const [selectedLang, setSelectedLang] = useState<Language>('es');
+  const [dbBanners, setDbBanners] = useState<any[]>([]);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+
+  const isSuperAdmin = user?.role === 'super_admin';
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchInitialData = async () => {
       try {
-        const data = await getWebCategories();
-        setCategories(data as any[]);
+        setLoading(true);
+        const [catsData, bannersData] = await Promise.all([
+          getWebCategories(),
+          getWebBanners()
+        ]);
+        setCategories(catsData as any[]);
+        setDbBanners(bannersData);
       } catch (error) {
-        console.error("Error fetching web categories:", error);
+        console.error("Error fetching web categories & banners:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchCategories();
+    fetchInitialData();
   }, []);
+
+  const handleBannerUpload = async (id: string, pageKey: string, bannerKey: string) => {
+    if (!isSuperAdmin) {
+      setNotification({ text: 'Acceso Denegado: Solo los Super Administradores pueden subir banners.', type: 'error' });
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      setUploadingId(id);
+      setNotification(null);
+
+      try {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Data = reader.result as string;
+          try {
+            // Renombrar dinámicamente y subir al storage
+            const imageUrl = await uploadBannerImage(pageKey, bannerKey, base64Data, fileExtension);
+            
+            // Actualizar la referencia en base de datos
+            await updateWebBanner(id, pageKey, bannerKey, imageUrl, id.replace(/_/g, ' ').toUpperCase());
+
+            // Actualizar estado local
+            setDbBanners(prev => prev.map(b => b.id === id ? { ...b, image_url: imageUrl } : b));
+            setNotification({ text: '¡Imagen de banner subida y guardada correctamente!', type: 'success' });
+          } catch (error) {
+            console.error("Error al subir el banner:", error);
+            setNotification({ text: 'No se pudo subir la imagen. Intente nuevamente.', type: 'error' });
+          } finally {
+            setUploadingId(null);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error leyendo archivo:", error);
+        setNotification({ text: 'Error procesando el archivo.', type: 'error' });
+        setUploadingId(null);
+      }
+    };
+    input.click();
+  };
 
   const tabs = ['Categorías', 'FAQ', 'Contadores', 'Imágenes', 'Normativas', 'Guías', 'Testimonios'];
   
@@ -34,19 +96,6 @@ const WebContentManagement: React.FC = () => {
     { id: 'stat-3', label: "Contratos", val: "342", desc: "Adjudicados este año", icon: "contract" },
     { id: 'stat-4', label: "Valor Local", val: "$45.2M", desc: "Retención Económica", icon: "payments" }
   ]);
-
-  const [heroImages, setHeroImages] = useState({
-    home: [
-      "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=1920&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?q=80&w=2070&auto=format&fit=crop"
-    ],
-    landing: [
-      "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=1920&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?q=80&w=2070&auto=format&fit=crop"
-    ]
-  });
 
   const getStatusBadge = (status: WebCategory['status']) => {
     if (status === 'published') {
@@ -74,6 +123,7 @@ const WebContentManagement: React.FC = () => {
       {code.toUpperCase()}
     </span>
   );
+
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden animate-in fade-in duration-700 relative">
@@ -248,59 +298,170 @@ const WebContentManagement: React.FC = () => {
         )}
 
         {activeTab === 'Imágenes' && (
-          <section className="space-y-12">
-            {/* Home Hero Images */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Imágenes Banner Principal (Home)</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Se recomienda resolución 1920x1080 o superior.</p>
+          <section className="space-y-12 animate-in fade-in duration-500">
+            {/* Permisos Header */}
+            <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Módulo de Banners Dinámicos</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                  Permisos Actuales: {isSuperAdmin ? (
+                    <span className="text-emerald-500 font-black">SUPER ADMINISTRADOR (ACCESO TOTAL)</span>
+                  ) : (
+                    <span className="text-amber-500 font-black">SOLO LECTURA (MODIFICACIONES RESERVADAS PARA SUPER ADMIN)</span>
+                  )}
+                </p>
+              </div>
+              {isSuperAdmin ? (
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-xl">
+                  <span className="material-symbols-outlined text-sm animate-pulse">lock_open</span>
+                  Sincronizado con Storage
                 </div>
-                <button className="flex items-center gap-2 px-6 py-3 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all">
-                  <span className="material-symbols-outlined text-lg">upload</span>
-                  Subir Nueva Imagen
-                </button>
+              ) : (
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-4 py-2 rounded-xl">
+                  <span className="material-symbols-outlined text-sm">lock</span>
+                  Banners Protegidos
+                </div>
+              )}
+            </div>
+
+            {/* Banners de Home (Carrusel) */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight animate-in slide-in-from-left duration-300">Banner de Inicio (Home Hero Carousel)</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Imágenes rotativas de la página de inicio. Resolución recomendada 1920x1080 o superior.</p>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {heroImages.home.map((src, idx) => (
-                  <div key={idx} className="group relative aspect-video rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800">
-                    <img src={src} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={`Home Hero ${idx + 1}`} />
-                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                      <button className="size-10 rounded-xl bg-white text-slate-900 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl"><span className="material-symbols-outlined text-xl">edit</span></button>
-                      <button className="size-10 rounded-xl bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-xl"><span className="material-symbols-outlined text-xl">delete</span></button>
+                {dbBanners.filter(b => b.page_key === 'home').map((banner, idx) => (
+                  <div key={banner.id} className="group relative aspect-video rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800">
+                    <img 
+                      src={banner.image_url} 
+                      className={`w-full h-full object-cover transition-transform duration-700 ${uploadingId === banner.id ? 'opacity-40' : 'group-hover:scale-110'}`} 
+                      alt={banner.title} 
+                    />
+                    
+                    {/* Overlay de acciones */}
+                    <div className="absolute inset-0 bg-slate-950/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 z-30">
+                      {isSuperAdmin ? (
+                        <button 
+                          onClick={() => handleBannerUpload(banner.id, banner.page_key, banner.banner_key)}
+                          disabled={uploadingId !== null}
+                          className="px-6 py-3 rounded-xl bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary hover:text-white transition-all shadow-xl active:scale-95 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">upload</span>
+                          Cambiar Banner
+                        </button>
+                      ) : (
+                        <span className="text-white text-[9px] font-black uppercase tracking-widest bg-slate-900/80 px-4 py-2 rounded-xl">Solo Lectura</span>
+                      )}
                     </div>
-                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 shadow-lg">
-                      <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Imagen #{idx + 1}</span>
+
+                    {/* Loader de subida */}
+                    {uploadingId === banner.id && (
+                      <div className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center gap-3 z-40">
+                        <div className="size-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-white text-[9px] font-black uppercase tracking-widest animate-pulse">Subiendo...</span>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 shadow-lg z-20">
+                      <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Slider #{idx + 1}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Landing Hero Images */}
+            {/* Banners de Landing Page */}
             <div className="space-y-6 pt-12 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Imágenes Banner Landing Page</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Imágenes específicas para la página de bienvenida.</p>
-                </div>
-                <button className="flex items-center gap-2 px-6 py-3 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all">
-                  <span className="material-symbols-outlined text-lg">upload</span>
-                  Subir Nueva Imagen
-                </button>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Banner de Bienvenida (Landing Page Carousel)</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Imágenes rotativas para la landing page principal.</p>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {heroImages.landing.map((src, idx) => (
-                  <div key={idx} className="group relative aspect-video rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800">
-                    <img src={src} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={`Landing Hero ${idx + 1}`} />
-                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                      <button className="size-10 rounded-xl bg-white text-slate-900 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl"><span className="material-symbols-outlined text-xl">edit</span></button>
-                      <button className="size-10 rounded-xl bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-xl"><span className="material-symbols-outlined text-xl">delete</span></button>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+                {dbBanners.filter(b => b.page_key === 'landing').map((banner, idx) => (
+                  <div key={banner.id} className="group relative aspect-video rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800">
+                    <img 
+                      src={banner.image_url} 
+                      className={`w-full h-full object-cover transition-transform duration-700 ${uploadingId === banner.id ? 'opacity-40' : 'group-hover:scale-110'}`} 
+                      alt={banner.title} 
+                    />
+                    
+                    {/* Overlay de acciones */}
+                    <div className="absolute inset-0 bg-slate-950/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 z-30">
+                      {isSuperAdmin ? (
+                        <button 
+                          onClick={() => handleBannerUpload(banner.id, banner.page_key, banner.banner_key)}
+                          disabled={uploadingId !== null}
+                          className="px-4 py-3 rounded-xl bg-white text-slate-900 font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary hover:text-white transition-all shadow-xl active:scale-95 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">upload</span>
+                          Cambiar
+                        </button>
+                      ) : (
+                        <span className="text-white text-[9px] font-black uppercase tracking-widest bg-slate-900/80 px-4 py-2 rounded-xl">Solo Lectura</span>
+                      )}
                     </div>
-                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 shadow-lg">
-                      <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Imagen #{idx + 1}</span>
+
+                    {/* Loader de subida */}
+                    {uploadingId === banner.id && (
+                      <div className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center gap-3 z-40">
+                        <div className="size-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-white text-[9px] font-black uppercase tracking-widest animate-pulse">Subiendo...</span>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 shadow-lg z-20">
+                      <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Slider #{idx + 1}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Banners Estáticos de Páginas */}
+            <div className="space-y-6 pt-12 border-t border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Banners de Secciones del Portal</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Imágenes de cabecera para las subpáginas del portal de Contenido Nacional.</p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {dbBanners.filter(b => !['home', 'landing'].includes(b.page_key)).map((banner) => (
+                  <div key={banner.id} className="group relative h-48 rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800">
+                    <img 
+                      src={banner.image_url} 
+                      className={`w-full h-full object-cover transition-transform duration-700 ${uploadingId === banner.id ? 'opacity-40' : 'group-hover:scale-110'}`} 
+                      alt={banner.title} 
+                    />
+                    
+                    {/* Overlay de acciones */}
+                    <div className="absolute inset-0 bg-slate-950/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 z-30">
+                      {isSuperAdmin ? (
+                        <button 
+                          onClick={() => handleBannerUpload(banner.id, banner.page_key, banner.banner_key)}
+                          disabled={uploadingId !== null}
+                          className="px-6 py-3 rounded-xl bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary hover:text-white transition-all shadow-xl active:scale-95 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">upload</span>
+                          Subir Nuevo Banner
+                        </button>
+                      ) : (
+                        <span className="text-white text-[9px] font-black uppercase tracking-widest bg-slate-900/80 px-4 py-2 rounded-xl">Solo Lectura</span>
+                      )}
+                    </div>
+
+                    {/* Loader de subida */}
+                    {uploadingId === banner.id && (
+                      <div className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center gap-3 z-40">
+                        <div className="size-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-white text-[9px] font-black uppercase tracking-widest animate-pulse">Subiendo...</span>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 shadow-lg z-20">
+                      <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">{banner.title}</span>
                     </div>
                   </div>
                 ))}
@@ -383,6 +544,19 @@ const WebContentManagement: React.FC = () => {
               <button className="flex-1 py-4 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all">Guardar Cambios</button>
             </footer>
           </div>
+        </div>
+      )}
+
+      {/* Notificación flotante de subida de banner */}
+      {notification && (
+        <div className={`fixed bottom-6 right-6 z-[300] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl animate-bounce ${
+          notification.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          <span className="material-symbols-outlined">{notification.type === 'success' ? 'check_circle' : 'error'}</span>
+          <span className="text-xs font-black uppercase tracking-widest">{notification.text}</span>
+          <button onClick={() => setNotification(null)} className="ml-4 hover:opacity-80 cursor-pointer">
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
         </div>
       )}
     </div>

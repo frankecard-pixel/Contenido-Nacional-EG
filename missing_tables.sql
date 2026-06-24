@@ -34,9 +34,28 @@ ADD COLUMN IF NOT EXISTS tag TEXT DEFAULT 'Nacional';
 -- 'avatars'
 -- 'cvs'
 -- 'documents'
+-- 'banners' (required for customizable page banners)
 
 -- Enable RLS for advertisements
 ALTER TABLE public.advertisements ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for advertisements (Allow all for now, or restrict by role)
 CREATE POLICY "Allow all for advertisements" ON public.advertisements FOR ALL USING (true);
+
+-- 5. Web Banners Table (Super Admin Web Customization)
+CREATE TABLE IF NOT EXISTS public.web_banners (
+    id TEXT PRIMARY KEY, -- e.g., 'home_hero_0', 'home_hero_1', 'opportunities_banner'
+    page_key TEXT NOT NULL,
+    banner_key TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    title TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Enable RLS for web_banners
+ALTER TABLE public.web_banners ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for web_banners
+CREATE POLICY "Allow public select for web_banners" ON public.web_banners FOR SELECT USING (true);
+CREATE POLICY "Allow all for authenticated users on web_banners" ON public.web_banners FOR ALL TO authenticated USING (true);
+

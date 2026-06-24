@@ -1,18 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-
-const backgroundImages = [
-  "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop", // Offshore platform
-  "https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=1920&auto=format&fit=crop", // Tanker / Infrastructure
-  "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?q=80&w=2070&auto=format&fit=crop"  // Gold mine / Mining operations
-];
+import { getWebBanners } from '../../../services/supabaseApi';
 
 const LandingHero: React.FC = () => {
   const { t } = useTranslation();
+  const [backgroundImages, setBackgroundImages] = useState<string[]>([
+    "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop", // Offshore platform
+    "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop", // Industrial processing plant / pipes
+    "https://images.unsplash.com/photo-1535730143503-a26507397bb6?q=80&w=2070&auto=format&fit=crop", // Oil refinery / Towers
+    "https://images.unsplash.com/photo-1513828583815-c4550fa574bf?q=80&w=2070&auto=format&fit=crop"  // Industrial refinery at night
+  ]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const data = await getWebBanners();
+        const landingBanners = data
+          .filter(b => b.page_key === 'landing')
+          .sort((a, b) => a.banner_key.localeCompare(b.banner_key))
+          .map(b => b.image_url);
+        if (landingBanners.length > 0) {
+          setBackgroundImages(landingBanners);
+        }
+      } catch (error) {
+        console.error("Error fetching landing banners:", error);
+      }
+    };
+    fetchBanners();
+  }, []);
+
+  useEffect(() => {
+    if (backgroundImages.length === 0) return;
+    
     // Preload images to avoid grey flashes
     backgroundImages.forEach((src) => {
       const img = new Image();
@@ -24,7 +45,8 @@ const LandingHero: React.FC = () => {
     }, 6000); // Change image every 6 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [backgroundImages]);
+
 
   return (
     <div className="relative bg-slate-900 min-h-[90vh] flex items-center overflow-hidden">

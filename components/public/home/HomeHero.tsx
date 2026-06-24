@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getWebBanners } from '../../../services/supabaseApi';
 
 const HomeHero: React.FC = () => {
-  const backgroundImages = [
+  const [backgroundImages, setBackgroundImages] = useState<string[]>([
     "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop", // Platform 1
     "https://images.unsplash.com/photo-1544333346-645472894670?q=80&w=2070&auto=format&fit=crop", // Clear Offshore Oil Rig
     "https://images.unsplash.com/photo-1567789391039-05677397c559?q=80&w=2070&auto=format&fit=crop"  // Refinery
-  ];
+  ]);
   const [textIndex, setTextIndex] = useState(0);
   const [bgIndex, setBgIndex] = useState(0);
   const [fade, setFade] = useState(true);
@@ -18,6 +19,25 @@ const HomeHero: React.FC = () => {
   ];
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const data = await getWebBanners();
+        const homeBanners = data
+          .filter(b => b.page_key === 'home')
+          .sort((a, b) => a.banner_key.localeCompare(b.banner_key))
+          .map(b => b.image_url);
+        if (homeBanners.length > 0) {
+          setBackgroundImages(homeBanners);
+        }
+      } catch (error) {
+        console.error("Error fetching home banners:", error);
+      }
+    };
+    fetchBanners();
+  }, []);
+
+  useEffect(() => {
+    if (backgroundImages.length === 0) return;
     const interval = setInterval(() => {
       setFade(false);
       setTimeout(() => {
@@ -27,7 +47,8 @@ const HomeHero: React.FC = () => {
       }, 500);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [backgroundImages]);
+
 
   return (
     <section className="relative bg-slate-900 overflow-hidden">

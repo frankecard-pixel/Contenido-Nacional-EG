@@ -28,6 +28,7 @@ const OpportunitiesPublicView: React.FC<OpportunitiesPublicViewProps> = ({
         subtitle="Explore y postule a las licitaciones oficiales y proyectos de contenido nacional."
         category="Licitaciones"
         image="https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop"
+        pageKey="opportunities"
       />
       <div className="max-w-[var(--layout-max-width)] mx-auto px-10 relative z-50 -mt-16 mb-12">
         <MinisterialCertification />

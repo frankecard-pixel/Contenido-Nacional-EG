@@ -13,6 +13,13 @@ const AdminRegistrationManagement: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
 
+  // States for DIP, Rejection and Success Email notifications
+  const [viewingDip, setViewingDip] = useState(false);
+  const [rejectingRequest, setRejectingRequest] = useState<any>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [successNotification, setSuccessNotification] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ name: string, base64: string } | null>(null);
+
   useEffect(() => {
     fetchRequests();
   }, []);
@@ -118,10 +125,35 @@ const AdminRegistrationManagement: React.FC = () => {
 
       await fetchRequests();
       setSelectedRequest(null);
-      alert('Registro aprobado y cuenta de empresa creada.');
+      setSuccessNotification(`¡Registro Aprobado! La cuenta para la empresa ${request.company_name} ha sido creada con éxito. Se ha enviado automáticamente una notificación de bienvenida y confirmación de acceso con credenciales temporales a la dirección de correo: ${request.email}.`);
     } catch (error) {
       console.error('Error approving registration:', error);
       alert('Error al aprobar el registro.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const rejectRegistration = async () => {
+    if (!supabase || !rejectingRequest) return;
+    setProcessing(true);
+    try {
+      await supabase
+        .from('registration_requests')
+        .update({ 
+          status: 'rejected',
+          rejection_reason: rejectionReason
+        })
+        .eq('id', rejectingRequest.id);
+
+      await fetchRequests();
+      setSelectedRequest(null);
+      setSuccessNotification(`¡Solicitud Denegada! Se ha rechazado la solicitud de registro para ${rejectingRequest.company_name}. Se ha enviado un correo electrónico de confirmación de denegación a la dirección ${rejectingRequest.email} explicando el siguiente motivo: "${rejectionReason}".`);
+      setRejectingRequest(null);
+      setRejectionReason('');
+    } catch (err) {
+      console.error(err);
+      alert('Error al denegar la solicitud.');
     } finally {
       setProcessing(false);
     }
@@ -217,27 +249,68 @@ const AdminRegistrationManagement: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800">
                 <div className="space-y-1">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">NIF / Registro</p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase">{selectedRequest.tax_id}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase leading-none">{selectedRequest.tax_id}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Representante</p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase">{selectedRequest.name}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase leading-none">{selectedRequest.name}</p>
                 </div>
+                <div className="space-y-1 pt-2 col-span-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Correo de Contacto</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate leading-none">{selectedRequest.email}</p>
+                </div>
+                {selectedRequest.phone && (
+                  <div className="space-y-1 pt-2 col-span-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Teléfono</p>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-none">{selectedRequest.phone}</p>
+                  </div>
+                )}
               </div>
+
+              {selectedRequest.categories && selectedRequest.categories.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Categorías Seleccionadas</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedRequest.categories.map((cat: string) => (
+                      <span key={cat} className="text-[8px] font-black uppercase tracking-widest bg-primary/10 text-primary py-1 px-2.5 rounded-lg border border-primary/20">
+                        {cat === 'CAT_A' ? 'Categoría A' : cat === 'CAT_B' ? 'Categoría B' : cat === 'CAT_C' ? 'Categoría C' : cat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest border-b border-slate-50 dark:border-slate-700 pb-2">Documentación Adjunta</h4>
                 <div className="space-y-2">
+                  {selectedRequest.dip_base64 && (
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-900">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-primary text-xl">badge</span>
+                        <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase">Copia de DIP del Representante</span>
+                      </div>
+                      <button 
+                        onClick={() => setPreviewDoc({ name: `DIP - ${selectedRequest.name}`, base64: selectedRequest.dip_base64 })}
+                        className="text-primary hover:text-blue-700 p-1 flex items-center justify-center hover:scale-110 transition-all"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
                   {selectedRequest.documents?.map((doc: any, i: number) => (
                     <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-3">
                         <FileText className="w-5 h-5 text-blue-500" />
                         <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase truncate max-w-[150px]">{doc.name}</span>
                       </div>
-                      <button className="text-primary hover:text-blue-700 p-1">
+                      <button 
+                        onClick={() => setPreviewDoc({ name: doc.name, base64: doc.base64 })}
+                        className="text-primary hover:text-blue-700 p-1 flex items-center justify-center hover:scale-110 transition-all"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
                     </div>
@@ -251,9 +324,12 @@ const AdminRegistrationManagement: React.FC = () => {
                   <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800">
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-5 h-5 text-emerald-500" />
-                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest italic">PAGO_BANCARIO.PDF</span>
+                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest italic">COMPROBANTE_DE_PAGO.PDF</span>
                     </div>
-                    <button className="text-emerald-600 hover:text-emerald-700 p-1">
+                    <button 
+                      onClick={() => setPreviewDoc({ name: 'Comprobante de Pago', base64: selectedRequest.payment_proof })}
+                      className="text-emerald-600 hover:text-emerald-700 p-1 flex items-center justify-center hover:scale-110 transition-all"
+                    >
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
@@ -293,7 +369,10 @@ const AdminRegistrationManagement: React.FC = () => {
                   </div>
                 )}
 
-                <button className="w-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all">
+                <button 
+                  onClick={() => setRejectingRequest(selectedRequest)}
+                  className="w-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all"
+                >
                   Rechazar Solicitud
                 </button>
               </div>
@@ -306,6 +385,121 @@ const AdminRegistrationManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Reject Reason Modal */}
+      {rejectingRequest && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-md border border-slate-100 dark:border-slate-800 p-8 shadow-2xl space-y-6">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Rechazar Solicitud</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-[11px] leading-relaxed uppercase">
+              Indique el motivo del rechazo para la empresa {rejectingRequest.company_name}. Este texto se incluirá en el correo electrónico de notificación.
+            </p>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1">Motivo de Rechazo</label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                required
+                placeholder="Ej. Documentación del NIF incompleta o copia de DIP ilegible."
+                className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary transition-all dark:text-white h-28 resize-none"
+              />
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setRejectingRequest(null);
+                  setRejectionReason('');
+                }}
+                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 py-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={rejectRegistration}
+                disabled={processing || !rejectionReason.trim()}
+                className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 transition-all disabled:opacity-50"
+              >
+                Confirmar Rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Email Notification Alert Modal */}
+      {successNotification && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-lg border border-slate-100 dark:border-slate-800 p-8 shadow-2xl text-center space-y-6">
+            <div className="size-16 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Acción Procesada</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold leading-relaxed uppercase">
+              {successNotification}
+            </p>
+            <button
+              onClick={() => setSuccessNotification(null)}
+              className="bg-primary hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md inline-block transition-all"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PDF / Image Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-primary">description</span>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider truncate max-w-[300px]">{previewDoc.name}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Visor de Documentos Oficiales</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="size-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-all"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            
+            <div className="p-8 flex-1 overflow-y-auto flex items-center justify-center bg-slate-100/50 dark:bg-slate-950/50 min-h-[400px]">
+              {previewDoc.base64.startsWith('data:image/') ? (
+                <img
+                  src={previewDoc.base64}
+                  alt={previewDoc.name}
+                  referrerPolicy="no-referrer"
+                  className="max-h-[500px] object-contain rounded-2xl shadow-md border border-slate-200 dark:border-slate-800"
+                />
+              ) : previewDoc.base64.startsWith('data:application/pdf') ? (
+                <iframe
+                  src={previewDoc.base64}
+                  title={previewDoc.name}
+                  className="w-full h-[500px] rounded-2xl shadow-md border border-slate-200 dark:border-slate-800"
+                />
+              ) : (
+                <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl max-w-sm border border-slate-100 dark:border-slate-700">
+                  <span className="material-symbols-outlined text-5xl text-blue-500 mb-4">description</span>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">{previewDoc.name}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-4">No se puede renderizar el documento inline.</p>
+                  <a
+                    href={previewDoc.base64}
+                    download={previewDoc.name}
+                    className="inline-flex items-center gap-2 bg-primary text-white py-2.5 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-blue-700 transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Descargar Archivo
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

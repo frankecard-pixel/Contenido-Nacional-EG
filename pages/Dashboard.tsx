@@ -183,12 +183,12 @@ const Dashboard: React.FC = () => {
             <Route path="super_admin/messages" element={<Messages />} />
             <Route path="admin/messages" element={<Navigate to="/dashboard/super_admin/messages" replace />} />
             <Route path="super_admin/community" element={<CommunityManagement />} />
-            <Route path="super_admin/web" element={<WebContentManagement />} />
+            <Route path="super_admin/web" element={<WebContentManagement user={currentUser} />} />
             <Route path="super_admin/newsletter" element={<NewsletterManagement />} />
             <Route path="super_admin/certifications" element={<AdminCertificationManagement />} />
             <Route path="super_admin/registrations" element={<AdminRegistrationManagement />} />
             <Route path="super_admin/contract-templates" element={<ContractTemplates />} />
-            <Route path="super_admin/news" element={<NewsManagement />} />
+            <Route path="super_admin/news" element={<NewsManagement user={currentUser} />} />
             <Route path="super_admin/help-requests" element={<HelpRequestManagement />} />
             <Route path="super_admin/campaigns" element={<CampaignManagement />} />
             <Route path="super_admin/billing" element={<BillingManagement />} />
@@ -210,8 +210,8 @@ const Dashboard: React.FC = () => {
 
             {/* 4. PRENSA Y GACETA */}
             <Route path="comunicacion/overview" element={<ComunicacionDashboardOverview user={currentUser} />} />
-            <Route path="comunicacion/news" element={<NewsManagement />} />
-            <Route path="comunicacion/web" element={<WebContentManagement />} />
+            <Route path="comunicacion/news" element={<NewsManagement user={currentUser} />} />
+            <Route path="comunicacion/web" element={<WebContentManagement user={currentUser} />} />
             <Route path="comunicacion/messages" element={<Messages />} />
 
             {/* 5. DESARROLLO SOCIAL / COMUNIDAD */}

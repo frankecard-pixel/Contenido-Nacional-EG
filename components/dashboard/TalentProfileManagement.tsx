@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { User as UserIcon, Briefcase, GraduationCap, Award, FileText, Plus, Edit2, Share2, Upload, X, Loader2, Phone, Mail, MapPin } from 'lucide-react';
 import { User } from '../../types';
 import { uploadFile, updateUser } from '../../services/supabaseApi';
+import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
 
 interface TalentProfileManagementProps {
   user?: User | null;
@@ -14,6 +15,9 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
   const [isUploading, setIsUploading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showAvatarUploader, setShowAvatarUploader] = useState(false);
+  const [showCvUploader, setShowCvUploader] = useState(false);
+
   const [editData, setEditData] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
@@ -32,58 +36,64 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
       });
     }
   }, [user]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
+  const handleConfirmCv = async (data: { base64?: string; url?: string; fileName?: string }) => {
+    if (!user) return;
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Data = reader.result as string;
-      try {
+    try {
+      let finalCvUrl = '';
+      if (data.url) {
+        finalCvUrl = data.url;
+      } else if (data.base64) {
+        const fileType = data.base64.split(';')[0].split(':')[1] || 'application/pdf';
         const fileName = `cv_${user.id}_${Date.now()}.pdf`;
-        await uploadFile('cvs', fileName, base64Data, file.type);
-        const cvUrl = `${process.env.VITE_SUPABASE_URL}/storage/v1/object/public/cvs/${fileName}`;
-        
-        await updateUser(user.id, { cv_url: cvUrl });
-        alert("CV subido con éxito");
-        if (onUpdate) onUpdate();
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        alert("Error al subir el CV");
-      } finally {
-        setIsUploading(false);
+        await uploadFile('cvs', fileName, data.base64, fileType);
+        finalCvUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/cvs/${fileName}`;
       }
-    };
-    reader.readAsDataURL(file);
+      
+      if (finalCvUrl) {
+        await updateUser(user.id, { cv_url: finalCvUrl });
+        alert("CV subido y guardado con éxito");
+        if (onUpdate) onUpdate();
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Error al subir el CV");
+    } finally {
+      setIsUploading(false);
+      setShowCvUploader(false);
+    }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Data = reader.result as string;
-      try {
+  const handleConfirmAvatar = async (data: { base64?: string; url?: string; fileName?: string }) => {
+    if (!user) return;
+    setIsUploading(true);
+    try {
+      let finalAvatarUrl = '';
+      if (data.url) {
+        finalAvatarUrl = data.url;
+      } else if (data.base64) {
+        const fileType = data.base64.split(';')[0].split(':')[1] || 'image/png';
         const fileName = `avatar_${user.id}_${Date.now()}`;
-        await uploadFile('avatars', fileName, base64Data, file.type);
-        const avatarUrl = `${process.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${fileName}`;
-        setEditData({ ...editData, avatar_url: avatarUrl });
-        alert("Imagen de perfil subida con éxito");
-      } catch (error) {
-        console.error("Error uploading avatar:", error);
-        alert("Error al subir la imagen");
+        await uploadFile('avatars', fileName, data.base64, fileType);
+        finalAvatarUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/avatars/${fileName}`;
       }
-    };
-    reader.readAsDataURL(file);
+      
+      if (finalAvatarUrl) {
+        setEditData({ ...editData, avatar_url: finalAvatarUrl });
+        alert("Imagen de perfil lista (recuerde hacer clic en 'Guardar Cambios' para confirmarlo en su perfil)");
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      alert("Error al subir la imagen");
+    } finally {
+      setIsUploading(false);
+      setShowAvatarUploader(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -141,7 +151,7 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
             <div className="space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <div 
-                  onClick={() => avatarInputRef.current?.click()}
+                  onClick={() => setShowAvatarUploader(true)}
                   className="size-32 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden cursor-pointer group relative"
                 >
                   {editData.avatar_url ? (
@@ -153,8 +163,7 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
                     <Upload size={24} className="text-white" />
                   </div>
                 </div>
-                <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Click para cambiar foto</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Click para cambiar foto (Base64/URL)</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -239,11 +248,10 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
             </h3>
             <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700">
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest truncate max-w-[150px]">
-                {user?.cv_url ? 'cv_actualizado.pdf' : 'No hay CV subido'}
+                {user?.cv_url ? (user.cv_url.startsWith('http') && !user.cv_url.includes('/storage/') ? 'CV Vinculado via URL' : 'cv_actualizado.pdf') : 'No hay CV subido'}
               </span>
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf" />
               <button 
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setShowCvUploader(true)}
                 disabled={isUploading}
                 className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline disabled:opacity-50"
               >
@@ -313,6 +321,26 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
           </div>
         </div>
       </div>
+
+      {showAvatarUploader && (
+        <FileUploaderWithPreview
+          title="Subir Imagen de Perfil"
+          allowedTypes="image/*"
+          initialUrl={editData.avatar_url}
+          onConfirm={handleConfirmAvatar}
+          onCancel={() => setShowAvatarUploader(false)}
+        />
+      )}
+
+      {showCvUploader && (
+        <FileUploaderWithPreview
+          title="Subir Currículum Vitae (CV)"
+          allowedTypes=".pdf"
+          initialUrl={user?.cv_url || ''}
+          onConfirm={handleConfirmCv}
+          onCancel={() => setShowCvUploader(false)}
+        />
+      )}
     </div>
   );
 };

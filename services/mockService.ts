@@ -15,15 +15,67 @@ export const MOCK_USERS: User[] = [
 export const MOCK_NEWS_ARTICLES: NewsArticle[] = [
   {
     id: 'art-1',
-    title: { es: 'Nueva Resolución sobre Cuotas de Catering Offshore', en: 'New Resolution on Offshore Catering Quotas', fr: 'Nouvelle résolution sur les quotas de restauration offshore' },
-    summary: { es: 'El Ministerio anuncia la obligatoriedad del 100% de suministro local para plataformas.', en: 'The Ministry announces mandatory 100% local supply for platforms.', fr: 'Le ministère annonce l\'approvisionnement local obligatoire à 100 % para les plateformes.' },
-    content: { es: '<p>Contenido detallado en español...</p>', en: '<p>Detailed content in English...</p>', fr: '<p>Contenu détaillé en français...</p>' },
-    category: 'Resolución',
+    title: { es: 'GEPetrol asume oficialmente la operación del Bloque B (Zafiro) en Guinea Ecuatorial', en: 'GEPetrol officially assumes operations of Block B (Zafiro) in Equatorial Guinea', fr: 'GEPetrol prend officiellement en charge l\'exploitation du Bloc B (Zafiro) en Guinée Équatoriale' },
+    summary: { es: 'La empresa nacional de petróleo toma el control operativo del yacimiento Zafiro tras el vencimiento de la concesión previa, marcando un hito en la soberanía hidrocarburífera.', en: 'The national oil company takes operational control of the Zafiro field following the expiration of the previous concession, marking a milestone in hydrocarbon sovereignty.', fr: 'La compagnie pétrolière nationale prend le contrôle opérationnel du gisement Zafiro après l\'expiration de la concession précédente, marquant un jalon dans la souveraineté sur les hydrocarbures.' },
+    content: { 
+      es: '<p>El Ministerio de Hidrocarburos, Minas y Electricidad de Guinea Ecuatorial ha anunciado que la Compañía Nacional de Petróleos (GEPetrol) ha asumido oficialmente el control operativo del Bloque B (Zafiro) tras el vencimiento de la anterior licencia de explotación.</p><p>Este histórico traspaso de operaciones representa un gran paso adelante para la soberanía energética del país, permitiendo que ingenieros y técnicos ecuatoguineanos lideren la producción en uno de los yacimientos más importantes del golfo de Guinea. El Gobierno ha garantizado una transición ordenada para asegurar la continuidad de la producción y mantener los más altos estándares de seguridad.</p>', 
+      en: '<p>The Ministry of Hydrocarbons, Mines and Electricity of Equatorial Guinea has announced that the National Oil Company (GEPetrol) has officially assumed operational control of Block B (Zafiro) after the expiration of the previous operating license.</p><p>This historic handover of operations represents a great step forward for the country\'s energy sovereignty, allowing Equatoguinean engineers and technicians to lead production in one of the most important fields in the Gulf of Guinea. The Government has guaranteed an orderly transition to ensure the continuity of production and maintain the highest safety standards.</p>', 
+      fr: '<p>Le ministère des Hydrocarbures, des Mines et de l\'Électricité de Guinée équatoriale a annoncé que la Société nationale des pétroles (GEPetrol) a officiellement pris le contrôle opérationnel du bloc B (Zafiro) après l\'expiration de la précédente licence d\'exploitation.</p><p>Ce transfert historique d\'opérations représente un grand pas en avant pour la souveraineté énergétique du pays, permettant aux ingénieurs et techniciens équatoguinéens de diriger la production dans l\'un des gisements les plus importants du golfe de Guinée. Le gouvernement a garanti une transition ordonnée pour assurer la continuité de la production et maintenir les normes de sécurité les plus élevées.</p>' 
+    },
+    category: 'Operaciones',
     status: 'published',
     author: 'María Nchama',
-    publish_date: '2024-11-15T10:00:00Z',
-    featuredImage: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=2074&auto=format&fit=crop',
-    attachments: [{ id: 'att-1', name: 'Decreto_2023_Hidrocarburos.pdf', size: '2.4 MB', format: 'PDF' }]
+    publish_date: '2024-11-20T12:00:00Z',
+    featuredImage: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop',
+    attachments: [{ id: 'att-1', name: 'Traspaso_Operaciones_Zafiro.pdf', size: '1.8 MB', format: 'PDF' }]
+  },
+  {
+    id: 'art-2',
+    title: { es: 'Guinea Ecuatorial y Camerún firman histórico acuerdo para el desarrollo del gas transfronterizo', en: 'Equatorial Guinea and Cameroon sign historic treaty for cross-border gas development', fr: 'La Guinée Équatoriale et le Cameroun signent un traité historique pour le développement du gaz transfrontalier' },
+    summary: { es: 'El acuerdo habilita el procesamiento conjunto de recursos de gas natural de los yacimientos Yoyo (Camerún) y Yolanda (Guinea Ecuatorial), impulsando la industrialización de la subregión.', en: 'The agreement enables joint processing of natural gas resources from the Yoyo (Cameroon) and Yolanda (Equatorial Guinea) fields, boosting industrialization in the sub-region.', fr: 'L\'accord permet le traitement conjoint des ressources en gaz naturel des gisements de Yoyo (Cameroun) et Yolanda (Guinée équatoriale), stimulant l\'industrialisation dans la sous-région.' },
+    content: {
+      es: '<p>Los gobiernos de Guinea Ecuatorial y Camerún han firmado un tratado de unificación transfronterizo que permitirá desarrollar conjuntamente los yacimientos de gas natural de Yoyo y Yolanda, situados en la frontera marítima común.</p><p>Este acuerdo estratégico establece el marco para procesar el gas camerunés en el Complejo de Gas de Punta Europa en Malabo, optimizando la infraestructura existente y creando nuevas oportunidades de empleo y desarrollo industrial para ambas naciones centroafricanas. El Ministro de Hidrocarburos destacó la firma como un ejemplo supremo de cooperación energética regional en África Central.</p>',
+      en: '<p>The governments of Equatorial Guinea and Cameroon have signed a cross-border unification treaty that will allow the joint development of the Yoyo and Yolanda natural gas fields, located on the common maritime border.</p><p>This strategic agreement establishes the framework for processing Cameroonian gas at the Punta Europa Gas Complex in Malabo, optimizing existing infrastructure and creating new jobs and industrial development opportunities for both Central African nations. The Minister of Hydrocarbons highlighted the signing as a supreme example of regional energy cooperation in Central Africa.</p>',
+      fr: '<p>Les gouvernements de la Guinée équatoriale et du Cameroun ont signé un traité d\'unification transfrontalier qui permettra le développement conjoint des gisements de gaz naturel de Yoyo et Yolanda, situés sur la frontière maritime commune.</p><p>Cet accord stratégique établit le cadre de traitement du gaz camerounais au complexe gazier de Punta Europa à Malabo, optimisant les infrastructures existantes et créant de nouveaux emplois et opportunités de développement industriel pour les deux nations d\'Afrique centrale. Le ministre des Hydrocarbures a souligné la signature comme un exemple suprême de coopération énergétique régionale en Afrique centrale.</p>'
+    },
+    category: 'Regulación',
+    status: 'published',
+    author: 'Juan Ndong',
+    publish_date: '2024-11-18T09:00:00Z',
+    featuredImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop',
+    attachments: [{ id: 'att-2', name: 'Tratado_Gas_EG_Camerun.pdf', size: '3.1 MB', format: 'PDF' }]
+  },
+  {
+    id: 'art-3',
+    title: { es: 'Africa Oil Corp firma contratos de participación en producción para los bloques EG-18 y EG-31', en: 'Africa Oil Corp signs production sharing contracts for blocks EG-18 and EG-31', fr: 'Africa Oil Corp signe des contrats de partage de production pour les blocs EG-18 et EG-31' },
+    summary: { es: 'La compañía canadiense se une formalmente al sector exploratorio de Guinea Ecuatorial para perforar nuevas estructuras geológicas altamente prospectivas en la cuenca de Río Muni.', en: 'The Canadian company formally joins Equatorial Guinea\'s exploratory sector to drill new highly prospective geological structures in the Rio Muni basin.', fr: 'La compagnie canadienne rejoint formellement le secteur d\'exploration de la Guinée équatoriale pour forer de nouvelles structures géologiques très prometteuses dans le bassin de Rio Muni.' },
+    content: {
+      es: '<p>La firma canadiense Africa Oil Corp ha formalizado la firma de Contratos de Participación en la Producción (PSC) con el Ministerio de Hidrocarburos para los bloques de exploración offshore EG-18 y EG-31.</p><p>La fase inicial de exploración incluirá la adquisición de datos sísmicos tridimensionales avanzados y estudios ambientales exhaustivos para definir los objetivos de perforación. El acuerdo incluye compromisos de transferencia de tecnología y capacitación obligatoria para profesionales nacionales, alineado con las directrices de Contenido Nacional de la plataforma RUGE.</p>',
+      en: '<p>The Canadian firm Africa Oil Corp has formalized the signing of Production Sharing Contracts (PSCs) with the Ministry of Hydrocarbons for offshore exploration blocks EG-18 and EG-31.</p><p>The initial exploration phase will include the acquisition of advanced three-dimensional seismic data and comprehensive environmental studies to define drilling targets. The agreement includes commitments for technology transfer and mandatory training for national professionals, aligned with the National Content guidelines of the RUGE platform.</p>',
+      fr: '<p>La firme canadienne Africa Oil Corp a formalisé la signature de contrats de partage de production (PSC) avec le ministère des Hydrocarbures pour les blocs d\'exploration offshore EG-18 et EG-31.</p><p>La phase initiale d\'exploration comprendra l\'acquisition de données sismiques tridimensionnelles avancées et des études environnementales complètes pour définir les cibles de forage. L\'accord comprend des engagements de transfert de technologie et de formation obligatoire pour les professionnels nationaux, conformément aux directives de contenu national de la plateforme RUGE.</p>'
+    },
+    category: 'Inversiones',
+    status: 'published',
+    author: 'Elena Mbasogo',
+    publish_date: '2024-11-10T14:30:00Z',
+    featuredImage: 'https://images.unsplash.com/photo-1535730143503-a26507397bb6?q=80&w=2070&auto=format&fit=crop',
+    attachments: []
+  },
+  {
+    id: 'art-4',
+    title: { es: 'El Ministerio lanza el Portal Digital RUGE para agilizar trámites de Contenido Nacional', en: 'Ministry launches RUGE Digital Portal to streamline National Content procedures', fr: 'Le Ministère lance le portail numérique RUGE pour simplifier les démarches de contenu national' },
+    summary: { es: 'La nueva plataforma automatiza los registros, auditorías e inspecciones, permitiendo a las empresas locales certificar su cumplimiento MMH de manera 100% digital.', en: 'The new platform automates registrations, audits and inspections, allowing local companies to certify their MMH compliance 100% digitally.', fr: 'La nouvelle plateforme automatise les enregistrements, les audits et les inspections, permettant aux entreprises locales de certifier leur conformité MMH de manière 100% numérique.' },
+    content: {
+      es: '<p>El Ministerio de Hidrocarburos, Minas y Electricidad ha presentado oficialmente el nuevo Portal Digital RUGE, una herramienta clave para la modernización administrativa y la retención del valor local.</p><p>A través de esta plataforma digital, las empresas nacionales y extranjeras del sector de hidrocarburos podrán gestionar de manera ágil sus registros de proveedores, auditorías de cumplimiento laboral y solicitudes de certificación. Esto eliminará la burocracia en papel y promoverá una mayor transparencia en los procesos de licitación en toda la República de Guinea Ecuatorial.</p>',
+      en: '<p>The Ministry of Hydrocarbons, Mines and Electricity has officially presented the new RUGE Digital Portal, a key tool for administrative modernization and local value retention.</p><p>Through this digital platform, national and foreign companies in the hydrocarbon sector will be able to efficiently manage their supplier registries, labor compliance audits and certification requests. This will eliminate paper bureaucracy and promote greater transparency in bidding processes throughout the Republic of Equatorial Guinea.</p>',
+      fr: '<p>Le ministère des Hydrocarbures, des Mines et de l\'Électricité a officiellement présenté le nouveau portail numérique RUGE, un outil clé pour la modernisation administrative et la rétention de la valeur locale.</p><p>Grâce à cette plateforme numérique, les entreprises nationales et étrangères des secteurs des hydrocarbures pourront gérer efficacement leurs registres de fournisseurs, audits de conformité du travail et demandes de certification. Cela éliminera la bureaucratie papier et favorisera une plus grande transparence dans les processus d\'appel d\'offres dans toute la République de Guinée équatoriale.</p>'
+    },
+    category: 'Contenido Nacional',
+    status: 'published',
+    author: 'Administrador',
+    publish_date: '2024-11-08T08:00:00Z',
+    featuredImage: 'https://images.unsplash.com/photo-1513828583815-c4550fa574bf?q=80&w=2070&auto=format&fit=crop',
+    attachments: [{ id: 'att-4', name: 'Manual_Usuario_Portal_RUGE.pdf', size: '4.5 MB', format: 'PDF' }]
   }
 ];
 
@@ -147,9 +199,9 @@ export const MOCK_EVENTS = [
 ];
 
 export const MOCK_NEWS = [
-  { id: 'n-1', category: 'RESOLUCIÓN', date: '15 NOV 2024', title: 'Actualización en Cuotas de Suministro Local', image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1200&auto=format&fit=crop', excerpt: 'Nuevos requisitos de participación nacional para contratos offshore.' },
-  { id: 'n-2', category: 'EVENTO', date: '10 NOV 2024', title: 'Firma de Acuerdo con PetroGuinee', image: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=1200&auto=format&fit=crop', excerpt: 'Fortalecimiento de la capacidad técnica nacional en Luba.' },
-  { id: 'n-3', category: 'AVISO', date: '08 NOV 2024', title: 'Lanzamiento del Portal Digital RUGE', image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop', excerpt: 'Digitalización completa de los trámites de Contenido Nacional.' }
+  { id: 'art-1', category: 'OPERACIONES', date: '20 NOV 2024', title: 'GEPetrol asume la operación de Zafiro', image: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=1200&auto=format&fit=crop', excerpt: 'La compañía nacional asume oficialmente el control operacional del Bloque B tras finalizar la concesión previa.' },
+  { id: 'art-2', category: 'REGULACIÓN', date: '18 NOV 2024', title: 'Histórico acuerdo de gas con Camerún', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop', excerpt: 'Firma de tratado transfronterizo para unificar los yacimientos de gas natural de Yoyo y Yolanda.' },
+  { id: 'art-4', category: 'AVISO', date: '08 NOV 2024', title: 'Lanzamiento del Portal Digital RUGE', image: 'https://images.unsplash.com/photo-1513828583815-c4550fa574bf?q=80&w=1200&auto=format&fit=crop', excerpt: 'El Ministerio presenta la nueva plataforma web para simplificar los trámites de Contenido Nacional.' }
 ];
 
 export const MOCK_TRAINING_CENTERS = [

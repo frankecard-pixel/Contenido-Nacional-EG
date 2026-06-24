@@ -11,8 +11,8 @@ const Login: React.FC = () => {
       <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center p-12 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=1920&auto=format&fit=crop" 
-            className="w-full h-full object-cover opacity-40" 
+            src="https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=1200&auto=format&fit=crop" 
+            className="w-full h-full object-cover opacity-30" 
             alt="Infrastructure" 
             referrerPolicy="no-referrer"
           />
@@ -20,8 +20,8 @@ const Login: React.FC = () => {
         </div>
         
         <div className="relative z-10 max-w-xl text-white">
-          <div className="mb-12">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Coat_of_arms_of_Equatorial_Guinea.svg" className="h-12 object-contain mb-8 shadow-2xl rounded-sm" alt="GE Coat of Arms" />
+          <div className="mb-12 flex flex-col items-center text-center">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Coat_of_arms_of_Equatorial_Guinea.svg" className="h-16 object-contain mb-8 shadow-2xl rounded-sm" alt="GE Coat of Arms" />
             <h1 className="text-5xl font-black uppercase tracking-tighter leading-none mb-4">
               Contenido Nacional <br />
               <span className="text-blue-400">Guinea Ecuatorial</span>

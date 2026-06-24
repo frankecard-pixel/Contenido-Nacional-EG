@@ -16,7 +16,9 @@ const News: React.FC = () => {
     const fetchNews = async () => {
       try {
         const data = await getNewsArticles();
-        setNews(data as NewsArticle[]);
+        // Only show published articles on the public news page
+        const publishedNews = (data as NewsArticle[]).filter(item => item.status === 'published');
+        setNews(publishedNews);
       } catch (error) {
         console.error("Error fetching news:", error);
       } finally {
@@ -33,6 +35,7 @@ const News: React.FC = () => {
         subtitle="Manténgase informado sobre las últimas noticias, comunicados oficiales y eventos del sector."
         category="Transparencia"
         image="https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=2070&auto=format&fit=crop"
+        pageKey="news"
       />
       <div className="mx-auto px-6 relative z-50 -mt-16 mb-12" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <MinisterialCertification />

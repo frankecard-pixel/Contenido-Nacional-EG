@@ -21,14 +21,27 @@ const RegisterForm: React.FC = () => {
     role: UserRole.PERSONA,
     companyName: '',
     taxId: '',
+    phone: '',
+    dipBase64: '',
+    dipFileName: '',
+    categories: [] as string[],
     sector: [] as string[],
     documents: [] as { name: string, base64: string, type: string }[],
   });
 
+  // Track the generated registration number after success
+  const [generatedRegNumber, setGeneratedRegNumber] = useState<string>('');
+
   const roles = [
     { value: UserRole.PERSONA, label: 'Talento Nacional', icon: '👷' },
-    { value: UserRole.COMPANY, label: 'Empresa de Servicios', icon: '🏭' },
+    { value: UserRole.COMPANY, label: 'Empresa de Servicios Internacionales', icon: '🏭' },
     { value: UserRole.EMPRESA_LOCAL, label: 'Pyme Nacional', icon: '💡' },
+  ];
+
+  const pymeCategories = [
+    { value: 'CAT_A', label: 'Categoría A', desc: 'Servicios Generales y Logística de Baja Complejidad (Limpieza, Catering, Suministros)' },
+    { value: 'CAT_B', label: 'Categoría B', desc: 'Servicios de Complejidad Media (Mantenimiento Técnico, Transporte, IT, Asesoramiento)' },
+    { value: 'CAT_C', label: 'Categoría C', desc: 'Servicios de Alta Tecnología e Ingeniería Especializada (Construcción, Perforación, Residuos)' },
   ];
 
   const sectors = ['Logística', 'Mantenimiento', 'Catering', 'Seguridad', 'Limpieza', 'Consultoría'];
@@ -77,6 +90,30 @@ const RegisterForm: React.FC = () => {
     }));
   };
 
+  const handleDipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({
+        ...prev,
+        dipBase64: reader.result as string,
+        dipFileName: file.name
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const togglePymeCategory = (cat: string) => {
+    setFormData(prev => ({
+      ...prev,
+      categories: prev.categories.includes(cat)
+        ? prev.categories.filter(c => c !== cat)
+        : [...prev.categories, cat]
+    }));
+  };
+
   const validateStep = () => {
     if (step === 1) {
       if (!formData.name || !formData.email || !formData.password) {
@@ -112,6 +149,10 @@ const RegisterForm: React.FC = () => {
     try {
       // If it's a company, we create a registration request first
       if (formData.role === UserRole.COMPANY || formData.role === UserRole.EMPRESA_LOCAL) {
+        // Generate unique tracking / registration number
+        const trackingNumber = `REG-GE-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+        setGeneratedRegNumber(trackingNumber);
+
         const { error: requestError } = await supabase.from('registration_requests').insert([{
           email: formData.email,
           name: formData.name,
@@ -121,14 +162,18 @@ const RegisterForm: React.FC = () => {
           sectors: formData.sector,
           documents: formData.documents,
           status: 'pending',
+          phone: formData.phone,
+          dip_base64: formData.dipBase64,
+          categories: formData.categories,
+          tracking_number: trackingNumber,
+          expediente_number: trackingNumber,
           created_at: new Date().toISOString()
         }]);
 
         if (requestError) throw requestError;
 
         setSuccess(true);
-        // Redirect to a tracking page instead of login
-        setTimeout(() => navigate(`/registration-status?email=${formData.email}`), 3000);
+        // Do not redirect automatically so the user can see the tracking number and instructions page!
       } else {
         // Talent (Persona) still registers directly
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -168,21 +213,92 @@ const RegisterForm: React.FC = () => {
   };
 
   if (success) {
+    const isCompany = formData.role === UserRole.COMPANY || formData.role === UserRole.EMPRESA_LOCAL;
+
     return (
-      <div className="text-center p-12 bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-500">
-        <div className="size-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8">
+      <div className="p-8 md:p-12 bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-500 max-w-2xl mx-auto">
+        <div className="size-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle2 className="w-10 h-10" />
         </div>
-        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-4">
-          ¡Registro Exitoso!
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter text-center mb-2">
+          {isCompany ? '¡Solicitud Recibida!' : '¡Registro Exitoso!'}
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
-          Su cuenta ha sido creada. Por favor, verifique su correo electrónico para confirmar su registro.
-          Será redirigido al inicio de sesión en unos segundos...
-        </p>
-        <Link to="/login" className="text-primary font-black uppercase tracking-widest text-xs hover:underline">
-          Ir al inicio de sesión ahora
-        </Link>
+        
+        {isCompany ? (
+          <div className="space-y-6">
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-center text-sm">
+              Su solicitud de registro ha sido guardada en nuestro sistema de forma segura.
+            </p>
+
+            <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 text-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">NÚMERO DE REGISTRO / EXPEDIENTE</span>
+              <span className="text-2xl font-black text-primary tracking-tight font-mono">{generatedRegNumber}</span>
+              <div className="mt-3 py-1.5 px-4 bg-blue-500/10 rounded-xl inline-flex items-center gap-2 text-primary">
+                <span className="material-symbols-outlined text-sm">mail</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Confirmación enviada a {formData.email}</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">Procedimiento de Certificación</h3>
+              <div className="space-y-4 text-left">
+                <div className="flex gap-4">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary flex items-center justify-center font-black text-xs shrink-0 mt-0.5">1</div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Verificación de Documentación y DIP</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Nuestros analistas validarán su NIF, NIF empresarial y la copia de su DIP proporcionada.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary flex items-center justify-center font-black text-xs shrink-0 mt-0.5">2</div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Inspección Presencial</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Un inspector del Ministerio se pondrá en contacto al {formData.phone} para planificar la auditoría física en su sede.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary flex items-center justify-center font-black text-xs shrink-0 mt-0.5">3</div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Emisión de Nota de Pago</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Una vez calificada positivamente la inspección, se habilitará la Nota de Pago en su portal de seguimiento.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary flex items-center justify-center font-black text-xs shrink-0 mt-0.5">4</div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Certificación y Acceso</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Tras acreditar el pago, su cuenta será dada de alta con rol certificado y podrá descargar su certificado oficial.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => navigate(`/registration-status?email=${formData.email}`)}
+                className="bg-primary hover:bg-blue-700 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">troubleshoot</span>
+                Consultar Estado de Registro
+              </button>
+              <Link
+                to="/login"
+                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center"
+              >
+                Ir a Inicio de Sesión
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center space-y-6">
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
+              Su cuenta ha sido creada exitosamente. Ya puede acceder al portal para completar su perfil laboral y postularse a ofertas de empleo.
+            </p>
+            <Link to="/login" className="bg-primary hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 inline-block transition-all">
+              Iniciar Sesión Ahora
+            </Link>
+          </div>
+        )}
       </div>
     );
   }
@@ -345,6 +461,79 @@ const RegisterForm: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Teléfono de Contacto</label>
+                    <div className="relative group">
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">phone</span>
+                      <input
+                        type="tel"
+                        name="phone"
+                        required
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="+240 222-3333"
+                        className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary transition-all dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Copia de DIP del Representante</label>
+                    <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-3 bg-slate-50 dark:bg-slate-800 flex items-center justify-between group">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleDipChange}
+                        required={!formData.dipBase64}
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-slate-400 group-hover:text-primary">badge</span>
+                        <span className="text-xs font-bold text-slate-500 truncate max-w-[150px]">
+                          {formData.dipFileName || 'Cargar DIP (Imagen/PDF)'}
+                        </span>
+                      </div>
+                      {formData.dipBase64 && (
+                        <span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {formData.role === UserRole.EMPRESA_LOCAL && (
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block">Categorías de PYME Nacional</label>
+                    <div className="grid grid-cols-1 gap-3">
+                      {pymeCategories.map(cat => {
+                        const isSelected = formData.categories.includes(cat.value);
+                        return (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => togglePymeCategory(cat.value)}
+                            className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-4 ${
+                              isSelected 
+                                ? 'border-primary bg-primary/5 shadow-md' 
+                                : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:border-slate-200'
+                            }`}
+                          >
+                            <span className={`size-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 ${
+                              isSelected ? 'bg-primary border-primary text-white' : 'border-slate-300 bg-white dark:bg-slate-800'
+                            }`}>
+                              {isSelected && <span className="material-symbols-outlined text-[10px] font-bold">check</span>}
+                            </span>
+                            <div>
+                              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">{cat.label}</h4>
+                              <p className="text-[10px] text-slate-400 leading-relaxed font-bold mt-1 uppercase">{cat.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Documentación Requerida (PDF)</label>
