@@ -101,7 +101,7 @@ const CompanyRegistry: React.FC = () => {
 
         {/* Footer info */}
         <footer className="text-center opacity-30">
-           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">Ministerio de Hidrocarburos y Desarrollo Minero • Registro RUGE • 2024</p>
+           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">Ministerio de Hidrocarburos, Minas y Electricidad • Registro RUGE • 2024</p>
         </footer>
       </main>
 

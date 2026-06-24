@@ -52,7 +52,7 @@ const Login: React.FC = () => {
           </div>
           
           <div className="mt-20 pt-12 border-t border-white/10">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Ministerio de Hidrocarburos y Desarrollo Minero</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Ministerio de Hidrocarburos, Minas y Electricidad</p>
           </div>
         </div>
       </div>

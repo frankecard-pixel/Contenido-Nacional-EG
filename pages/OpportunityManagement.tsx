@@ -267,7 +267,7 @@ const OpportunityManagement: React.FC = () => {
       </div>
 
       <footer className="text-center opacity-30">
-        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">Ministerio de Hidrocarburos y Desarrollo Minero • Dirección de Contenido Nacional • 2024</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">Ministerio de Hidrocarburos, Minas y Electricidad • Dirección de Contenido Nacional • 2024</p>
       </footer>
     </div>
   );

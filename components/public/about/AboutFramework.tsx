@@ -4,15 +4,15 @@ const AboutFramework: React.FC = () => {
   const ministryImage = "https://upload.wikimedia.org/wikipedia/commons/f/fe/Ministry_of_Mines_and_Hydrocarbons_%28Equatorial_Guinea%29.jpg";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 mb-20 md:mb-32 items-center">
-       <div className="relative">
-          <div className="absolute -inset-10 bg-blue-600/5 blur-[80px] rounded-full"></div>
-          <div className="relative bg-white p-4 md:p-8 rounded-[2.5rem] md:rounded-[4rem] shadow-[0_40px_100px_rgba(0,0,0,0.08)] border border-slate-50 overflow-hidden">
-            <img src={ministryImage} className="w-full h-full object-cover rounded-[2rem] md:rounded-[3rem]" alt="Ministerio de Hidrocarburos y Desarrollo Minero" />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 mb-12 md:mb-32 items-center">
+       <div className="relative w-full max-w-2xl mx-auto lg:max-w-none">
+          <div className="absolute -inset-10 bg-blue-600/5 blur-[80px] rounded-full hidden sm:block"></div>
+          <div className="relative bg-white p-3 md:p-8 rounded-[1.5rem] md:rounded-[4rem] shadow-[0_40px_100px_rgba(0,0,0,0.08)] border border-slate-50 overflow-hidden aspect-video lg:aspect-[4/3]">
+            <img src={ministryImage} className="w-full h-full object-cover rounded-[1rem] md:rounded-[3rem]" alt="Ministerio de Hidrocarburos, Minas y Electricidad" />
           </div>
        </div>
-       <div className="px-2 md:px-0">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-8 md:mb-12 tracking-tighter">Nuestro Marco Institucional</h2>
+       <div className="px-4 md:px-0">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-6 md:mb-12 tracking-tighter uppercase">Nuestro Marco Institucional</h2>
           <div className="space-y-8 md:space-y-12">
             {[
               { title: "SOBERANÍA TECNOLÓGICA", desc: "Asegurar que el conocimiento técnico de la industria petrolera sea absorbido y replicado por expertos nacionales." },

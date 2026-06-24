@@ -47,7 +47,7 @@ const ComunicacionDashboardOverview: React.FC<ComunicacionDashboardOverviewProps
             <div className="max-w-2xl w-full">
                <span className="text-[10px] font-black uppercase tracking-[0.4em] mb-4 block opacity-60">Gaceta Oficial y Prensa</span>
                <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter break-words">Bienvenido, {user.name}</h1>
-               <p className="text-indigo-200 font-medium mt-4 italic leading-relaxed text-sm md:text-base">Gestione la narrativa institucional y asegure la transparencia informativa del Ministerio de Hidrocarburos y Desarrollo Minero ante el país y el mundo.</p>
+               <p className="text-indigo-200 font-medium mt-4 italic leading-relaxed text-sm md:text-base">Gestione la narrativa institucional y asegure la transparencia informativa del Ministerio de Hidrocarburos, Minas y Electricidad ante el país y el mundo.</p>
             </div>
             <Link to="../news" className="bg-white text-indigo-900 w-full md:w-auto px-6 md:px-10 py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-50 transition-all active:scale-95 shrink-0 flex items-center justify-center gap-3">
                <span className="material-symbols-outlined">edit_document</span>

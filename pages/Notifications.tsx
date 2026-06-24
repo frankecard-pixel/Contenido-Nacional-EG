@@ -57,7 +57,7 @@ const Notifications: React.FC<NotificationsProps> = ({ user }) => {
       <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between shrink-0">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Centro de Notificaciones</h1>
-          <p className="mt-3 text-lg text-slate-500 dark:text-slate-400 font-medium">Gestione sus alertas y comunicaciones oficiales del Ministerio de Hidrocarburos y Desarrollo Minero.</p>
+          <p className="mt-3 text-lg text-slate-500 dark:text-slate-400 font-medium">Gestione sus alertas y comunicaciones oficiales del Ministerio de Hidrocarburos, Minas y Electricidad.</p>
         </div>
         <button className="inline-flex items-center justify-center gap-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-slate-50 transition-all shadow-sm active:scale-95">
           <span className="material-symbols-outlined text-lg">done_all</span>

@@ -67,7 +67,7 @@ const NewsDetail: React.FC = () => {
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Autor</p>
-              <p className="text-sm font-bold text-slate-900 dark:text-white">Ministerio de Hidrocarburos</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">Ministerio de Hidrocarburos, Minas y Electricidad</p>
             </div>
           </div>
 

@@ -23,7 +23,7 @@ const MinisterialCertification: React.FC<MinisterialCertificationProps> = ({
             República de Guinea Ecuatorial
           </span>
           <h2 className="text-xs md:text-sm font-black uppercase tracking-[0.1em] leading-tight text-slate-900 dark:text-white">
-            Ministerio de Hidrocarburos<br className="hidden md:block" /> y Desarrollo Minero
+            Ministerio de Hidrocarburos,<br className="hidden md:block" /> Minas y Electricidad
           </h2>
         </div>
       </div>

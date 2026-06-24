@@ -128,7 +128,7 @@ const ContractManagement: React.FC = () => {
       </section>
 
       <footer className="text-center py-10 opacity-30">
-        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Dirección de Contenido Nacional de Guinea Ecuatorial o DCN-GE • Ministerio de Hidrocarburos y Desarrollo Minero</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Dirección de Contenido Nacional de Guinea Ecuatorial o DCN-GE • Ministerio de Hidrocarburos, Minas y Electricidad</p>
       </footer>
     </div>
   );

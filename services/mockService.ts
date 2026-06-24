@@ -171,7 +171,7 @@ export const MOCK_AUDIT_LOGS: AuditActivity[] = [
 ];
 
 export const MOCK_CONVERSATIONS: Conversation[] = [
-  { id: 'conv-1', participantName: 'Ministerio de Hidrocarburos y Desarrollo Minero', participantRole: 'Departamento Legal', avatar: 'https://flagcdn.com/w80/gq.png', lastMessage: 'Su documentación ha sido verificada.', timestamp: '10:30 AM', unreadCount: 1, isOnline: true },
+  { id: 'conv-1', participantName: 'Ministerio de Hidrocarburos, Minas y Electricidad', participantRole: 'Departamento Legal', avatar: 'https://flagcdn.com/w80/gq.png', lastMessage: 'Su documentación ha sido verificada.', timestamp: '10:30 AM', unreadCount: 1, isOnline: true },
   { id: 'conv-2', participantName: 'Sofia Obono (Técnico)', participantRole: 'Auditor MMH', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200&auto=format&fit=crop', lastMessage: 'Revisaremos la planta el próximo lunes.', timestamp: 'Ayer', unreadCount: 0, isOnline: false }
 ];
 

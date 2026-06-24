@@ -47,7 +47,7 @@ const Resources: React.FC = () => {
         {/* Bottom CTA / Footer Placeholder */}
         <section className="mt-10 py-16 border-t border-slate-100 dark:border-slate-800 text-center opacity-40">
           <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">
-            © 2024 Ministerio de Hidrocarburos y Desarrollo Minero de Guinea Ecuatorial
+            © 2024 Ministerio de Hidrocarburos, Minas y Electricidad de Guinea Ecuatorial
           </p>
         </section>
       </div>

@@ -7,7 +7,7 @@ const LoginFooter: React.FC = () => {
       <div className="flex items-center gap-4">
         <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Coat_of_arms_of_Equatorial_Guinea.svg" className="h-4 object-contain opacity-50" alt="GE Coat of Arms" />
         <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em]">
-          República de Guinea Ecuatorial • Ministerio de Hidrocarburos y Desarrollo Minero
+          República de Guinea Ecuatorial • Ministerio de Hidrocarburos, Minas y Electricidad
         </p>
       </div>
       <div className="flex items-center space-x-6">

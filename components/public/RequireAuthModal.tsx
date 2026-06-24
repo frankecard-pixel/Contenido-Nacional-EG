@@ -12,7 +12,7 @@ const RequireAuthModal: React.FC<RequireAuthModalProps> = ({
   isOpen, 
   onClose,
   title = "Acceso Restringido",
-  message = "Para acceder a esta información detallada, debe estar registrado y confirmado por el Ministerio de Hidrocarburos y Desarrollo Minero."
+  message = "Para acceder a esta información detallada, debe estar registrado y confirmado por el Ministerio de Hidrocarburos, Minas y Electricidad."
 }) => {
   if (!isOpen) return null;
 

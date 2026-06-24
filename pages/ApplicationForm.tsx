@@ -260,7 +260,7 @@ const ApplicationForm: React.FC = () => {
                      </p>
                      <div className="flex items-center gap-4">
                         <input type="checkbox" id="legal" className="size-6 rounded bg-white/10 border-white/20 text-primary focus:ring-primary/20" />
-                        <label htmlFor="legal" className="text-xs font-black uppercase tracking-widest cursor-pointer">Acepto los términos y condiciones del Ministerio de Hidrocarburos y Desarrollo Minero</label>
+                        <label htmlFor="legal" className="text-xs font-black uppercase tracking-widest cursor-pointer">Acepto los términos y condiciones del Ministerio de Hidrocarburos, Minas y Electricidad</label>
                      </div>
                   </div>
 

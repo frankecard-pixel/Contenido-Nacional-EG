@@ -13,7 +13,7 @@ const CompanySidebarWidgets: React.FC = () => {
         <div className="divide-y divide-slate-100 dark:divide-slate-700">
           <div className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-all cursor-pointer bg-blue-50/30 dark:bg-primary/5 border-l-4 border-primary">
             <div className="flex justify-between items-start mb-2">
-              <span className="font-black text-[11px] text-slate-900 dark:text-white uppercase tracking-tight">Ministerio de Hidrocarburos y Desarrollo Minero</span>
+              <span className="font-black text-[11px] text-slate-900 dark:text-white uppercase tracking-tight">Ministerio de Hidrocarburos, Minas y Electricidad</span>
               <span className="text-[10px] font-bold text-slate-400">2h</span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 font-medium leading-relaxed uppercase tracking-tight">
@@ -76,7 +76,7 @@ const CompanySidebarWidgets: React.FC = () => {
             <h3 className="font-black text-xl tracking-tight uppercase">¿Necesita Ayuda?</h3>
           </div>
           <p className="text-sm text-slate-300 mb-8 font-medium leading-relaxed uppercase tracking-tight">
-            Contacte con la mesa de ayuda del Ministerio de Hidrocarburos y Desarrollo Minero para soporte técnico o legal sobre el portal.
+            Contacte con la mesa de ayuda del Ministerio de Hidrocarburos, Minas y Electricidad para soporte técnico o legal sobre el portal.
           </p>
           <button className="text-[10px] font-black text-white bg-white/10 hover:bg-white/20 border border-white/10 px-6 py-4 rounded-xl w-full transition-all uppercase tracking-[0.2em]">
             Contactar Soporte

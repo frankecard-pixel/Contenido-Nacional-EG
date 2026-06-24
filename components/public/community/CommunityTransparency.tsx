@@ -7,7 +7,7 @@ const CommunityTransparency: React.FC = () => {
           <div>
              <h2 className="text-4xl font-black mb-8 tracking-tighter uppercase leading-tight">Mecanismo de Inversión Social Obligatoria</h2>
              <p className="text-slate-400 text-lg mb-10 font-medium leading-relaxed">
-               De acuerdo con la Ley de Hidrocarburos, cada operadora debe destinar un porcentaje de sus utilidades netas a proyectos de impacto social aprobados por el Ministerio de Hidrocarburos y Desarrollo Minero.
+               De acuerdo con la Ley de Hidrocarburos, cada operadora debe destinar un porcentaje de sus utilidades netas a proyectos de impacto social aprobados por el Ministerio de Hidrocarburos, Minas y Electricidad.
              </p>
              <div className="space-y-6">
                 {[

@@ -7,7 +7,7 @@ const AboutStructure: React.FC = () => {
         <h2 className="text-4xl font-black text-white mb-16 text-center tracking-tighter uppercase">Estructura Organizativa</h2>
         <div className="flex flex-col items-center space-y-16">
           <div className="bg-white text-slate-900 p-12 rounded-[3rem] shadow-2xl text-center w-full max-w-md">
-            <h4 className="text-xl font-black uppercase tracking-widest mb-2">Ministerio de Hidrocarburos y Desarrollo Minero</h4>
+            <h4 className="text-xl font-black uppercase tracking-widest mb-2">Ministerio de Hidrocarburos, Minas y Electricidad</h4>
             <p className="text-[11px] text-blue-600 font-bold uppercase tracking-[0.2em]">Dirección General de Contenido Nacional</p>
           </div>
           <div className="w-px h-16 bg-white/20"></div>

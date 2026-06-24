@@ -47,7 +47,7 @@ const LandingHero: React.FC = () => {
       <div className="mx-auto px-6 relative z-30 w-full pt-20" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <div className="max-w-3xl">
           <span className="inline-block px-4 py-1.5 rounded-full bg-blue-600/20 text-blue-400 text-xs font-black uppercase tracking-[0.2em] mb-6 border border-blue-500/30 backdrop-blur-sm">
-            Ministerio de Hidrocarburos y Desarrollo Minero
+            Ministerio de Hidrocarburos, Minas y Electricidad
           </span>
           <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight">
             {t('common.welcome')}

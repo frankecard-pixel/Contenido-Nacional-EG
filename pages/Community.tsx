@@ -60,7 +60,7 @@ const Community: React.FC = () => {
         title="Impacto Comunitario" 
         subtitle="Proyectos de desarrollo social y sostenibilidad financiados por la industria de hidrocarburos."
         category="Responsabilidad Social"
-        image="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=2070&auto=format&fit=crop"
+        image="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2070&auto=format&fit=crop"
       />
       <div className="mx-auto px-6 relative z-50 -mt-16 mb-12" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <MinisterialCertification />

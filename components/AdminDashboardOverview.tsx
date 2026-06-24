@@ -285,7 +285,7 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
 
       {/* Footer Internal */}
       <footer className="flex flex-col sm:flex-row items-center justify-between py-6 md:py-10 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-t border-slate-50 dark:border-slate-700 gap-4 text-center sm:text-left">
-        <p>© 2024 Ministerio de Hidrocarburos y Desarrollo Minero. República de Guinea Ecuatorial.</p>
+        <p>© 2024 Ministerio de Hidrocarburos, Minas y Electricidad. República de Guinea Ecuatorial.</p>
         <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-4 md:mt-0">
           <a className="hover:text-primary transition-all" href="#">Privacidad</a>
           <a className="hover:text-primary transition-all" href="#">Términos de Uso</a>

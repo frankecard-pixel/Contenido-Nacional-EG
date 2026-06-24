@@ -54,7 +54,7 @@ const PublicFooter: React.FC = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">República de Guinea Ecuatorial</span>
-                <span className="text-sm font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tighter">Min. de Hidrocarburos y Desarrollo Minero</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tighter">Min. de Hidrocarburos, Minas y Electricidad</span>
               </div>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed max-w-sm">
@@ -121,7 +121,7 @@ const PublicFooter: React.FC = () => {
       <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950">
         <div className="max-w-[var(--layout-max-width)] mx-auto px-6 py-8 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] text-center md:text-left">
-            © 2024 MINISTERIO DE HIDROCARBUROS Y DESARROLLO MINERO. GOBIERNO DE LA REPÚBLICA DE GUINEA ECUATORIAL.
+            © 2024 MINISTERIO DE HIDROCARBUROS, MINAS Y ELECTRICIDAD. GOBIERNO DE LA REPÚBLICA DE GUINEA ECUATORIAL.
           </p>
           
           <div className="flex items-center gap-6">

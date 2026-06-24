@@ -13,7 +13,7 @@ const Jobs: React.FC = () => {
         title="Bolsa de Empleo" 
         subtitle="Encuentre las mejores oportunidades laborales en el sector de hidrocarburos y minería de Guinea Ecuatorial."
         category="Talento Nacional"
-        image="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2070&auto=format&fit=crop"
+        image="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2070&auto=format&fit=crop"
       />
       <div className="mx-auto px-8 relative z-50 -mt-16 mb-12" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <MinisterialCertification />

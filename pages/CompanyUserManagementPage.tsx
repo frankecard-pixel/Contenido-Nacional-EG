@@ -222,7 +222,7 @@ const CompanyUserManagementPage: React.FC = () => {
       </div>
 
       <footer className="text-center py-10 opacity-30">
-        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Ministerio de Hidrocarburos y Desarrollo Minero • República de Guinea Ecuatorial</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Ministerio de Hidrocarburos, Minas y Electricidad • República de Guinea Ecuatorial</p>
       </footer>
     </div>
   );

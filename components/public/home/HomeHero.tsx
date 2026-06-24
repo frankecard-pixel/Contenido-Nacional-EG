@@ -53,7 +53,7 @@ const HomeHero: React.FC = () => {
           
           <div className="inline-flex items-center rounded-full bg-blue-500/20 px-4 py-2 text-xs md:text-sm font-black text-blue-100 backdrop-blur-md border border-blue-400/30 uppercase tracking-[0.2em]">
             <span className="mr-3 h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
-            Plataforma Oficial del Ministerio de Hidrocarburos y Desarrollo Minero
+            Plataforma Oficial del Ministerio de Hidrocarburos, Minas y Electricidad
           </div>
 
           <p className="max-w-2xl text-lg text-slate-200 md:text-xl font-medium leading-relaxed mt-2 -mb-4">

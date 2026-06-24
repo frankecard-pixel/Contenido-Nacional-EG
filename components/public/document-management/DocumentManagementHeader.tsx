@@ -10,7 +10,7 @@ const DocumentManagementHeader: React.FC = () => {
           <span className="text-primary">Cumplimiento</span>
         </div>
         <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Gestión Documental</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium italic">Gestione la documentación legal, financiera y técnica requerida por el Ministerio de Hidrocarburos y Desarrollo Minero.</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium italic">Gestione la documentación legal, financiera y técnica requerida por el Ministerio de Hidrocarburos, Minas y Electricidad.</p>
       </div>
       <div className="flex gap-4">
         <button className="flex items-center gap-3 px-6 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-sm transition-all">

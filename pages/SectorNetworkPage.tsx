@@ -86,7 +86,7 @@ const SectorNetworkPage: React.FC = () => {
               <div className="size-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black">MM</div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Ministerio de Hidrocarburos y Desarrollo Minero</h4>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Ministerio de Hidrocarburos, Minas y Electricidad</h4>
                   <span className="material-symbols-outlined text-primary text-base">verified</span>
                 </div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hace 2 horas • Comunicado Oficial</p>
@@ -180,7 +180,7 @@ const SectorNetworkPage: React.FC = () => {
       </div>
 
       <footer className="text-center py-10 opacity-30">
-        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Ministerio de Hidrocarburos y Desarrollo Minero • República de Guinea Ecuatorial</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Ministerio de Hidrocarburos, Minas y Electricidad • República de Guinea Ecuatorial</p>
       </footer>
     </div>
   );

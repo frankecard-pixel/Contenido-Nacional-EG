@@ -111,7 +111,7 @@ const NewsManagement: React.FC = () => {
             <span className="text-primary">Gestión de Noticias</span>
           </nav>
           <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Gestión de Noticias</h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium italic">Redacte, programe y publique comunicados oficiales del Ministerio de Hidrocarburos y Desarrollo Minero.</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium italic">Redacte, programe y publique comunicados oficiales del Ministerio de Hidrocarburos, Minas y Electricidad.</p>
         </div>
           <div className="flex gap-4">
             <button 
@@ -377,7 +377,7 @@ const NewsManagement: React.FC = () => {
 
       {/* Info Footer */}
       <footer className="text-center py-10 opacity-30">
-        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Gaceta Digital del Ministerio de Hidrocarburos y Desarrollo Minero • Guinea Ecuatorial</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Gaceta Digital del Ministerio de Hidrocarburos, Minas y Electricidad • Guinea Ecuatorial</p>
       </footer>
     </div>
   );

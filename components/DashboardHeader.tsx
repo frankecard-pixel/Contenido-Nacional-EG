@@ -60,7 +60,7 @@ const DashboardHeader: React.FC<HeaderProps> = ({ user, onToggleSidebar }) => {
         <div className="hidden md:flex items-center space-x-3">
           <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Coat_of_arms_of_Equatorial_Guinea.svg" className="h-5 object-contain shadow-sm rounded-sm" alt="GE Coat of Arms" />
           <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
-          <h2 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Ministerio de Hidrocarburos y Desarrollo Minero</h2>
+          <h2 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Ministerio de Hidrocarburos, Minas y Electricidad</h2>
         </div>
       </div>
 

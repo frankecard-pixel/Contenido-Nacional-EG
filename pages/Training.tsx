@@ -25,7 +25,7 @@ const Training: React.FC = () => {
         title="Capacitación y Formación" 
         subtitle="Programas de desarrollo de competencias para el talento nacional en la industria extractiva."
         category="Oportunidades"
-        image="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop"
+        image="https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=2070&auto=format&fit=crop"
       />
       <div className="mx-auto px-6 relative z-50 -mt-16 mb-12" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <MinisterialCertification />

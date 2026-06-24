@@ -24,7 +24,7 @@ const resources = {
         restricted: "Área Restringida",
         loginToSeeMore: "Debe iniciar sesión para ver los pliegos técnicos y requisitos de contenido nacional.",
         minister_name: "Excmo. Sr. Antonio Oburu Ondo",
-        minister_role: "Ministro de Hidrocarburos y Desarrollo Minero",
+        minister_role: "Ministro de Hidrocarburos, Minas y Electricidad",
         minister_title: "DISCURSO INSTITUCIONAL",
         logout: "Cerrar Sesión",
         stats: {
@@ -171,7 +171,7 @@ const resources = {
         restricted: "Restricted Area",
         loginToSeeMore: "You must login to see technical specifications and national content requirements.",
         minister_name: "H.E. Antonio Oburu Ondo",
-        minister_role: "Minister of Hydrocarbons and Mineral Development",
+        minister_role: "Minister of Hydrocarbons, Mines and Electricity",
         minister_title: "INSTITUTIONAL SPEECH",
         logout: "Logout",
         stats: {
@@ -318,7 +318,7 @@ const resources = {
         restricted: "Zone Restreinte",
         loginToSeeMore: "Vous devez vous connecter pour voir les spécifications techniques et les exigences de contenu national.",
         minister_name: "S.E. Antonio Oburu Ondo",
-        minister_role: "Ministre des Hydrocarbures et du Développement Minier",
+        minister_role: "Ministre des Hydrocarbures, des Mines et de l'Électricité",
         minister_title: "DISCOURS INSTITUTIONNEL",
         logout: "Déconnexion",
         stats: {

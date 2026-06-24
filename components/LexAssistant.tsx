@@ -19,7 +19,7 @@ const LexAssistant: React.FC = () => {
   }, [messages, isTyping]);
 
   const getSystemInstruction = () => {
-    const base = "Eres Lex, el Asistente de Inteligencia Jurídica oficial del Ministerio de Hidrocarburos y Desarrollo Minero de Guinea Ecuatorial. ";
+    const base = "Eres Lex, el Asistente de Inteligencia Jurídica oficial del Ministerio de Hidrocarburos, Minas y Electricidad de Guinea Ecuatorial. ";
     const contextMap: Record<string, string> = {
       [UserRole.SUPER_ADMIN]: "Eres el asesor principal del Ministro y del Administrador General. Proporciona análisis estratégicos, resúmenes de cumplimiento global y alertas sobre desviaciones en el contenido nacional.",
       [UserRole.FUNCIONARIO]: "Eres el asesor técnico de auditoría ministerial. Ayuda a los funcionarios a analizar informes de contenido nacional y verificar el cumplimiento legal de las operadoras.",
@@ -162,7 +162,7 @@ const LexAssistant: React.FC = () => {
           </button>
         </div>
         <p className="text-[9px] text-center text-slate-500 mt-6 font-bold uppercase tracking-widest leading-loose">
-          {t('lex.disclaimer')} • Lex es una IA informativa • Para trámites legales vinculantes consulte con el Ministerio de Hidrocarburos y Desarrollo Minero
+          {t('lex.disclaimer')} • Lex es una IA informativa • Para trámites legales vinculantes consulte con el Ministerio de Hidrocarburos, Minas y Electricidad
         </p>
       </form>
     </div>

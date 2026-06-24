@@ -9,7 +9,7 @@ import AboutMinistryCommitment from '../components/public/about/AboutMinistryCom
 
 const About: React.FC = () => {
   return (
-    <div className="pb-24 bg-white">
+    <div className="pb-24 bg-white overflow-x-hidden w-full">
       <PublicBanner 
         title="Sobre el Contenido Nacional" 
         subtitle="Conozca nuestra misión, visión y el marco institucional que rige el desarrollo del sector en Guinea Ecuatorial."
