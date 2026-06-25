@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     company_id UUID,
     avatar TEXT,
     is_online BOOLEAN DEFAULT false,
+    verification_status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'rejected'
     permissions JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
@@ -58,7 +59,13 @@ CREATE TABLE IF NOT EXISTS public.companies (
 );
 
 -- Add foreign key to users now that companies exists
-ALTER TABLE public.users ADD CONSTRAINT fk_users_company FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_users_company') THEN
+        ALTER TABLE public.users ADD CONSTRAINT fk_users_company FOREIGN KEY (company_id) REFERENCES public.companies(id) ON DELETE SET NULL;
+    END IF;
+END
+$$;
 
 -- ==========================================
 -- 2. REGISTRATION & AUTHENTICATION
@@ -67,13 +74,20 @@ ALTER TABLE public.users ADD CONSTRAINT fk_users_company FOREIGN KEY (company_id
 -- REGISTRATION REQUESTS
 CREATE TABLE IF NOT EXISTS public.registration_requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT,
     company_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     phone TEXT,
     tax_id TEXT,
     sector TEXT,
+    sectors JSONB DEFAULT '[]'::jsonb,
     role TEXT,
     status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    documents JSONB DEFAULT '[]'::jsonb,
+    dip_base64 TEXT,
+    categories JSONB DEFAULT '[]'::jsonb,
+    tracking_number TEXT,
+    expediente_number TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
@@ -151,11 +165,39 @@ CREATE TABLE IF NOT EXISTS public.job_offers (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- JOB APPLICATIONS
+CREATE TABLE IF NOT EXISTS public.job_applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    job_id UUID REFERENCES public.job_offers(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'submitted', -- 'submitted', 'under_review', 'shortlisted', 'rejected', 'hired'
+    cover_letter TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- CERTIFICATIONS
+CREATE TABLE IF NOT EXISTS public.certifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    institution TEXT,
+    issue_date DATE,
+    expiry_date DATE,
+    credential_id TEXT,
+    file_url TEXT,
+    verification_status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'rejected'
+    progress INTEGER DEFAULT 0, -- 0-100 for ongoing training
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
 -- CANDIDATE PROFILES
 CREATE TABLE IF NOT EXISTS public.candidate_profiles (
     user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
     skills JSONB DEFAULT '[]'::jsonb,
     experience JSONB DEFAULT '[]'::jsonb,
+    education JSONB DEFAULT '[]'::jsonb,
     cv_url TEXT,
     saved_jobs JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -358,6 +400,8 @@ ALTER TABLE public.user_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_offers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.certifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.candidate_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contract_milestones ENABLE ROW LEVEL SECURITY;
@@ -381,6 +425,8 @@ CREATE POLICY "Allow all for authenticated users" ON public.user_groups FOR ALL 
 CREATE POLICY "Allow all for authenticated users" ON public.opportunities FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.applications FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.job_offers FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated users" ON public.job_applications FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated users" ON public.certifications FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.candidate_profiles FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.contracts FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.contract_milestones FOR ALL USING (true);

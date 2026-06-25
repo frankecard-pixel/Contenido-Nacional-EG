@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Language } from '../../../types';
 import { toast } from 'sonner';
+import { ImageCropper } from '../../ImageCropper';
 
 interface BannerItem {
   id: string;
@@ -26,6 +27,7 @@ interface ImagesTabProps {
   onBannerUpload: (id: string, pageKey: string, bannerKey: string) => void;
   onAddGalleryImage: (img: Omit<GalleryImageItem, 'id'>) => Promise<any>;
   onDeleteGalleryImage: (id: string) => Promise<any>;
+  onUploadGalleryImage: (file: File) => Promise<string>;
 }
 
 export const ImagesTab: React.FC<ImagesTabProps> = ({
@@ -36,14 +38,50 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
   onBannerUpload,
   onAddGalleryImage,
   onDeleteGalleryImage,
+  onUploadGalleryImage,
 }) => {
   const [showAddImage, setShowAddImage] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
   const [activeLang, setActiveLang] = useState<Language>('es');
   const [newImage, setNewImage] = useState<Partial<GalleryImageItem>>({
     url: '',
     title: { es: '', en: '', fr: '' },
     group_name: 'Instalaciones',
   });
+
+  // Cropper State
+  const [cropperImage, setCropperImage] = useState<string | null>(null);
+  const [cropperAspect, setCropperAspect] = useState(16 / 9);
+
+  const handleGalleryFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropperImage(reader.result as string);
+      setCropperAspect(16 / 9);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBase64: string) => {
+    try {
+      setIsUploadingGallery(true);
+      setCropperImage(null);
+      
+      const res = await fetch(croppedBase64);
+      const blob = await res.blob();
+      const file = new File([blob], "gallery_img.jpg", { type: "image/jpeg" });
+      
+      const url = await onUploadGalleryImage(file);
+      setNewImage(prev => ({ ...prev, url }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
 
   const handleAddGalleryImageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,15 +202,34 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">URL de la Imagen (Unsplash o Enlace de Storage)</label>
-                <input 
-                  type="url"
-                  required
-                  value={newImage.url || ''}
-                  onChange={(e) => setNewImage({ ...newImage, url: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full bg-white dark:bg-slate-800 border-none rounded-xl p-4 text-xs font-medium dark:text-white focus:ring-2 focus:ring-primary"
-                />
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Imagen de la Galería</label>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    <input 
+                      type="url"
+                      required
+                      value={newImage.url || ''}
+                      onChange={(e) => setNewImage({ ...newImage, url: e.target.value })}
+                      placeholder="https://images.unsplash.com/..."
+                      className="flex-1 bg-white dark:bg-slate-800 border-none rounded-xl p-4 text-xs font-medium dark:text-white focus:ring-2 focus:ring-primary"
+                    />
+                    <label className="flex items-center justify-center px-4 bg-slate-200 dark:bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-300 transition-colors">
+                      <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">upload</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleGalleryFileSelect} disabled={isUploadingGallery} />
+                    </label>
+                  </div>
+                  {isUploadingGallery && (
+                    <div className="flex items-center gap-2 text-[9px] font-bold text-primary animate-pulse">
+                      <div className="size-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      SUBIENDO ARCHIVO...
+                    </div>
+                  )}
+                  {newImage.url && (
+                    <div className="aspect-video w-32 rounded-xl overflow-hidden border border-slate-200">
+                      <img src={newImage.url} alt="Vista previa" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -253,6 +310,14 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
           ))}
         </div>
       </div>
+      {cropperImage && (
+        <ImageCropper
+          image={cropperImage}
+          aspect={cropperAspect}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setCropperImage(null)}
+        />
+      )}
     </div>
   );
 };

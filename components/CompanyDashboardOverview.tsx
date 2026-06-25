@@ -161,14 +161,7 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
       </div>
 
       {/* Ad Banner */}
-      <AdBanner 
-        type="main"
-        title="Equipos de Perforación de Última Generación"
-        description="Descubra nuestra nueva línea de equipos diseñados para maximizar la eficiencia en plataformas offshore."
-        sponsor="Global Ads (Anunciante)"
-        imageUrl="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop"
-        link="https://example.com"
-      />
+      <AdBanner type="main" />
 
       {/* Main Dashboard Split */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-10">

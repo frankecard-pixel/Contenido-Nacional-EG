@@ -180,11 +180,11 @@ export const PublicAdSpace: React.FC<PublicAdSpaceProps> = ({ format, className 
         <div className="absolute top-3 right-3 z-10 text-[8px] font-black text-white bg-slate-900/60 backdrop-blur-sm px-2.5 py-1 rounded-full uppercase tracking-widest">
           Patrocinado
         </div>
-        <div className="md:w-1/3 relative shrink-0 min-h-[100px] md:min-h-0 bg-slate-100">
+        <div className="md:w-1/3 relative shrink-0 aspect-[16/9] md:aspect-auto md:h-full bg-slate-100">
           <img 
             src={ad.image_url} 
             alt={ad.title} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 absolute inset-0"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 absolute inset-0"
             referrerPolicy="no-referrer"
           />
         </div>
@@ -216,19 +216,19 @@ export const PublicAdSpace: React.FC<PublicAdSpaceProps> = ({ format, className 
         <div className="absolute top-4 right-4 z-10 text-[8px] font-black text-white bg-slate-900/60 backdrop-blur-sm px-3 py-1 rounded-full uppercase tracking-widest">
           Anuncio
         </div>
-        <div className="relative w-full h-32 md:h-28">
+        <div className="relative w-full h-32 bg-slate-100 dark:bg-slate-800">
           <img 
             src={ad.image_url} 
             alt={ad.title} 
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
+            className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-700"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 flex flex-col justify-end">
-            <h4 className="text-sm font-black text-white uppercase tracking-tight">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 flex flex-col justify-end pointer-events-none">
+            <h4 className="text-sm font-black text-white uppercase tracking-tight drop-shadow-md">
               {ad.title}
             </h4>
             {ad.description && (
-              <p className="text-[9px] text-slate-200 font-bold uppercase tracking-wide mt-1 max-w-2xl line-clamp-1">
+              <p className="text-[9px] text-slate-200 font-bold uppercase tracking-wide mt-1 max-w-2xl line-clamp-1 drop-shadow-md">
                 {ad.description}
               </p>
             )}
@@ -283,7 +283,7 @@ export const PublicAdSpace: React.FC<PublicAdSpaceProps> = ({ format, className 
       <div className="absolute top-4 right-4 z-10 text-[8px] font-black text-white bg-slate-900/60 backdrop-blur-sm px-2.5 py-1 rounded-full uppercase tracking-widest">
         Patrocinado
       </div>
-      <div className="w-full sm:w-40 h-28 relative rounded-2xl overflow-hidden bg-slate-100 shrink-0">
+      <div className="w-full sm:w-40 aspect-video sm:aspect-square relative rounded-2xl overflow-hidden bg-slate-100 shrink-0">
         <img 
           src={ad.image_url} 
           alt={ad.title} 

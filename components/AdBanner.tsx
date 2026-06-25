@@ -1,8 +1,10 @@
-import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ExternalLink, Loader2, Image as ImageIcon } from 'lucide-react';
+import { getAdvertisements } from '../services/supabaseApi';
 
 interface AdBannerProps {
   type: 'sidebar' | 'main' | 'inline';
+  format?: 'top_banner' | 'sidebar' | 'sidebar_banner' | 'inline';
   imageUrl?: string;
   title?: string;
   description?: string;
@@ -10,12 +12,59 @@ interface AdBannerProps {
   link?: string;
 }
 
-const AdBanner: React.FC<AdBannerProps> = ({ type, imageUrl, title, description, sponsor, link }) => {
+const AdBanner: React.FC<AdBannerProps> = ({ type, format: propFormat, imageUrl: propImageUrl, title: propTitle, description: propDescription, sponsor: propSponsor, link: propLink }) => {
+  const [ad, setAd] = useState<any>(null);
+  const [loading, setLoading] = useState(!propTitle);
+
+  useEffect(() => {
+    if (!propTitle) {
+      const fetchAd = async () => {
+        try {
+          const ads = await getAdvertisements();
+          let activeAds = ads.filter((a: any) => a.status === 'active');
+          
+          if (propFormat) {
+            activeAds = activeAds.filter((a: any) => a.format === propFormat);
+          } else if (type === 'sidebar') {
+            activeAds = activeAds.filter((a: any) => a.format === 'sidebar' || a.format === 'sidebar_banner');
+          } else if (type === 'main') {
+            activeAds = activeAds.filter((a: any) => a.format === 'top_banner' || a.format === 'main');
+          }
+
+          if (activeAds.length > 0) {
+            const selectedAd = activeAds[Math.floor(Math.random() * activeAds.length)];
+            setAd(selectedAd);
+          }
+        } catch (error) {
+          console.error("Error fetching ad for banner:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAd();
+    }
+  }, [propTitle, propFormat, type]);
+
+  const imageUrl = propImageUrl || ad?.image_url;
+  const title = propTitle || ad?.title;
+  const description = propDescription || ad?.description;
+  const sponsor = propSponsor || ad?.sponsor_name || ad?.company_name;
+  const link = propLink || ad?.link_url;
+
   const handleClick = () => {
     if (link) {
       window.open(link, '_blank', 'noopener,noreferrer');
     }
   };
+
+  if (loading && !propTitle) {
+    return (
+      <div className={`w-full rounded-2xl bg-slate-50 dark:bg-slate-900/50 animate-pulse flex items-center justify-center ${type === 'main' ? 'h-32 mb-8' : 'h-24 mt-4'}`}>
+        <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
+      </div>
+    );
+  }
+
 
   if (type === 'sidebar') {
     return (
@@ -27,10 +76,15 @@ const AdBanner: React.FC<AdBannerProps> = ({ type, imageUrl, title, description,
           Publicidad
         </div>
         {imageUrl ? (
-          <img src={imageUrl} alt="Ad" className="w-full h-24 object-cover rounded-xl mb-3 group-hover:scale-105 transition-transform duration-500" />
+          <div className="w-full h-24 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3 overflow-hidden">
+            <img src={imageUrl} alt="Ad" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+          </div>
         ) : (
-          <div className="w-full h-24 bg-slate-800 rounded-xl mb-3 flex items-center justify-center group-hover:bg-slate-700 transition-colors">
-            <span className="text-slate-500 text-xs font-bold">Espacio Publicitario</span>
+          <div className="w-full h-24 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl mb-3 flex items-center justify-center group-hover:from-slate-700 group-hover:to-slate-800 transition-all border border-white/5">
+            <div className="flex flex-col items-center gap-1">
+              <ImageIcon size={20} className="text-slate-600" />
+              <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Espacio Publicitario</span>
+            </div>
           </div>
         )}
         <h4 className="text-xs font-bold text-white line-clamp-1 group-hover:text-blue-400 transition-colors">
@@ -58,12 +112,13 @@ const AdBanner: React.FC<AdBannerProps> = ({ type, imageUrl, title, description,
           Publicidad Premium
         </div>
         {imageUrl ? (
-          <div className="w-full sm:w-64 h-32 shrink-0 overflow-hidden rounded-2xl">
+          <div className="w-full sm:w-64 h-32 shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
             <img src={imageUrl} alt="Ad" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
           </div>
         ) : (
-          <div className="w-full sm:w-64 h-32 shrink-0 bg-blue-100/50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
-            <span className="text-blue-400 text-sm font-bold">Banner Principal</span>
+          <div className="w-full sm:w-64 h-32 shrink-0 bg-blue-100/50 dark:bg-blue-900/30 rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-blue-200 dark:border-blue-800/50">
+            <ImageIcon size={32} className="text-blue-300 dark:text-blue-800/50 mb-2" />
+            <span className="text-blue-400 dark:text-blue-500 text-[10px] font-black uppercase tracking-widest">Banner Principal</span>
           </div>
         )}
         <div className="flex-1 text-center sm:text-left">

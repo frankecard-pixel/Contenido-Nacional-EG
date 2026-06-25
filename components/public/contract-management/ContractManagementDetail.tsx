@@ -32,7 +32,7 @@ const ContractManagementDetail: React.FC<ContractManagementDetailProps> = ({
                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {selectedContract.ref}</span>
                </div>
                <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none mb-3">
-                 {(selectedContract.title as any).es || selectedContract.title}
+                 {(selectedContract.title as any)?.es || selectedContract.title || 'Sin Título'}
                </h2>
                <p className="text-lg text-slate-500 dark:text-slate-400 font-medium italic">
                  Adjudicado a: <span className="text-slate-900 dark:text-white font-black">{selectedContract.awardedTo}</span>

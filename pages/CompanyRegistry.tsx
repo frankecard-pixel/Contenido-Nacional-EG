@@ -7,6 +7,7 @@ import CompanyRegistryHeader from '../components/admin/CompanyRegistryHeader';
 import CompanyRegistryFilters from '../components/admin/CompanyRegistryFilters';
 import CompanyRegistryTable from '../components/admin/CompanyRegistryTable';
 import CompanyRegistryDetail from '../components/admin/CompanyRegistryDetail';
+import CompanyCreateModal from '../components/admin/CompanyCreateModal';
 
 const CompanyRegistry: React.FC = () => {
   const { t } = useTranslation();
@@ -16,6 +17,7 @@ const CompanyRegistry: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const fetchRegistryData = async () => {
     try {
@@ -99,7 +101,7 @@ const CompanyRegistry: React.FC = () => {
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden animate-in fade-in duration-700 relative">
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar p-8 lg:p-12 space-y-10 pb-32">
         {/* Page Header */}
-        <CompanyRegistryHeader />
+        <CompanyRegistryHeader onCreateClick={() => setIsCreateModalOpen(true)} />
 
         {/* Toolbar */}
         <CompanyRegistryFilters 
@@ -134,6 +136,14 @@ const CompanyRegistry: React.FC = () => {
           onLinkUser={handleLinkUser}
         />
       )}
+
+      {/* Create Modal */}
+      <CompanyCreateModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        users={users}
+        onCompanyCreated={fetchRegistryData}
+      />
     </div>
   );
 };

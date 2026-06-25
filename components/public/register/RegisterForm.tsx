@@ -149,6 +149,29 @@ const RegisterForm: React.FC = () => {
     try {
       // If it's a company, we create a registration request first
       if (formData.role === UserRole.COMPANY || formData.role === UserRole.EMPRESA_LOCAL) {
+        // Check for duplicates in companies table
+        const { data: existingCompany } = await supabase
+          .from('companies')
+          .select('id')
+          .ilike('name', formData.companyName)
+          .maybeSingle();
+
+        if (existingCompany) {
+          throw new Error('Ya existe una empresa registrada con ese nombre.');
+        }
+
+        // Check for duplicates in registration_requests table
+        const { data: existingRequest } = await supabase
+          .from('registration_requests')
+          .select('id')
+          .ilike('company_name', formData.companyName)
+          .neq('status', 'rejected')
+          .limit(1);
+
+        if (existingRequest && existingRequest.length > 0) {
+           throw new Error('Ya existe una solicitud en curso para una empresa con ese nombre.');
+        }
+
         // Generate unique tracking / registration number
         const trackingNumber = `REG-GE-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
         setGeneratedRegNumber(trackingNumber);
@@ -201,7 +224,6 @@ const RegisterForm: React.FC = () => {
           });
 
           setSuccess(true);
-          setTimeout(() => navigate('/login'), 3000);
         }
       }
     } catch (err: any) {
@@ -291,11 +313,18 @@ const RegisterForm: React.FC = () => {
           </div>
         ) : (
           <div className="text-center space-y-6">
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
-              Su cuenta ha sido creada exitosamente. Ya puede acceder al portal para completar su perfil laboral y postularse a ofertas de empleo.
+            <div className="p-8 bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-800 text-center mb-8">
+              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-4xl mb-4">mark_email_unread</span>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Confirme su correo electrónico</h3>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                Hemos enviado un correo a <strong className="text-slate-900 dark:text-white">{formData.email}</strong>. Por favor, revise su bandeja de entrada (y la carpeta de spam) y haga clic en el enlace para activar su cuenta.
+              </p>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mb-4">
+              Una vez confirmado su correo, podrá acceder al portal para completar su perfil laboral y postularse a ofertas de empleo.
             </p>
-            <Link to="/login" className="bg-primary hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 inline-block transition-all">
-              Iniciar Sesión Ahora
+            <Link to="/login" className="bg-primary hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 inline-block transition-all mt-4">
+              Ir al Inicio de Sesión
             </Link>
           </div>
         )}

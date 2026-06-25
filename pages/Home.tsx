@@ -8,7 +8,7 @@ import HomeInteractive from '../components/public/home/HomeInteractive';
 import HomeNews from '../components/public/home/HomeNews';
 import HomeCategories from '../components/public/home/HomeCategories';
 import HomeLatestOpportunities from '../components/public/home/HomeLatestOpportunities';
-import HomeGallery from '../components/public/home/HomeGallery';
+import HomeJobs from '../components/public/home/HomeJobs';
 import HomeSuccessStories from '../components/public/home/HomeSuccessStories';
 import HomeCTA from '../components/public/home/HomeCTA';
 import { PublicAdSpace } from '../components/public/PublicAdSpace';
@@ -29,7 +29,7 @@ const Home: React.FC = () => {
       <HomeNews />
       <HomeCategories />
       <HomeLatestOpportunities />
-      <HomeGallery />
+      <HomeJobs />
       <HomeSuccessStories />
 
       <div className="mx-auto px-6 py-8" style={{ maxWidth: 'var(--layout-max-width)' }}>

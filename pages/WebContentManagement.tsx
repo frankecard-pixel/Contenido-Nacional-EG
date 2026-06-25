@@ -26,7 +26,9 @@ import {
   getWebTestimonials,
   createWebTestimonial,
   updateWebTestimonial,
-  deleteWebTestimonial
+  deleteWebTestimonial,
+  uploadFile,
+  getStoragePublicUrl
 } from '../services/supabaseApi';
 import { WebCategory, Language } from '../types';
 import { CategoriesTab } from '../components/dashboard/web-management/CategoriesTab';
@@ -201,6 +203,37 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
     return res;
   };
 
+  const handleUploadGalleryImage = async (file: File) => {
+    const fileExtension = file.name.split('.').pop() || 'jpg';
+    setUploadingId('gallery_new');
+    
+    try {
+      const reader = new FileReader();
+      const base64Data = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      toast.loading('Subiendo imagen a la galería...', { id: 'gallery-upload' });
+      
+      const bucket = 'web-assets';
+      const fileName = `gallery/img_${Date.now()}.${fileExtension}`;
+      const contentType = file.type;
+      
+      await uploadFile(bucket, fileName, base64Data, contentType);
+      const publicUrl = getStoragePublicUrl(bucket, fileName);
+      
+      toast.success('Imagen subida con éxito', { id: 'gallery-upload' });
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading gallery image:", error);
+      toast.error('Error al subir la imagen');
+      throw error;
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
   const handleDeleteGalleryImage = async (id: string) => {
     await deleteWebImage(id);
     setGalleryImages(prev => prev.filter(item => item.id !== id));
@@ -228,14 +261,21 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
         reader.onloadend = async () => {
           const base64Data = reader.result as string;
           try {
+            toast.loading('Subiendo imagen...', { id: 'upload-toast' });
             const imageUrl = await uploadBannerImage(pageKey, bannerKey, base64Data, fileExtension);
-            await updateWebBanner(id, pageKey, bannerKey, imageUrl, id.replace(/_/g, ' ').toUpperCase());
+            
+            // Si devolvió base64 es que falló el storage, avisamos pero seguimos para ver si guarda en DB
+            if (imageUrl.startsWith('data:')) {
+              console.warn("Storage upload failed, using base64 fallback");
+            }
+
+            const updatedBanner = await updateWebBanner(id, pageKey, bannerKey, imageUrl, id.replace(/_/g, ' ').toUpperCase());
             
             setDbBanners(prev => prev.map(b => b.id === id ? { ...b, image_url: imageUrl } : b));
-            toast.success('¡Imagen de banner de cabecera actualizada con éxito!');
+            toast.success('¡Imagen de banner de cabecera actualizada con éxito!', { id: 'upload-toast' });
           } catch (error) {
             console.error("Error al subir el banner:", error);
-            toast.error('No se pudo subir la imagen. Intente nuevamente.');
+            toast.error('No se pudo guardar la imagen en el servidor.', { id: 'upload-toast' });
           } finally {
             setUploadingId(null);
           }
@@ -347,6 +387,7 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
               onBannerUpload={handleBannerUpload}
               onAddGalleryImage={handleAddGalleryImage}
               onDeleteGalleryImage={handleDeleteGalleryImage}
+              onUploadGalleryImage={handleUploadGalleryImage}
             />
           )}
 

@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User as UserIcon, Briefcase, GraduationCap, Award, FileText, Plus, Edit2, Share2, Upload, X, Loader2, Phone, Mail, MapPin } from 'lucide-react';
+import { User as UserIcon, Briefcase, GraduationCap, Award, FileText, Plus, Edit2, Share2, Upload, X, Loader2, Phone, Mail, MapPin, Trash2 } from 'lucide-react';
 import { User } from '../../types';
-import { uploadFile, updateUser, getStoragePublicUrl } from '../../services/supabaseApi';
+import { uploadFile, updateUser, getStoragePublicUrl, getCandidateProfile, updateCandidateProfile } from '../../services/supabaseApi';
 import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
 
 interface TalentProfileManagementProps {
@@ -17,6 +17,23 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
   const [isSaving, setIsSaving] = useState(false);
   const [showAvatarUploader, setShowAvatarUploader] = useState(false);
   const [showCvUploader, setShowCvUploader] = useState(false);
+
+  // New Profile State
+  const [profile, setProfile] = useState<any>(null);
+  const [showExpModal, setShowExpModal] = useState(false);
+  const [showEduModal, setShowEduModal] = useState(false);
+  const [showSkillModal, setShowSkillModal] = useState(false);
+  const [expData, setExpData] = useState({ role: '', company: '', period: '', desc: '' });
+  const [eduData, setEduData] = useState({ degree: '', school: '', year: '' });
+  const [skillData, setSkillData] = useState('');
+
+  useEffect(() => {
+    if (user?.id) {
+      getCandidateProfile(user.id).then(data => {
+        if (data) setProfile(data);
+      });
+    }
+  }, [user?.id]);
 
   const [editData, setEditData] = useState({
     name: user?.name || '',
@@ -109,6 +126,87 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
       alert("Error al actualizar el perfil");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveExperience = async () => {
+    if (!user || !expData.role || !expData.company) return;
+    try {
+      const newExp = { ...expData };
+      const currentExps = profile?.experience || [];
+      const updatedExps = [...currentExps, newExp];
+      const updatedProfile = await updateCandidateProfile(user.id, { experience: updatedExps });
+      setProfile(updatedProfile);
+      setShowExpModal(false);
+      setExpData({ role: '', company: '', period: '', desc: '' });
+    } catch (error) {
+      console.error("Error saving experience:", error);
+    }
+  };
+
+  const handleDeleteExperience = async (index: number) => {
+    if (!user || !profile?.experience) return;
+    try {
+      const updatedExps = profile.experience.filter((_: any, i: number) => i !== index);
+      const updatedProfile = await updateCandidateProfile(user.id, { experience: updatedExps });
+      setProfile(updatedProfile);
+    } catch (error) {
+      console.error("Error deleting experience:", error);
+    }
+  };
+
+  const handleSaveEducation = async () => {
+    if (!user || !eduData.degree || !eduData.school) return;
+    try {
+      const newEdu = { ...eduData };
+      const currentEdus = profile?.education || [];
+      const updatedEdus = [...currentEdus, newEdu];
+      const updatedProfile = await updateCandidateProfile(user.id, { education: updatedEdus });
+      setProfile(updatedProfile);
+      setShowEduModal(false);
+      setEduData({ degree: '', school: '', year: '' });
+    } catch (error) {
+      console.error("Error saving education:", error);
+    }
+  };
+
+  const handleDeleteEducation = async (index: number) => {
+    if (!user || !profile?.education) return;
+    try {
+      const updatedEdus = profile.education.filter((_: any, i: number) => i !== index);
+      const updatedProfile = await updateCandidateProfile(user.id, { education: updatedEdus });
+      setProfile(updatedProfile);
+    } catch (error) {
+      console.error("Error deleting education:", error);
+    }
+  };
+
+  const handleSaveSkill = async () => {
+    if (!user || !skillData.trim()) return;
+    try {
+      const currentSkills = profile?.skills || [];
+      if (currentSkills.includes(skillData.trim())) {
+        alert("Esta habilidad ya existe.");
+        return;
+      }
+      const updatedSkills = [...currentSkills, skillData.trim()];
+      const updatedProfile = await updateCandidateProfile(user.id, { skills: updatedSkills });
+      setProfile(updatedProfile);
+      setShowSkillModal(false);
+      setSkillData('');
+    } catch (error) {
+      console.error("Error saving skill:", error);
+    }
+  };
+
+  const handleDeleteSkill = async (skillToDelete: string) => {
+    if (!user || !profile?.skills) return;
+    try {
+      const updatedSkills = profile.skills.filter((skill: string) => skill !== skillToDelete);
+      const updatedProfile = await updateCandidateProfile(user.id, { skills: updatedSkills });
+      setProfile(updatedProfile);
+    } catch (error) {
+      console.error("Error deleting skill:", error);
     }
   };
 
@@ -222,7 +320,19 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
               )}
             </div>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{user?.name || 'Usuario'}</h2>
-            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">{user?.role || 'Talento'}</p>
+            <div className="mt-2 flex flex-col items-center gap-2">
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">{user?.role || 'Talento'}</p>
+              {(user as any)?.verification_status === 'verified' ? (
+                <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-100 inline-block flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">verified</span>
+                  Candidato Verificado
+                </span>
+              ) : (
+                <span className="bg-slate-50 text-slate-500 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-slate-100 inline-block">
+                  Perfil en Revisión
+                </span>
+              )}
+            </div>
             
             {user?.bio && (
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-4 italic">
@@ -279,20 +389,24 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
                 <Briefcase className="w-6 h-6 text-blue-600" />
                 Experiencia Laboral
               </h3>
-              <button className="text-blue-600 hover:text-blue-700"><Plus className="w-5 h-5" /></button>
+              <button onClick={() => setShowExpModal(true)} className="text-blue-600 hover:text-blue-700"><Plus className="w-5 h-5" /></button>
             </div>
             <div className="space-y-8">
-              {[
-                { role: 'Senior Drilling Engineer', company: 'Marathon Oil', period: '2020 - Presente', desc: 'Liderazgo de operaciones de perforación en el Bloque B, supervisión de equipos técnicos y cumplimiento de normativas HSE.' },
-                { role: 'Drilling Engineer', company: 'ExxonMobil', period: '2015 - 2020', desc: 'Soporte técnico en operaciones offshore, planificación de pozos y optimización de procesos de perforación.' }
-              ].map((exp, i) => (
+              {profile?.experience && profile.experience.length > 0 ? profile.experience.map((exp: any, i: number) => (
                 <div key={i} className="relative pl-8 border-l-2 border-slate-100 dark:border-slate-700 pb-8 last:pb-0">
                   <div className="absolute -left-[9px] top-0 size-4 rounded-full bg-blue-600 border-4 border-white dark:border-slate-800"></div>
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{exp.role}</h4>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{exp.company} • {exp.period}</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{exp.role}</h4>
+                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{exp.company} • {exp.period}</p>
+                    </div>
+                    <button onClick={() => handleDeleteExperience(i)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                  </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-3">{exp.desc}</p>
                 </div>
-              ))}
+              )) : (
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No hay experiencia registrada</p>
+              )}
             </div>
           </div>
 
@@ -302,25 +416,97 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
                 <GraduationCap className="w-6 h-6 text-purple-600" />
                 Educación
               </h3>
-              <button className="text-purple-600 hover:text-purple-700"><Plus className="w-5 h-5" /></button>
+              <button onClick={() => setShowEduModal(true)} className="text-purple-600 hover:text-purple-700"><Plus className="w-5 h-5" /></button>
             </div>
             <div className="space-y-6">
-              {[
-                { degree: 'Máster en Ingeniería de Petróleos', school: 'University of Houston', year: '2014' },
-                { degree: 'Grado en Ingeniería Mecánica', school: 'Universidad Nacional de Guinea Ecuatorial', year: '2012' }
-              ].map((edu, i) => (
+              {profile?.education && profile.education.length > 0 ? profile.education.map((edu: any, i: number) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700">
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{edu.degree}</h4>
                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{edu.school}</p>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{edu.year}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{edu.year}</span>
+                    <button onClick={() => handleDeleteEducation(i)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                  </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No hay educación registrada</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+                <Award className="w-6 h-6 text-emerald-600" />
+                Habilidades
+              </h3>
+              <button onClick={() => setShowSkillModal(true)} className="text-emerald-600 hover:text-emerald-700"><Plus className="w-5 h-5" /></button>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {profile?.skills && profile.skills.length > 0 ? profile.skills.map((skill: string, i: number) => (
+                <span key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700">
+                  {skill}
+                  <button onClick={() => handleDeleteSkill(skill)} className="text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                </span>
+              )) : (
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No hay habilidades registradas</p>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {showExpModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-lg p-8 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black uppercase tracking-tight">Añadir Experiencia</h2>
+              <button onClick={() => setShowExpModal(false)}><X className="w-6 h-6 text-slate-400 hover:text-slate-600" /></button>
+            </div>
+            <div className="space-y-4">
+              <input type="text" placeholder="Cargo (Ej: Senior Drilling Engineer)" value={expData.role} onChange={(e) => setExpData({...expData, role: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <input type="text" placeholder="Empresa" value={expData.company} onChange={(e) => setExpData({...expData, company: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <input type="text" placeholder="Periodo (Ej: 2020 - Presente)" value={expData.period} onChange={(e) => setExpData({...expData, period: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <textarea placeholder="Descripción del cargo..." value={expData.desc} onChange={(e) => setExpData({...expData, desc: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm resize-none h-24" />
+              <button onClick={handleSaveExperience} className="w-full py-4 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px]">Guardar Experiencia</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEduModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-lg p-8 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black uppercase tracking-tight">Añadir Educación</h2>
+              <button onClick={() => setShowEduModal(false)}><X className="w-6 h-6 text-slate-400 hover:text-slate-600" /></button>
+            </div>
+            <div className="space-y-4">
+              <input type="text" placeholder="Título (Ej: Máster en Ingeniería)" value={eduData.degree} onChange={(e) => setEduData({...eduData, degree: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <input type="text" placeholder="Institución" value={eduData.school} onChange={(e) => setEduData({...eduData, school: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <input type="text" placeholder="Año" value={eduData.year} onChange={(e) => setEduData({...eduData, year: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <button onClick={handleSaveEducation} className="w-full py-4 bg-purple-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px]">Guardar Educación</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSkillModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-lg p-8 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black uppercase tracking-tight">Añadir Habilidad</h2>
+              <button onClick={() => setShowSkillModal(false)}><X className="w-6 h-6 text-slate-400 hover:text-slate-600" /></button>
+            </div>
+            <div className="space-y-4">
+              <input type="text" placeholder="Habilidad (Ej: Perforación Offshore)" value={skillData} onChange={(e) => setSkillData(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveSkill()} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-4 font-bold text-sm" />
+              <button onClick={handleSaveSkill} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px]">Guardar Habilidad</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAvatarUploader && (
         <FileUploaderWithPreview

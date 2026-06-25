@@ -1,12 +1,30 @@
 
-import React from 'react';
-import { MOCK_JOBS } from '../services/mockService';
+import React, { useState, useEffect } from 'react';
+import { getJobOffers } from '../services/supabaseApi';
 import JobsFilters from '../components/public/jobs/JobsFilters';
 import JobsList from '../components/public/jobs/JobsList';
 import PublicBanner from '../components/public/PublicBanner';
 import MinisterialCertification from '../components/public/MinisterialCertification';
+import { JobOffer } from '../types';
 
 const Jobs: React.FC = () => {
+  const [jobs, setJobs] = useState<JobOffer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const data = await getJobOffers();
+        setJobs(data as any[]);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
+
   return (
     <div className="bg-white min-h-screen pb-24">
       <PublicBanner 
@@ -24,7 +42,13 @@ const Jobs: React.FC = () => {
           <JobsFilters />
 
           {/* Listado de Empleos - Escala Corregida */}
-          <JobsList jobs={MOCK_JOBS} />
+          {loading ? (
+            <div className="lg:col-span-12 py-20 flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <JobsList jobs={jobs} />
+          )}
         </div>
       </div>
     </div>

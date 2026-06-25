@@ -1,6 +1,10 @@
 import React from 'react';
 
-const CompanyRegistryHeader: React.FC = () => {
+interface CompanyRegistryHeaderProps {
+  onCreateClick?: () => void;
+}
+
+const CompanyRegistryHeader: React.FC<CompanyRegistryHeaderProps> = ({ onCreateClick }) => {
   return (
     <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div className="space-y-2">
@@ -17,7 +21,10 @@ const CompanyRegistryHeader: React.FC = () => {
           <span className="material-symbols-outlined text-xl">download</span>
           Exportar Registro
         </button>
-        <button className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+        <button 
+          onClick={onCreateClick}
+          className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95"
+        >
           <span className="material-symbols-outlined text-xl">add</span>
           Nueva Empresa
         </button>

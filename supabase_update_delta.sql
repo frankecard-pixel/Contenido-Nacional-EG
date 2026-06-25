@@ -10,11 +10,14 @@ ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'published'::text;
 
 -- 1. Soporte para avatar_url en la tabla de usuarios (usado en el frontend)
 ALTER TABLE public.users 
-ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'pending';
 
 -- 1.1 Soporte para campos adicionales en la tabla de solicitudes de registro (registration_requests)
 -- Esto resuelve el error PGRST204 de "Could not find the 'documents' column..."
 ALTER TABLE public.registration_requests 
+ADD COLUMN IF NOT EXISTS name TEXT,
+ADD COLUMN IF NOT EXISTS sectors JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS phone TEXT,
 ADD COLUMN IF NOT EXISTS dip_base64 TEXT,
@@ -83,12 +86,25 @@ CREATE POLICY "Allow all for documents" ON public.documents FOR ALL USING (true)
 CREATE TABLE IF NOT EXISTS public.certifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    status TEXT DEFAULT 'active'::text,
-    date DATE,
+    title TEXT NOT NULL,
+    institution TEXT,
+    issue_date DATE,
     expiry_date DATE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    credential_id TEXT,
+    file_url TEXT,
+    verification_status TEXT DEFAULT 'pending',
+    progress INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- Asegurar que las nuevas columnas existan si la tabla ya había sido creada anteriormente
+ALTER TABLE public.certifications ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE public.certifications ADD COLUMN IF NOT EXISTS institution TEXT;
+ALTER TABLE public.certifications ADD COLUMN IF NOT EXISTS issue_date DATE;
+ALTER TABLE public.certifications ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'pending';
+ALTER TABLE public.certifications ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;
+ALTER TABLE public.certifications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
 
 -- Habilitar Row Level Security para certificaciones
 ALTER TABLE public.certifications ENABLE ROW LEVEL SECURITY;
@@ -145,3 +161,22 @@ CREATE POLICY "Permitir todo en el bucket de advertisements" ON storage.objects
 DROP POLICY IF EXISTS "Permitir todo en el bucket de news-images" ON storage.objects;
 CREATE POLICY "Permitir todo en el bucket de news-images" ON storage.objects 
   FOR ALL USING (bucket_id = 'news-images') WITH CHECK (bucket_id = 'news-images');
+
+-- 7. Creación de la tabla de Job Applications
+CREATE TABLE IF NOT EXISTS public.job_applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    job_id UUID REFERENCES public.job_offers(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'submitted', -- 'submitted', 'under_review', 'shortlisted', 'rejected', 'hired'
+    cover_letter TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all for job_applications" ON public.job_applications;
+CREATE POLICY "Allow all for job_applications" ON public.job_applications FOR ALL USING (true);
+
+ALTER TABLE public.candidate_profiles ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
+

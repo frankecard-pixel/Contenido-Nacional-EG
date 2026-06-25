@@ -43,9 +43,12 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
 
   const stats = useMemo(() => {
     return {
-      valid: certifications.filter(c => c.status === 'valid' || c.status === 'active').length,
-      expired: certifications.filter(c => c.status === 'expired').length,
-      pending: certifications.filter(c => c.status === 'pending').length,
+      valid: certifications.filter(c => c.verification_status === 'verified').length,
+      expired: certifications.filter(c => {
+        if (!c.expiry_date) return false;
+        return new Date(c.expiry_date) < new Date();
+      }).length,
+      pending: certifications.filter(c => c.verification_status === 'pending').length,
     };
   }, [certifications]);
 
@@ -61,12 +64,13 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
       const certData = {
         user_id: user.id,
         title: newTitle,
-        issuer: newIssuer,
-        date: newDate || new Date().toISOString().split('T')[0],
+        institution: newIssuer,
+        issue_date: newDate || new Date().toISOString().split('T')[0],
         expiry_date: newExpiry || null,
         category: newCategory,
         file_url: newFileUrl || 'https://example.com/certificado.pdf',
-        status: 'pending'
+        verification_status: 'pending',
+        progress: 100
       };
 
       await addCertification(certData);
@@ -160,25 +164,25 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
               <div key={cert.id} className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all group">
                 <div className="flex justify-between items-start mb-6">
                   <div className={`size-14 rounded-2xl flex items-center justify-center ${
-                    cert.status === 'valid' || cert.status === 'active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' : cert.status === 'rejected' ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20'
+                    cert.verification_status === 'verified' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' : cert.verification_status === 'rejected' ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20'
                   }`}>
                     <Award className="w-7 h-7" />
                   </div>
                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                    cert.status === 'valid' || cert.status === 'active' ? 'bg-emerald-100 text-emerald-700' : cert.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'
+                    cert.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700' : cert.verification_status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'
                   }`}>
-                    {cert.status === 'valid' || cert.status === 'active' ? 'Vigente / Validado' : cert.status === 'rejected' ? 'Rechazado' : 'Pendiente de Validación'}
+                    {cert.verification_status === 'verified' ? 'Vigente / Validado' : cert.verification_status === 'rejected' ? 'Rechazado' : 'Pendiente de Validación'}
                   </span>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-2 tracking-tight">{cert.title || cert.name}</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">{cert.issuer}</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-2 tracking-tight">{cert.title}</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">{cert.institution}</p>
                 
                 <div className="grid grid-cols-2 gap-4 mb-8">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-slate-400" />
                     <div>
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Emisión</p>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">{cert.date}</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-white">{cert.issue_date}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

@@ -87,53 +87,23 @@ export const getAdvertisements = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('advertisements').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    
-    // Parse format and description if the format column is not present in some schemas
-    return (data || []).map((ad: any) => {
-      let format = ad.format || 'top_banner';
-      let description = ad.description || '';
-      
-      if (!ad.format && description.startsWith('[FORMAT:')) {
-        const match = description.match(/^\[FORMAT:([^\]]+)\]\s*(.*)/);
-        if (match) {
-          format = match[1];
-          description = match[2];
-        }
-      }
-      
-      return {
-        ...ad,
-        format,
-        description,
-        link_url: ad.link_url || ad.link || ''
-      };
-    });
+    return data || [];
   } catch (error) {
-    console.warn('getAdvertisements failed. Falling back to mock data:', error);
-    return [
-      { 
-        id: 'ad-1', 
-        title: 'Portal RUGE', 
-        description: 'Regístrese en el Registro Único de Empresas de Guinea Ecuatorial', 
-        image_url: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=400&auto=format&fit=crop', 
-        link_url: '/register', 
-        status: 'active', 
-        format: 'top_banner',
-        start_date: '2024-01-01', 
-        end_date: '2025-12-31' 
-      }
-    ];
+    console.error('getAdvertisements failed:', error);
+    return [];
   }
 };
 
-export const createAdvertisement = async (advertisementData: any) => {
+export const createAdvertisement = async (advertisementData: any, userId?: string) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     
     // Normalise link properties
     const payload = {
       ...advertisementData,
-      link_url: advertisementData.link_url || advertisementData.link || ''
+      link_url: advertisementData.link_url || advertisementData.link || '',
+      created_by: userId,
+      validation_status: 'approved' // Default to approved for now, or use logic based on role
     };
     
     const { data, error } = await supabase.from('advertisements').insert([payload]).select().single();
@@ -175,14 +145,32 @@ export const deleteAdvertisement = async (id: string) => {
   }
 };
 
-export const updateAdvertisement = async (id: string, adData: any) => {
+export const updateAdvertisement = async (id: string, adData: any, userRole?: string) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     
-    // Normalise link properties
-    const payload = {
-      ...adData,
-    };
+    // Budget validation logic
+    let payload = { ...adData };
+    
+    if (adData.budget !== undefined) {
+      // Get current ad to check budget
+      const { data: currentAd } = await supabase.from('advertisements').select('budget').eq('id', id).single();
+      
+      if (currentAd && adData.budget > currentAd.budget && userRole !== 'super_admin') {
+        // If budget increases and not super_admin, set to pending validation
+        payload = {
+          ...adData,
+          budget: currentAd.budget, // Keep current budget
+          pending_budget: adData.budget, // Store new budget in pending
+          validation_status: 'pending_validation'
+        };
+      } else if (userRole === 'super_admin') {
+        // Super admin can update budget directly
+        payload.validation_status = 'approved';
+        payload.pending_budget = null;
+      }
+    }
+
     if (adData.link_url !== undefined) {
       payload.link_url = adData.link_url;
       payload.link = adData.link_url;
@@ -578,8 +566,9 @@ export const getApplications = async (userId?: string) => {
       .from('applications')
       .select('*, opportunity:opportunities(*), company:companies(*)');
     
+    // Note: applications table is for companies. Use getJobApplications for talents.
     if (userId) {
-      query = query.eq('user_id', userId);
+      console.warn('getApplications called with userId, this is likely an error as applications table does not have user_id.');
     }
     
     const { data, error } = await query.order('submitted_at', { ascending: false });
@@ -588,6 +577,74 @@ export const getApplications = async (userId?: string) => {
   } catch (error) {
     console.warn('getApplications failed. Falling back to MOCK_APPLICATIONS:', error);
     return MOCK_APPLICATIONS;
+  }
+};
+
+export const getJobApplications = async (userId: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('job_applications')
+      .select('*, job:job_offers(*, company:companies(*))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getJobApplications failed:', error);
+    return [];
+  }
+};
+
+export const createJobApplication = async (applicationData: any) => {
+  try {
+    if (!isSupabaseActive()) return null;
+    const { data, error } = await supabase
+      .from('job_applications')
+      .insert([applicationData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('createJobApplication failed:', error);
+    throw error;
+  }
+};
+
+export const getCandidateProfile = async (userId: string) => {
+  try {
+    if (!isSupabaseActive()) return null;
+    const { data, error } = await supabase
+      .from('candidate_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('getCandidateProfile failed:', error);
+    return null;
+  }
+};
+
+export const updateCandidateProfile = async (userId: string, profileData: any) => {
+  try {
+    if (!isSupabaseActive()) return null;
+    const { data, error } = await supabase
+      .from('candidate_profiles')
+      .upsert({ user_id: userId, ...profileData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('updateCandidateProfile failed:', error);
+    throw error;
   }
 };
 
@@ -632,8 +689,8 @@ export const getContracts = async () => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.warn('getContracts failed. Falling back to MOCK_CONTRACTS:', error);
-    return MOCK_CONTRACTS;
+    console.error('getContracts failed:', error);
+    return [];
   }
 };
 
@@ -644,9 +701,8 @@ export const getContractMilestones = async (contractId: string) => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.warn(`getContractMilestones for '${contractId}' failed. Falling back to contract sub-milestones:`, error);
-    const contract = MOCK_CONTRACTS.find(c => c.id === contractId);
-    return contract?.milestones || [];
+    console.error(`getContractMilestones for '${contractId}' failed:`, error);
+    return [];
   }
 };
 
@@ -660,8 +716,8 @@ export const getSocialProjects = async () => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.warn('getSocialProjects failed. Falling back to MOCK_SOCIAL_PROJECTS:', error);
-    return MOCK_SOCIAL_PROJECTS;
+    console.error('getSocialProjects failed:', error);
+    return [];
   }
 };
 
@@ -672,8 +728,8 @@ export const getSocialProjectById = async (id: string) => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.warn(`getSocialProjectById for '${id}' failed. Falling back to MOCK_SOCIAL_PROJECTS search:`, error);
-    return MOCK_SOCIAL_PROJECTS.find(sp => sp.id === id) || MOCK_SOCIAL_PROJECTS[0];
+    console.error(`getSocialProjectById for '${id}' failed:`, error);
+    return null;
   }
 };
 
@@ -693,8 +749,8 @@ export const getJobOffers = async () => {
       postedAt: job.posted_at || job.postedAt
     }));
   } catch (error) {
-    console.warn('getJobOffers failed. Falling back to MOCK_JOBS:', error);
-    return MOCK_JOBS;
+    console.error('getJobOffers failed:', error);
+    return [];
   }
 };
 
@@ -1151,14 +1207,12 @@ export const getCertifications = async (userId: string) => {
       .from('certifications')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('issue_date', { ascending: false });
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.warn(`getCertifications failed for '${userId}'. Returning mock certifications:`, error);
-    return [
-      { id: 'cert-1', user_id: userId, name: 'Certificación de Contenido Nacional MMH', status: 'active', date: '2024-01-15', expiry_date: '2026-01-15' }
-    ];
+    console.warn(`getCertifications failed for '${userId}':`, error);
+    return [];
   }
 };
 
@@ -1362,10 +1416,12 @@ export const updateWebBanner = async (id: string, pageKey: string, bannerKey: st
 export const uploadBannerImage = async (pageKey: string, bannerKey: string, base64Data: string, fileExtension: string = 'jpg') => {
   try {
     if (!isSupabaseActive()) {
+      console.warn("Supabase not active, returning base64");
       return base64Data;
     }
-    const bucket = 'banners';
-    const path = `${pageKey}/${bannerKey}.${fileExtension}`;
+    // Using 'web-assets' as it's more likely to exist or be created by standard migrations
+    const bucket = 'web-assets';
+    const path = `banners/${pageKey}/${bannerKey}_${Date.now()}.${fileExtension}`;
     const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
     
     await uploadFile(bucket, path, base64Data, contentType);
@@ -1373,7 +1429,7 @@ export const uploadBannerImage = async (pageKey: string, bannerKey: string, base
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
   } catch (error) {
-    console.warn("uploadBannerImage failed, returning base64/placeholder:", error);
+    console.error("uploadBannerImage failed:", error);
     return base64Data;
   }
 };

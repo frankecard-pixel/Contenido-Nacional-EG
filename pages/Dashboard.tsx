@@ -37,6 +37,7 @@ import AdminUserManagementPage from './AdminUserManagementPage';
 import CompanyUserManagementPage from './CompanyUserManagementPage';
 import SectorNetworkPage from './SectorNetworkPage';
 import Jobs from './Jobs';
+import AdminJobManagement from './AdminJobManagement';
 import InspectionsManagement from '../components/dashboard/InspectionsManagement';
 import CitizenFeedbackManagement from '../components/dashboard/CitizenFeedbackManagement';
 import CSRProjectManagement from '../components/dashboard/CSRProjectManagement';
@@ -50,6 +51,7 @@ import JobManagement from '../components/dashboard/jobs/JobManagement';
 import JobPostingForm from '../components/dashboard/jobs/JobPostingForm';
 import OpportunityPostingForm from '../components/dashboard/opportunities/OpportunityPostingForm';
 import ContractCreationForm from '../components/public/contract-management/ContractCreationForm';
+import InternalJobs from '../components/dashboard/InternalJobs';
 import { UserRole, User, Company } from '../types';
 import { getUsers, getCompanies, getUserById } from '../services/supabaseApi';
 import { MOCK_USERS } from '../services/mockService';
@@ -176,6 +178,8 @@ const Dashboard: React.FC = () => {
             <Route path="admin/companies" element={<Navigate to="/dashboard/super_admin/companies" replace />} />
             <Route path="super_admin/opportunities" element={<OpportunityManagement />} />
             <Route path="admin/opportunities" element={<Navigate to="/dashboard/super_admin/opportunities" replace />} />
+            <Route path="super_admin/jobs" element={<AdminJobManagement />} />
+            <Route path="admin/jobs" element={<Navigate to="/dashboard/super_admin/jobs" replace />} />
             <Route path="super_admin/contracts" element={<ContractManagement />} />
             <Route path="admin/contracts" element={<Navigate to="/dashboard/super_admin/contracts" replace />} />
             <Route path="super_admin/contracts/new" element={<ContractCreationForm />} />
@@ -262,6 +266,7 @@ const Dashboard: React.FC = () => {
             <Route path="empresa_local/jobs" element={currentCompany ? <JobManagement company={currentCompany} /> : <div>Cargando empresa...</div>} />
             <Route path="empresa/jobs" element={<Navigate to="/dashboard/empresa_local/jobs" replace />} />
             <Route path="empresa_local/jobs/new" element={<JobPostingForm />} />
+            <Route path="empresa_local/contracts" element={<ContractManagement />} />
             <Route path="empresa_local/messages" element={<Messages user={currentUser} />} />
             <Route path="empresa/messages" element={<Navigate to="/dashboard/empresa_local/messages" replace />} />
             <Route path="empresa_local/support" element={<TechnicalSupportManagement />} />
@@ -274,7 +279,7 @@ const Dashboard: React.FC = () => {
                 getUserById(authUserId).then(userData => setDbUser(userData as any));
               }
             }} />} />
-            <Route path="persona/jobs" element={<Jobs />} />
+            <Route path="persona/jobs" element={<InternalJobs user={currentUser} />} />
             <Route path="persona/messages" element={<Messages user={currentUser} />} />
             <Route path="persona/certificates" element={<CertificationsManagement user={currentUser} />} />
             

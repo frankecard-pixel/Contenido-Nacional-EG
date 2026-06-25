@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole, User } from '../types';
 import AdBanner from './AdBanner';
-import { getAdvertisements } from '../services/supabaseApi';
 
 interface SidebarProps {
   forcedUser?: User;
@@ -19,21 +18,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const currentUser = forcedUser; 
-  const [sidebarAd, setSidebarAd] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchAd = async () => {
-      const ads = await getAdvertisements();
-      const activeSidebarAd = ads.find((ad: any) => ad.status === 'active' && ad.format === 'sidebar');
-      setSidebarAd(activeSidebarAd || {
-        title: "Soluciones Logísticas Offshore",
-        description: "Transporte seguro y eficiente para sus operaciones marítimas.",
-        sponsor: "Guinea Logistics S.L.",
-        image_url: "https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=400&auto=format&fit=crop"
-      });
-    };
-    fetchAd();
-  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -60,9 +45,10 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/super_admin/registrations', label: 'Registros', icon: '🏢' },
       { path: '/dashboard/super_admin/contract-templates', label: 'Templates', icon: '📄' },
       { path: '/dashboard/super_admin/community', label: 'dashboard.community_works', icon: '🏗️' },
-      { path: '/dashboard/super_admin/users', label: 'dashboard.users', icon: '👥' },
+      { path: '/dashboard/super_admin/users', label: 'Talentos / Usuarios', icon: '👥' },
       { path: '/dashboard/super_admin/companies', label: 'dashboard.local_companies', icon: '🏢' },
       { path: '/dashboard/super_admin/opportunities', label: 'dashboard.tenders', icon: '📜' },
+      { path: '/dashboard/super_admin/jobs', label: 'Gestión de Vacantes', icon: '💼' },
       { path: '/dashboard/super_admin/contracts', label: 'dashboard.contracts', icon: '📑' },
       { path: '/dashboard/super_admin/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
       { path: '/dashboard/super_admin/help-requests', label: 'Atención y Feedback', icon: '🙋' },
@@ -137,6 +123,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/empresa_local/documents', label: 'dashboard.document_management', icon: '📁' },
       { path: '/dashboard/empresa_local/applications', label: 'dashboard.my_applications', icon: '📄' },
       { path: '/dashboard/empresa_local/jobs', label: 'Gestión de Vacantes', icon: '💼' },
+      { path: '/dashboard/empresa_local/contracts', label: 'dashboard.my_contracts', icon: '📑' },
       { path: '/dashboard/empresa_local/support', label: 'dashboard.local_support', icon: '🤝' },
       { path: '/dashboard/empresa_local/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/empresa_local/notifications', label: 'dashboard.notifications', icon: '🔔' },
@@ -226,18 +213,9 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
           })}
           
           {/* Ad Banner in Sidebar */}
-          {sidebarAd && (
-            <div className="px-2 mt-8">
-              <AdBanner 
-                type="sidebar" 
-                title={sidebarAd.title}
-                description={sidebarAd.description}
-                sponsor={sidebarAd.sponsor}
-                imageUrl={sidebarAd.image_url}
-                link={sidebarAd.link_url}
-              />
-            </div>
-          )}
+          <div className="px-2 mt-8">
+            <AdBanner type="sidebar" />
+          </div>
         </nav>
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">

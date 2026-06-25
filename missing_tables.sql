@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS public.advertisements (
     impressions INTEGER DEFAULT 0,
     clicks INTEGER DEFAULT 0,
     format TEXT DEFAULT 'top_banner',
+    created_by UUID REFERENCES public.users(id),
+    validation_status TEXT DEFAULT 'approved', -- 'approved', 'pending_validation'
+    pending_budget NUMERIC,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );

@@ -11,6 +11,15 @@ const JobsList: React.FC<JobsListProps> = ({ jobs }) => {
   const { i18n } = useTranslation();
   const getTranslatedText = (obj: any) => obj[i18n.language] || obj.es;
 
+  if (jobs.length === 0) {
+    return (
+      <div className="lg:col-span-12 py-32 text-center bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+        <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
+        <p className="text-slate-500 font-medium uppercase tracking-widest text-xs">No se encontraron vacantes disponibles en este momento</p>
+      </div>
+    );
+  }
+
   return (
     <div className="lg:col-span-12 space-y-6">
       {jobs.map(job => (
