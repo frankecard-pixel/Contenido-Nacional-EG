@@ -281,6 +281,7 @@ export interface NewsArticle {
   publish_date: string;
   featuredImage?: string;
   attachments: NewsAttachment[];
+  url?: string;
 }
 
 export interface NewsAttachment {

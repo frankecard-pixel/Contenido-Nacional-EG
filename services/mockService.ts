@@ -228,3 +228,193 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
 ];
 
 export const MOCK_WEB_CATEGORIES_MANAGEMENT = MOCK_WEB_CATEGORIES;
+
+export const MOCK_FAQS = [
+  {
+    id: 'faq-1',
+    question: {
+      es: '¿Qué es el Contenido Nacional en Guinea Ecuatorial?',
+      en: 'What is Local Content in Equatorial Guinea?',
+      fr: 'Qu\'es-ce que le Contenu National en Guinée Équatoriale?'
+    },
+    answer: {
+      es: 'El Contenido Nacional es la regulación que promueve la contratación de personal local, la adquisición de bienes y servicios locales, y la transferencia de tecnología por parte de las operadoras extranjeras en el sector de hidrocarburos.',
+      en: 'Local Content is the regulation that promotes the hiring of local staff, procurement of local goods and services, and technology transfer by foreign operators in the hydrocarbons sector.',
+      fr: 'Le Contenu National est la réglementation qui promeut le recrutement de personnel local, l\'acquisition de biens et services locaux, et le transfert de technologie par les opérateurs étrangers du secteur des hydrocarbures.'
+    },
+    category: 'General',
+    status: 'published'
+  },
+  {
+    id: 'faq-2',
+    question: {
+      es: '¿Cómo se registra mi empresa en el portal RUGE?',
+      en: 'How do I register my company on the RUGE portal?',
+      fr: 'Comment enregistrer mon entreprise sur le portail RUGE?'
+    },
+    answer: {
+      es: 'Para registrarse en el portal RUGE, debe acceder a la sección de registro, completar la información de su empresa y subir los documentos legales correspondientes como el registro mercantil y solvencia fiscal.',
+      en: 'To register on the RUGE portal, you must access the registration section, complete your company information, and upload the corresponding legal documents such as the commercial register and tax clearance.',
+      fr: 'Pour vous enregistrer sur le portail RUGE, vous devez accéder à la section d\'enregistrement, remplir les informations de votre entreprise et télécharger les documents légaux correspondants.'
+    },
+    category: 'Empresas',
+    status: 'published'
+  },
+  {
+    id: 'faq-3',
+    question: {
+      es: '¿Cuáles son los niveles de certificación disponibles?',
+      en: 'What are the available certification levels?',
+      fr: 'Quels sont les niveaux de certification disponibles?'
+    },
+    answer: {
+      es: 'Los niveles de certificación son Básico, Estándar, Premium y Élite, calculados en base al cumplimiento de requisitos de Contenido Nacional, número de empleados locales y gasto local.',
+      en: 'The certification levels are Basic, Standard, Premium, and Elite, calculated based on compliance with Local Content requirements, number of local employees, and local spend.',
+      fr: 'Les niveaux de certification sont Basique, Standard, Premium et Élite, calculés en fonction du respect des exigences de Contenu National, du nombre d\'employés locaux et des dépenses locales.'
+    },
+    category: 'Certificaciones',
+    status: 'published'
+  }
+];
+
+export const MOCK_GUIDES = [
+  {
+    id: 'g-1',
+    title: {
+      es: 'Guía de Certificación de Contenido Nacional',
+      en: 'National Content Certification Guide',
+      fr: 'Guide de Certification du Contenu National'
+    },
+    description: {
+      es: 'Guía práctica para entender el cálculo de cumplimiento y los niveles de certificación del portal RUGE.',
+      en: 'Practical guide to understanding the compliance calculation and certification levels of the RUGE portal.',
+      fr: 'Guide pratique pour comprendre le calcul de la conformité et les niveaux de certification du portail RUGE.'
+    },
+    file_url: 'https://vsp-supabase.co/storage/v1/object/public/documents/guia_certificacion_es.pdf',
+    category: 'Guías de Usuario',
+    status: 'published'
+  },
+  {
+    id: 'g-2',
+    title: {
+      es: 'Manual del Gabinete de Comunicación',
+      en: 'Communication Cabinet Manual',
+      fr: 'Manuel du Cabinet de Communication'
+    },
+    description: {
+      es: 'Manual de estilo e instrucciones para el uso del motor de prensa AI y publicación de boletines oficiales.',
+      en: 'Style manual and instructions for using the AI press engine and publishing official newsletters.',
+      fr: 'Manuel de style et instructions pour l\'utilisation du moteur de presse IA et la publication des bulletins officiels.'
+    },
+    file_url: 'https://vsp-supabase.co/storage/v1/object/public/documents/manual_comunicacion_es.pdf',
+    category: 'Guías de Usuario',
+    status: 'published'
+  }
+];
+
+export const MOCK_TESTIMONIALS = [
+  {
+    id: 't-1',
+    name: 'Teodoro Nguema Mba',
+    company: 'Elite Oil Services S.L.',
+    role: {
+      es: 'Director General',
+      en: 'Managing Director',
+      fr: 'Directeur Général'
+    },
+    quote: {
+      es: 'Gracias al portal RUGE y al apoyo de Contenido Nacional, pudimos certificar a nuestra empresa y competir en igualdad de condiciones por licitaciones con operadoras internacionales.',
+      en: 'Thanks to the RUGE portal and Local Content support, we were able to certify our company and compete on an equal footing for tenders with international operators.',
+      fr: 'Grâce au portail RUGE et au soutien du Contenu National, nous avons pu certifier notre entreprise et concourir sur un pied d\'égalité pour des appels d\'offres avec des opérateurs internationaux.'
+    },
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+    status: 'published'
+  },
+  {
+    id: 't-2',
+    name: 'Esperanza Obono',
+    company: 'EG LNG Operations',
+    role: {
+      es: 'Coordinadora de Recursos Humanos',
+      en: 'HR Coordinator',
+      fr: 'Coordonnatrice des Ressources Humaines'
+    },
+    quote: {
+      es: 'La bolsa de empleo de talento nacional nos ha facilitado la contratación de perfiles técnicos capacitados en Guinea Ecuatorial de forma transparente y ágil.',
+      en: 'The national talent job board has made it easier for us to hire qualified technical profiles in Equatorial Guinea in a transparent and agile manner.',
+      fr: 'La bourse de l\'emploi du talent national nous a facilité le recrutement de profils techniques qualifiés en Guinée Équatoriale de manière transparente et agile.'
+    },
+    avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop',
+    status: 'published'
+  }
+];
+
+export const MOCK_GALLERY_IMAGES = [
+  {
+    id: 'img-1',
+    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
+    title: {
+      es: 'Refinería de Punta Europa',
+      en: 'Punta Europa Refinery',
+      fr: 'Raffinerie de Punta Europa'
+    },
+    group_name: 'Instalaciones',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'img-2',
+    url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=800&auto=format&fit=crop',
+    title: {
+      es: 'Capacitación Técnica en Malabo',
+      en: 'Technical Training in Malabo',
+      fr: 'Formation Technique à Malabo'
+    },
+    group_name: 'Capacitación',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'img-3',
+    url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop',
+    title: {
+      es: 'Firma de Acuerdos Ministeriales',
+      en: 'Signing of Ministerial Agreements',
+      fr: 'Signature d\'Accords Ministériels'
+    },
+    group_name: 'Eventos',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'img-4',
+    url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=800&auto=format&fit=crop',
+    title: {
+      es: 'Estudiantes del Programa de Becas',
+      en: 'Scholarship Program Students',
+      fr: 'Étudiants du Programme de Bourses'
+    },
+    group_name: 'Capacitación',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'img-5',
+    url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop',
+    title: {
+      es: 'Oficinas del Contenido Nacional',
+      en: 'Local Content Offices',
+      fr: 'Bureaux du Contenu National'
+    },
+    group_name: 'Instalaciones',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'img-6',
+    url: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop',
+    title: {
+      es: 'Conferencia de Contenido Nacional',
+      en: 'Local Content Conference',
+      fr: 'Conférence du Contenu National'
+    },
+    group_name: 'Eventos',
+    created_at: new Date().toISOString()
+  }
+];
+

@@ -1,0 +1,15 @@
+-- Seed data for web_categories
+
+INSERT INTO public.web_categories (name, icon, slug, description) VALUES
+('{"es": "Exploración y Producción", "en": "Exploration & Production", "fr": "Exploration et Production"}', 'oil_barrel', 'exploracion-produccion', '{"es": "Actividades de upstream", "en": "Upstream activities", "fr": "Activités amont"}'),
+('{"es": "Refino y Procesamiento", "en": "Refining & Processing", "fr": "Raffinage et Traitement"}', 'factory', 'refino-procesamiento', '{"es": "Transformación de crudo", "en": "Crude processing", "fr": "Traitement du brut"}'),
+('{"es": "Distribución y Comercialización", "en": "Distribution & Marketing", "fr": "Distribution et Commercialisation"}', 'local_shipping', 'distribucion-comercializacion', '{"es": "Cadena de suministro", "en": "Supply chain", "fr": "Chaîne d''approvisionnement"}'),
+('{"es": "Servicios Petroleros", "en": "Oilfield Services", "fr": "Services Pétroliers"}', 'construction', 'servicios-petroleros', '{"es": "Servicios técnicos especializados", "en": "Specialized technical services", "fr": "Services techniques spécialisés"}'),
+('{"es": "Electricidad y Energía", "en": "Electricity & Power", "fr": "Électricité et Énergie"}', 'bolt', 'electricidad-energia', '{"es": "Generación y distribución eléctrica", "en": "Power generation and distribution", "fr": "Production et distribution d''électricité"}'),
+('{"es": "Minería", "en": "Mining", "fr": "Mines"}', 'diamond', 'mineria', '{"es": "Extracción de recursos minerales", "en": "Mineral extraction", "fr": "Extraction de ressources minérales"}'),
+('{"es": "Logística y Transporte", "en": "Logistics & Transport", "fr": "Logistique et Transport"}', 'directions_boat', 'logistica-transporte', '{"es": "Movilidad de carga", "en": "Cargo mobility", "fr": "Mobilité du fret"}'),
+('{"es": "Seguridad y Medio Ambiente", "en": "Safety & Environment", "fr": "Sécurité et Environnement"}', 'eco', 'seguridad-medio-ambiente', '{"es": "Normativas HSE", "en": "HSE regulations", "fr": "Réglementations HSE"}'),
+('{"es": "Ingeniería y Proyectos", "en": "Engineering & Projects", "fr": "Ingénierie et Projets"}', 'engineering', 'ingenieria-proyectos', '{"es": "Desarrollo de infraestructura", "en": "Infrastructure development", "fr": "Développement d''infrastructures"}'),
+('{"es": "Formación y Capacitación", "en": "Training & Development", "fr": "Formation et Développement"}', 'school', 'formacion-capacitacion', '{"es": "Desarrollo de talento", "en": "Talent development", "fr": "Développement des talents"}'),
+('{"es": "Marco Legal y Normativo", "en": "Legal & Regulatory Framework", "fr": "Cadre Légal et Réglementaire"}', 'gavel', 'marco-legal', '{"es": "Leyes y reglamentos sectoriales", "en": "Sector laws and regulations", "fr": "Lois et réglementations sectorielles"}'),
+('{"es": "Noticias e Informes", "en": "News & Reports", "fr": "Actualités et Rapports"}', 'newspaper', 'noticias-informes', '{"es": "Actualizaciones del sector", "en": "Sector updates", "fr": "Actualités du secteur"}');

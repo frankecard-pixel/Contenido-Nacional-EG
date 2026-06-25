@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getCompanies } from '../services/supabaseApi';
-import { Company } from '../types';
+import { getCompanies, getUsers, updateUser } from '../services/supabaseApi';
+import { Company, User } from '../types';
 import CompanyRegistryHeader from '../components/admin/CompanyRegistryHeader';
 import CompanyRegistryFilters from '../components/admin/CompanyRegistryFilters';
 import CompanyRegistryTable from '../components/admin/CompanyRegistryTable';
@@ -14,21 +14,38 @@ const CompanyRegistry: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('Perfil');
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchRegistryData = async () => {
+    try {
+      setLoading(true);
+      const [companyData, userData] = await Promise.all([
+        getCompanies(),
+        getUsers()
+      ]);
+      setCompanies(companyData as any);
+      setUsers(userData as any);
+    } catch (error) {
+      console.error("Error fetching registry data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const data = await getCompanies();
-        setCompanies(data as any);
-      } catch (error) {
-        console.error("Error fetching companies:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCompanies();
+    fetchRegistryData();
   }, []);
+
+  const handleLinkUser = async (userId: string, companyId: string | null) => {
+    try {
+      await updateUser(userId, { companyId: companyId || undefined });
+      const updatedUsers = await getUsers();
+      setUsers(updatedUsers as any);
+    } catch (error) {
+      console.error("Error linking user to company:", error);
+    }
+  };
 
   const filteredCompanies = useMemo(() => {
     return companies.filter(c => 
@@ -113,6 +130,8 @@ const CompanyRegistry: React.FC = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           getStatusBadge={getStatusBadge}
+          users={users}
+          onLinkUser={handleLinkUser}
         />
       )}
     </div>

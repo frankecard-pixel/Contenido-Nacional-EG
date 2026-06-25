@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User as UserIcon, Briefcase, GraduationCap, Award, FileText, Plus, Edit2, Share2, Upload, X, Loader2, Phone, Mail, MapPin } from 'lucide-react';
 import { User } from '../../types';
-import { uploadFile, updateUser } from '../../services/supabaseApi';
+import { uploadFile, updateUser, getStoragePublicUrl } from '../../services/supabaseApi';
 import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
 
 interface TalentProfileManagementProps {
@@ -52,7 +52,7 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
         const fileType = data.base64.split(';')[0].split(':')[1] || 'application/pdf';
         const fileName = `cv_${user.id}_${Date.now()}.pdf`;
         await uploadFile('cvs', fileName, data.base64, fileType);
-        finalCvUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/cvs/${fileName}`;
+        finalCvUrl = getStoragePublicUrl('cvs', fileName);
       }
       
       if (finalCvUrl) {
@@ -80,7 +80,7 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
         const fileType = data.base64.split(';')[0].split(':')[1] || 'image/png';
         const fileName = `avatar_${user.id}_${Date.now()}`;
         await uploadFile('avatars', fileName, data.base64, fileType);
-        finalAvatarUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/avatars/${fileName}`;
+        finalAvatarUrl = getStoragePublicUrl('avatars', fileName);
       }
       
       if (finalAvatarUrl) {

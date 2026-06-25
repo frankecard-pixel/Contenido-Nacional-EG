@@ -1,4 +1,5 @@
 import React from 'react';
+import { PublicAdSpace } from '../PublicAdSpace';
 
 const NewsSidebar: React.FC = () => {
   return (
@@ -11,6 +12,9 @@ const NewsSidebar: React.FC = () => {
           <button className="w-full bg-blue-700 hover:bg-blue-600 py-4 rounded-xl font-black uppercase text-xs tracking-widest transition-all">Suscribirse</button>
         </form>
       </div>
+
+      {/* Reusable Public Ad Space Sidebar Placement */}
+      <PublicAdSpace format="sidebar_banner" />
 
       <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <h4 className="text-xl font-black mb-8 text-slate-900">Documentos Recientes</h4>

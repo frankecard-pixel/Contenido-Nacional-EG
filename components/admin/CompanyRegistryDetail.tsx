@@ -1,5 +1,5 @@
 import React from 'react';
-import { Company } from '../../types';
+import { Company, User } from '../../types';
 
 interface CompanyRegistryDetailProps {
   selectedCompany: Company;
@@ -7,6 +7,8 @@ interface CompanyRegistryDetailProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   getStatusBadge: (status: Company['status']) => React.ReactNode;
+  users?: User[];
+  onLinkUser?: (userId: string, companyId: string | null) => void;
 }
 
 const CompanyRegistryDetail: React.FC<CompanyRegistryDetailProps> = ({
@@ -14,8 +16,19 @@ const CompanyRegistryDetail: React.FC<CompanyRegistryDetailProps> = ({
   setSelectedCompanyId,
   activeTab,
   setActiveTab,
-  getStatusBadge
+  getStatusBadge,
+  users = [],
+  onLinkUser
 }) => {
+  const [selectedUserIdToLink, setSelectedUserIdToLink] = React.useState('');
+
+  const companyUsers = React.useMemo(() => {
+    return (users || []).filter(u => u.companyId === selectedCompany.id);
+  }, [users, selectedCompany.id]);
+
+  const availableUsersToLink = React.useMemo(() => {
+    return (users || []).filter(u => u.companyId !== selectedCompany.id);
+  }, [users, selectedCompany.id]);
   return (
     <aside className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-white dark:bg-slate-900 shadow-2xl z-[100] flex flex-col border-l border-slate-100 dark:border-slate-800 animate-in slide-in-from-right duration-500">
       <header className="p-8 border-b border-slate-50 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">

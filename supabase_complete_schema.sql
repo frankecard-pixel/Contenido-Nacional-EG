@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS public.advertisements (
     spend NUMERIC DEFAULT 0,
     impressions INTEGER DEFAULT 0,
     clicks INTEGER DEFAULT 0,
+    format TEXT DEFAULT 'top_banner',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
@@ -129,6 +130,7 @@ CREATE TABLE IF NOT EXISTS public.web_categories (
     icon TEXT,
     slug TEXT,
     description TEXT,
+    status TEXT DEFAULT 'published'::text,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -436,32 +438,85 @@ ALTER TABLE public.certifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Crear políticas permisivas para desarrollo
+DROP POLICY IF EXISTS "Allow all for advertisements" ON public.advertisements;
 CREATE POLICY "Allow all for advertisements" ON public.advertisements FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for web_categories" ON public.web_categories;
 CREATE POLICY "Allow all for web_categories" ON public.web_categories FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for companies" ON public.companies;
 CREATE POLICY "Allow all for companies" ON public.companies FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for user_groups" ON public.user_groups;
 CREATE POLICY "Allow all for user_groups" ON public.user_groups FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for projects" ON public.projects;
 CREATE POLICY "Allow all for projects" ON public.projects FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for registration_requests" ON public.registration_requests;
 CREATE POLICY "Allow all for registration_requests" ON public.registration_requests FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for contract_templates" ON public.contract_templates;
 CREATE POLICY "Allow all for contract_templates" ON public.contract_templates FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for categories" ON public.categories;
 CREATE POLICY "Allow all for categories" ON public.categories FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for system_settings" ON public.system_settings;
 CREATE POLICY "Allow all for system_settings" ON public.system_settings FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for users" ON public.users;
 CREATE POLICY "Allow all for users" ON public.users FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for opportunities" ON public.opportunities;
 CREATE POLICY "Allow all for opportunities" ON public.opportunities FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for applications" ON public.applications;
 CREATE POLICY "Allow all for applications" ON public.applications FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for job_offers" ON public.job_offers;
 CREATE POLICY "Allow all for job_offers" ON public.job_offers FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for candidate_profiles" ON public.candidate_profiles;
 CREATE POLICY "Allow all for candidate_profiles" ON public.candidate_profiles FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for contracts" ON public.contracts;
 CREATE POLICY "Allow all for contracts" ON public.contracts FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for contract_milestones" ON public.contract_milestones;
 CREATE POLICY "Allow all for contract_milestones" ON public.contract_milestones FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for company_documents" ON public.company_documents;
 CREATE POLICY "Allow all for company_documents" ON public.company_documents FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for documents" ON public.documents;
 CREATE POLICY "Allow all for documents" ON public.documents FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for audit_logs" ON public.audit_logs;
 CREATE POLICY "Allow all for audit_logs" ON public.audit_logs FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for inspections" ON public.inspections;
 CREATE POLICY "Allow all for inspections" ON public.inspections FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for news_articles" ON public.news_articles;
 CREATE POLICY "Allow all for news_articles" ON public.news_articles FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for social_projects" ON public.social_projects;
 CREATE POLICY "Allow all for social_projects" ON public.social_projects FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for conversations" ON public.conversations;
 CREATE POLICY "Allow all for conversations" ON public.conversations FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for messages" ON public.messages;
 CREATE POLICY "Allow all for messages" ON public.messages FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for help_requests" ON public.help_requests;
 CREATE POLICY "Allow all for help_requests" ON public.help_requests FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for certifications" ON public.certifications;
 CREATE POLICY "Allow all for certifications" ON public.certifications FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for notifications" ON public.notifications;
 CREATE POLICY "Allow all for notifications" ON public.notifications FOR ALL USING (true);
 
 -- Seeding inicial de roles

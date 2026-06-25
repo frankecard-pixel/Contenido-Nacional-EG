@@ -27,7 +27,12 @@ import {
   MOCK_APPLICATIONS,
   MOCK_COMPANY_DOCUMENTS,
   MOCK_AUDIT_LOGS,
-  MOCK_CONVERSATIONS
+  MOCK_CONVERSATIONS,
+  MOCK_LEGAL_DOCS,
+  MOCK_FAQS,
+  MOCK_GUIDES,
+  MOCK_TESTIMONIALS,
+  MOCK_GALLERY_IMAGES
 } from './mockService';
 
 // Helper to check if supabase client is available and active
@@ -61,6 +66,19 @@ export const uploadFile = async (bucket: string, path: string, base64Data: strin
   }
 };
 
+export const getStoragePublicUrl = (bucket: string, path: string) => {
+  try {
+    if (!isSupabaseActive()) {
+      return `https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600&auto=format&fit=crop`;
+    }
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl || '';
+  } catch (error) {
+    console.warn(`getStoragePublicUrl failed for '${bucket}/${path}':`, error);
+    return `https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600&auto=format&fit=crop`;
+  }
+};
+
 // ==========================================
 // ADVERTISEMENTS
 // ==========================================
@@ -69,7 +87,27 @@ export const getAdvertisements = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('advertisements').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    
+    // Parse format and description if the format column is not present in some schemas
+    return (data || []).map((ad: any) => {
+      let format = ad.format || 'top_banner';
+      let description = ad.description || '';
+      
+      if (!ad.format && description.startsWith('[FORMAT:')) {
+        const match = description.match(/^\[FORMAT:([^\]]+)\]\s*(.*)/);
+        if (match) {
+          format = match[1];
+          description = match[2];
+        }
+      }
+      
+      return {
+        ...ad,
+        format,
+        description,
+        link_url: ad.link_url || ad.link || ''
+      };
+    });
   } catch (error) {
     console.warn('getAdvertisements failed. Falling back to mock data:', error);
     return [
@@ -78,8 +116,9 @@ export const getAdvertisements = async () => {
         title: 'Portal RUGE', 
         description: 'Regístrese en el Registro Único de Empresas de Guinea Ecuatorial', 
         image_url: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=400&auto=format&fit=crop', 
-        link: '/register', 
+        link_url: '/register', 
         status: 'active', 
+        format: 'top_banner',
         start_date: '2024-01-01', 
         end_date: '2025-12-31' 
       }
@@ -90,14 +129,41 @@ export const getAdvertisements = async () => {
 export const createAdvertisement = async (advertisementData: any) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('advertisements').insert([advertisementData]).select().single();
-    if (error) throw error;
+    
+    // Normalise link properties
+    const payload = {
+      ...advertisementData,
+      link_url: advertisementData.link_url || advertisementData.link || ''
+    };
+    
+    const { data, error } = await supabase.from('advertisements').insert([payload]).select().single();
+    if (error) {
+      if (error.message && error.message.includes('column "format" of relation "advertisements" does not exist')) {
+        // Fallback: strip format and serialize inside description
+        const { format, ...rest } = payload;
+        const fallbackDesc = `[FORMAT:${format || 'top_banner'}] ${rest.description || ''}`;
+        const { data: retryData, error: retryError } = await supabase
+          .from('advertisements')
+          .insert([{ ...rest, description: fallbackDesc }])
+          .select()
+          .single();
+        if (retryError) throw retryError;
+        return { 
+          ...retryData, 
+          format: format || 'top_banner', 
+          description: rest.description || '',
+          link_url: retryData.link_url || retryData.link || ''
+        };
+      }
+      throw error;
+    }
     return data;
   } catch (error) {
     console.warn('createAdvertisement failed. Falling back to mock response:', error);
     return { id: `ad-${Date.now()}`, ...advertisementData, created_at: new Date().toISOString() };
   }
 };
+
 
 export const deleteAdvertisement = async (id: string) => {
   try {
@@ -112,12 +178,86 @@ export const deleteAdvertisement = async (id: string) => {
 export const updateAdvertisement = async (id: string, adData: any) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('advertisements').update(adData).eq('id', id).select().single();
-    if (error) throw error;
+    
+    // Normalise link properties
+    const payload = {
+      ...adData,
+    };
+    if (adData.link_url !== undefined) {
+      payload.link_url = adData.link_url;
+      payload.link = adData.link_url;
+    } else if (adData.link !== undefined) {
+      payload.link_url = adData.link;
+      payload.link = adData.link;
+    }
+    
+    const { data, error } = await supabase.from('advertisements').update(payload).eq('id', id).select().single();
+    if (error) {
+      if (error.message && error.message.includes('column "format" of relation "advertisements" does not exist')) {
+        const { format, ...rest } = payload;
+        if (format) {
+          let currentDesc = rest.description;
+          if (currentDesc === undefined) {
+            const { data: existingAd } = await supabase.from('advertisements').select('description').eq('id', id).single();
+            currentDesc = existingAd?.description || '';
+          }
+          const strippedDesc = currentDesc.replace(/^\[FORMAT:[^\]]+\]\s*/, '');
+          rest.description = `[FORMAT:${format}] ${strippedDesc}`;
+        }
+        const { data: retryData, error: retryError } = await supabase
+          .from('advertisements')
+          .update(rest)
+          .eq('id', id)
+          .select()
+          .single();
+        if (retryError) throw retryError;
+        return { 
+          ...retryData, 
+          format: format || 'top_banner', 
+          description: rest.description || '',
+          link_url: retryData.link_url || retryData.link || ''
+        };
+      }
+      throw error;
+    }
     return data;
   } catch (error) {
     console.warn(`updateAdvertisement for id '${id}' failed. Falling back to mock response:`, error);
     return { id, ...adData };
+  }
+};
+
+export const incrementAdImpressions = async (id: string, currentImpressions: number = 0) => {
+  try {
+    if (!isSupabaseActive()) return null;
+    const { data, error } = await supabase
+      .from('advertisements')
+      .update({ impressions: (currentImpressions || 0) + 1 })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn(`incrementAdImpressions failed for id '${id}':`, error);
+    return null;
+  }
+};
+
+export const incrementAdClicks = async (id: string, currentClicks: number = 0) => {
+  try {
+    if (!isSupabaseActive()) return null;
+    const { data, error } = await supabase
+      .from('advertisements')
+      .update({ clicks: (currentClicks || 0) + 1 })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn(`incrementAdClicks failed for id '${id}':`, error);
+    return null;
   }
 };
 
@@ -139,12 +279,47 @@ export const getDocuments = async () => {
 // ==========================================
 // USERS
 // ==========================================
+export const mapDboToUser = (dbo: any) => {
+  if (!dbo) return null;
+  return {
+    ...dbo,
+    companyId: dbo.company_id || dbo.companyId,
+    companyRole: dbo.company_role || dbo.companyRole || (dbo.role === 'company' || dbo.role === 'petrolera' ? 'admin' : 'viewer'),
+    isOnline: dbo.is_online !== undefined ? dbo.is_online : (dbo.isOnline || false),
+    permissions: Array.isArray(dbo.permissions) ? dbo.permissions : []
+  };
+};
+
+export const mapUserToDbo = (user: Partial<User>) => {
+  const dbo: any = {};
+  if (user.id !== undefined) dbo.id = user.id;
+  if (user.email !== undefined) dbo.email = user.email;
+  if (user.name !== undefined) dbo.name = user.name;
+  if (user.role !== undefined) dbo.role = user.role;
+  if (user.status !== undefined) dbo.status = user.status;
+  if (user.department !== undefined) dbo.department = user.department;
+  if (user.position !== undefined) dbo.position = user.position;
+  if (user.avatar !== undefined) dbo.avatar = user.avatar;
+  if (user.avatar_url !== undefined) dbo.avatar_url = user.avatar_url;
+  
+  if (user.companyId !== undefined) dbo.company_id = user.companyId;
+  else if ((user as any).company_id !== undefined) dbo.company_id = (user as any).company_id;
+
+  if (user.isOnline !== undefined) dbo.is_online = user.isOnline;
+  
+  if (user.permissions !== undefined) {
+    dbo.permissions = Array.isArray(user.permissions) ? user.permissions : [];
+  }
+  
+  return dbo;
+};
+
 export const getUsers = async () => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('users').select('*');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(mapDboToUser);
   } catch (error) {
     console.warn('getUsers failed. Falling back to MOCK_USERS:', error);
     return MOCK_USERS;
@@ -156,7 +331,7 @@ export const getUserById = async (id: string) => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('users').select('*').eq('id', id).single();
     if (error) throw error;
-    return data;
+    return mapDboToUser(data);
   } catch (error) {
     console.warn(`getUserById for '${id}' failed. Falling back to MOCK_USERS search:`, error);
     return MOCK_USERS.find(u => u.id === id) || MOCK_USERS[0];
@@ -166,9 +341,10 @@ export const getUserById = async (id: string) => {
 export const createUser = async (userData: Partial<User>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('users').insert([userData]).select().single();
+    const dbPayload = mapUserToDbo(userData);
+    const { data, error } = await supabase.from('users').insert([dbPayload]).select().single();
     if (error) throw error;
-    return data;
+    return mapDboToUser(data);
   } catch (error) {
     console.warn('createUser failed. Falling back to mock user creation:', error);
     return { id: userData.id || `u-${Date.now()}`, ...userData };
@@ -178,9 +354,10 @@ export const createUser = async (userData: Partial<User>) => {
 export const updateUser = async (id: string, userData: Partial<User>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('users').update(userData).eq('id', id).select().single();
+    const dbPayload = mapUserToDbo(userData);
+    const { data, error } = await supabase.from('users').update(dbPayload).eq('id', id).select().single();
     if (error) throw error;
-    return data;
+    return mapDboToUser(data);
   } catch (error) {
     console.warn(`updateUser for '${id}' failed. Falling back to mock response:`, error);
     return { id, ...userData };
@@ -202,12 +379,31 @@ export const updateOpportunity = async (id: string, opportunityData: Partial<Opp
 // ==========================================
 // COMPANIES
 // ==========================================
+export const mapDboToCompany = (dbo: any) => {
+  if (!dbo) return null;
+  return {
+    ...dbo,
+    taxId: dbo.tax_id || dbo.taxId || 'N/A',
+    rugeId: dbo.ruge_id || dbo.rugeId || `RG-${Math.floor(1000 + Math.random() * 9000)}`,
+    certificationLevel: dbo.certification_level || dbo.certificationLevel || 'basic',
+    complianceScore: dbo.compliance_score !== undefined ? dbo.compliance_score : (dbo.complianceScore || 0),
+    nationalEmployeeCount: dbo.national_employee_count !== undefined ? dbo.national_employee_count : (dbo.nationalEmployeeCount || 0),
+    totalEmployeeCount: dbo.total_employee_count !== undefined ? dbo.total_employee_count : (dbo.totalEmployeeCount || 0),
+    localSpendPercentage: dbo.local_spend_percentage !== undefined ? dbo.local_spend_percentage : (dbo.localSpendPercentage || 0),
+    registrationDate: dbo.created_at ? new Date(dbo.created_at).toLocaleDateString() : (dbo.registrationDate || new Date().toLocaleDateString()),
+    legalRepresentative: dbo.legalRepresentative || { name: 'Representante General', avatar: '' },
+    auditHistory: dbo.auditHistory || [],
+    sector: dbo.sector || ['Varios'],
+    badges: dbo.badges || []
+  };
+};
+
 export const getCompanies = async () => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('companies').select('*');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(mapDboToCompany);
   } catch (error) {
     console.warn('getCompanies failed. Falling back to MOCK_COMPANIES:', error);
     return MOCK_COMPANIES;
@@ -219,7 +415,7 @@ export const getCompanyById = async (id: string) => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('companies').select('*').eq('id', id).single();
     if (error) throw error;
-    return data;
+    return mapDboToCompany(data);
   } catch (error) {
     console.warn(`getCompanyById for '${id}' failed. Falling back to MOCK_COMPANIES search:`, error);
     return MOCK_COMPANIES.find(c => c.id === id) || MOCK_COMPANIES[0];
@@ -229,9 +425,27 @@ export const getCompanyById = async (id: string) => {
 export const createCompany = async (companyData: Partial<Company>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('companies').insert([companyData]).select().single();
+    
+    const dbPayload = {
+      name: companyData.name,
+      tax_id: companyData.taxId || null,
+      ruge_id: companyData.rugeId || null,
+      type: companyData.type || 'local',
+      sector: companyData.sector || [],
+      status: companyData.status || 'pending',
+      certification_level: companyData.certificationLevel || 'basic',
+      compliance_score: companyData.complianceScore || 0,
+      national_employee_count: companyData.nationalEmployeeCount || 0,
+      total_employee_count: companyData.totalEmployeeCount || 0,
+      local_spend_percentage: companyData.localSpendPercentage || 0,
+      address: companyData.address || '',
+      phone: companyData.phone || '',
+      email: companyData.email || ''
+    };
+
+    const { data, error } = await supabase.from('companies').insert([dbPayload]).select().single();
     if (error) throw error;
-    return data;
+    return mapDboToCompany(data);
   } catch (error) {
     console.warn('createCompany failed. Falling back to mock creation:', error);
     return { id: `c-${Date.now()}`, ...companyData };
@@ -241,9 +455,26 @@ export const createCompany = async (companyData: Partial<Company>) => {
 export const updateCompany = async (id: string, companyData: Partial<Company>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('companies').update(companyData).eq('id', id).select().single();
+    
+    const dbPayload: any = {};
+    if (companyData.name !== undefined) dbPayload.name = companyData.name;
+    if (companyData.taxId !== undefined) dbPayload.tax_id = companyData.taxId;
+    if (companyData.rugeId !== undefined) dbPayload.ruge_id = companyData.rugeId;
+    if (companyData.type !== undefined) dbPayload.type = companyData.type;
+    if (companyData.sector !== undefined) dbPayload.sector = companyData.sector;
+    if (companyData.status !== undefined) dbPayload.status = companyData.status;
+    if (companyData.certificationLevel !== undefined) dbPayload.certification_level = companyData.certificationLevel;
+    if (companyData.complianceScore !== undefined) dbPayload.compliance_score = companyData.complianceScore;
+    if (companyData.nationalEmployeeCount !== undefined) dbPayload.national_employee_count = companyData.nationalEmployeeCount;
+    if (companyData.totalEmployeeCount !== undefined) dbPayload.total_employee_count = companyData.totalEmployeeCount;
+    if (companyData.localSpendPercentage !== undefined) dbPayload.local_spend_percentage = companyData.localSpendPercentage;
+    if (companyData.address !== undefined) dbPayload.address = companyData.address;
+    if (companyData.phone !== undefined) dbPayload.phone = companyData.phone;
+    if (companyData.email !== undefined) dbPayload.email = companyData.email;
+
+    const { data, error } = await supabase.from('companies').update(dbPayload).eq('id', id).select().single();
     if (error) throw error;
-    return data;
+    return mapDboToCompany(data);
   } catch (error) {
     console.warn(`updateCompany for '${id}' failed. Falling back to mock response:`, error);
     return { id, ...companyData };
@@ -258,7 +489,13 @@ export const getOpportunities = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('opportunities').select('*, petrolera:users(name, email), project:projects(name)');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      projectId: item.project_id,
+      awardedAmount: item.awarded_amount,
+      scopeOfWork: item.scope_of_work,
+      petroleraId: item.petrolera_id
+    }));
   } catch (error) {
     console.warn('getOpportunities failed. Falling back to MOCK_OPPORTUNITIES:', error);
     return MOCK_OPPORTUNITIES;
@@ -270,7 +507,13 @@ export const getOpportunityById = async (id: string) => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('opportunities').select('*, petrolera:users(name, email)').eq('id', id).single();
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      projectId: data.project_id,
+      awardedAmount: data.awarded_amount,
+      scopeOfWork: data.scope_of_work,
+      petroleraId: data.petrolera_id
+    };
   } catch (error) {
     console.warn(`getOpportunityById for '${id}' failed. Falling back to MOCK_OPPORTUNITIES search:`, error);
     const opp = MOCK_OPPORTUNITIES.find(o => o.id === id) || MOCK_OPPORTUNITIES[0];
@@ -281,12 +524,44 @@ export const getOpportunityById = async (id: string) => {
   }
 };
 
-export const createOpportunity = async (opportunityData: Partial<Opportunity>) => {
+export const createOpportunity = async (opportunityData: Partial<Opportunity> & { projectId?: string, awardedAmount?: number, scopeOfWork?: string, petroleraId?: string }) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('opportunities').insert([opportunityData]).select().single();
+    
+    // Attempt to get active auth user if not provided
+    let petId = opportunityData.petroleraId || null;
+    if (!petId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        petId = user.id;
+      }
+    }
+
+    const dbPayload = {
+      title: opportunityData.title,
+      description: opportunityData.description || opportunityData.title || { es: opportunityData.scopeOfWork || '', en: '', fr: '' },
+      category: opportunityData.category,
+      budget: opportunityData.budget || 0,
+      deadline: opportunityData.deadline || null,
+      project_id: opportunityData.projectId || null,
+      awarded_amount: opportunityData.awardedAmount || 0,
+      scope_of_work: opportunityData.scopeOfWork || '',
+      location: opportunityData.location,
+      ref: opportunityData.ref,
+      tag: opportunityData.tag,
+      requirements: opportunityData.requirements || [],
+      petrolera_id: petId
+    };
+
+    const { data, error } = await supabase.from('opportunities').insert([dbPayload]).select().single();
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      projectId: data.project_id,
+      awardedAmount: data.awarded_amount,
+      scopeOfWork: data.scope_of_work,
+      petroleraId: data.petrolera_id
+    };
   } catch (error) {
     console.warn('createOpportunity failed. Falling back to mock response:', error);
     return { id: `opp-${Date.now()}`, ...opportunityData };
@@ -410,10 +685,102 @@ export const getJobOffers = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('job_offers').select('*, company:companies(name)');
     if (error) throw error;
-    return data || [];
+    
+    // Normalize properties for frontend consistency
+    return (data || []).map((job: any) => ({
+      ...job,
+      companyId: job.company_id || job.companyId,
+      postedAt: job.posted_at || job.postedAt
+    }));
   } catch (error) {
     console.warn('getJobOffers failed. Falling back to MOCK_JOBS:', error);
     return MOCK_JOBS;
+  }
+};
+
+export const createJobOffer = async (jobData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    
+    const dbPayload = {
+      title: typeof jobData.title === 'string' ? { es: jobData.title, en: jobData.title } : jobData.title,
+      description: typeof jobData.description === 'string' ? { es: jobData.description, en: jobData.description } : jobData.description,
+      company_id: jobData.companyId || jobData.company_id,
+      location: jobData.location,
+      salary: jobData.salary || '',
+      tags: Array.isArray(jobData.tags) ? jobData.tags : [],
+      category: jobData.category || 'General',
+      status: jobData.status || 'published'
+    };
+
+    const { data, error } = await supabase.from('job_offers').insert([dbPayload]).select('*, company:companies(name)').single();
+    if (error) throw error;
+    
+    return {
+      ...data,
+      companyId: data.company_id || data.companyId,
+      postedAt: data.posted_at || data.postedAt
+    };
+  } catch (error) {
+    console.warn('createJobOffer failed. Falling back to mock creation:', error);
+    const mockNewJob = {
+      id: `job-${Math.random().toString(36).substr(2, 9)}`,
+      title: typeof jobData.title === 'string' ? { es: jobData.title, en: jobData.title } : jobData.title,
+      description: typeof jobData.description === 'string' ? { es: jobData.description, en: jobData.description } : jobData.description,
+      companyId: jobData.companyId || 'company-1',
+      location: jobData.location,
+      salary: jobData.salary || 'A convenir',
+      tags: Array.isArray(jobData.tags) ? jobData.tags : ['Full-time'],
+      category: jobData.category || 'General',
+      status: jobData.status || 'published',
+      postedAt: new Date().toISOString()
+    };
+    return mockNewJob;
+  }
+};
+
+export const updateJobOffer = async (id: string, jobData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    
+    const dbPayload: any = {};
+    if (jobData.title !== undefined) dbPayload.title = typeof jobData.title === 'string' ? { es: jobData.title, en: jobData.title } : jobData.title;
+    if (jobData.description !== undefined) dbPayload.description = typeof jobData.description === 'string' ? { es: jobData.description, en: jobData.description } : jobData.description;
+    if (jobData.companyId !== undefined) dbPayload.company_id = jobData.companyId;
+    if (jobData.company_id !== undefined) dbPayload.company_id = jobData.company_id;
+    if (jobData.location !== undefined) dbPayload.location = jobData.location;
+    if (jobData.salary !== undefined) dbPayload.salary = jobData.salary;
+    if (jobData.tags !== undefined) dbPayload.tags = Array.isArray(jobData.tags) ? jobData.tags : [];
+    if (jobData.category !== undefined) dbPayload.category = jobData.category;
+    if (jobData.status !== undefined) dbPayload.status = jobData.status;
+
+    const { data, error } = await supabase.from('job_offers').update(dbPayload).eq('id', id).select('*, company:companies(name)').single();
+    if (error) throw error;
+    
+    return {
+      ...data,
+      companyId: data.company_id || data.companyId,
+      postedAt: data.posted_at || data.postedAt
+    };
+  } catch (error) {
+    console.warn(`updateJobOffer failed for id ${id}. Falling back to mock update:`, error);
+    return {
+      id,
+      ...jobData,
+      updated_at: new Date().toISOString()
+    };
+  }
+};
+
+export const deleteJobOffer = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('job_offers').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn(`deleteJobOffer failed for id ${id}:`, error);
+    return true;
   }
 };
 
@@ -425,19 +792,52 @@ export const getNewsArticles = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('news_articles').select('*').order('publish_date', { ascending: false });
     if (error) throw error;
-    return data || [];
+    
+    // Map database featured_image (snake_case) to frontend featuredImage (camelCase)
+    return (data || []).map(item => ({
+      ...item,
+      featuredImage: item.featured_image || item.featuredImage || ''
+    }));
   } catch (error) {
     console.warn('getNewsArticles failed. Falling back to MOCK_NEWS_ARTICLES:', error);
     return MOCK_NEWS_ARTICLES;
   }
 };
 
+export const getNewsArticleById = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('news_articles').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return {
+      ...data,
+      featuredImage: data.featured_image || data.featuredImage || ''
+    };
+  } catch (error) {
+    console.warn(`getNewsArticleById for '${id}' failed:`, error);
+    return null;
+  }
+};
+
 export const createNewsArticle = async (articleData: Partial<NewsArticle>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('news_articles').insert([articleData]).select().single();
+    
+    // Map featuredImage camelCase to featured_image snake_case for DB
+    const dbData: any = { ...articleData };
+    if ('featuredImage' in dbData) {
+      dbData.featured_image = dbData.featuredImage;
+      delete dbData.featuredImage;
+    }
+    
+    const { data, error } = await supabase.from('news_articles').insert([dbData]).select().single();
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      featuredImage: data.featured_image || data.featuredImage || ''
+    };
   } catch (error) {
     console.warn('createNewsArticle failed. Falling back to mock news article:', error);
     return { id: `art-${Date.now()}`, ...articleData, publish_date: new Date().toISOString() };
@@ -447,9 +847,23 @@ export const createNewsArticle = async (articleData: Partial<NewsArticle>) => {
 export const updateNewsArticle = async (id: string, articleData: Partial<NewsArticle>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('news_articles').update(articleData).eq('id', id).select().single();
+    
+    // Map featuredImage camelCase to featured_image snake_case for DB
+    const dbData: any = { ...articleData };
+    if ('featuredImage' in dbData) {
+      dbData.featured_image = dbData.featuredImage;
+      delete dbData.featuredImage;
+    }
+    // Avoid updating primary key
+    delete dbData.id;
+
+    const { data, error } = await supabase.from('news_articles').update(dbData).eq('id', id).select().single();
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      featuredImage: data.featured_image || data.featuredImage || ''
+    };
   } catch (error) {
     console.warn(`updateNewsArticle for '${id}' failed. Falling back to mock response:`, error);
     return { id, ...articleData };
@@ -784,6 +1198,43 @@ export const getWebCategories = async () => {
   }
 };
 
+export const createWebCategory = async (categoryData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_categories').insert([categoryData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createWebCategory failed. Returning simulated data:', error);
+    return { id: `CAT-${Date.now()}`, ...categoryData };
+  }
+};
+
+export const updateWebCategory = async (id: string, categoryData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_categories').update(categoryData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('updateWebCategory failed. Returning simulated data:', error);
+    return { id, ...categoryData };
+  }
+};
+
+export const deleteWebCategory = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('web_categories').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('deleteWebCategory failed:', error);
+    return true;
+  }
+};
+
+
 // ==========================================
 // REGISTRATION REQUESTS
 // ==========================================
@@ -1055,6 +1506,254 @@ export const deleteNewsletterSubscriber = async (id: string) => {
     return true;
   }
 };
+
+
+// ==========================================
+// WEB CONFIG & CUSTOM MODULES
+// ==========================================
+
+// 1. FAQs API
+export const getWebFAQs = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_faqs').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getWebFAQs failed. Falling back to MOCK_FAQS:', error);
+    return MOCK_FAQS;
+  }
+};
+
+export const createWebFAQ = async (faqData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_faqs').insert([faqData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createWebFAQ failed. Returning simulated data:', error);
+    return { id: `faq-${Date.now()}`, ...faqData, created_at: new Date().toISOString() };
+  }
+};
+
+export const updateWebFAQ = async (id: string, faqData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_faqs').update(faqData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('updateWebFAQ failed. Returning simulated data:', error);
+    return { id, ...faqData };
+  }
+};
+
+export const deleteWebFAQ = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('web_faqs').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('deleteWebFAQ failed:', error);
+    return true;
+  }
+};
+
+// 2. Images / Gallery API
+export const getWebImages = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_images').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getWebImages failed. Falling back to MOCK_GALLERY_IMAGES:', error);
+    return MOCK_GALLERY_IMAGES;
+  }
+};
+
+export const createWebImage = async (imageData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_images').insert([imageData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createWebImage failed. Returning simulated data:', error);
+    return { id: `img-${Date.now()}`, ...imageData, created_at: new Date().toISOString() };
+  }
+};
+
+export const deleteWebImage = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('web_images').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('deleteWebImage failed:', error);
+    return true;
+  }
+};
+
+// 3. Normativas API
+export const getWebNormativas = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_normativas').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getWebNormativas failed. Falling back to MOCK_LEGAL_DOCS:', error);
+    // Wrap to match structure
+    return MOCK_LEGAL_DOCS.map(doc => ({
+      id: doc.id,
+      title: { es: doc.title, en: doc.title, fr: doc.title },
+      description: { es: doc.description, en: doc.description, fr: doc.description },
+      file_url: 'https://vsp-supabase.co/storage/v1/object/public/documents/' + doc.id + '.pdf',
+      category: doc.isPack ? 'Manuales' : 'Leyes',
+      status: 'published',
+      created_at: new Date().toISOString()
+    }));
+  }
+};
+
+export const createWebNormative = async (normativeData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_normativas').insert([normativeData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createWebNormative failed. Returning simulated data:', error);
+    return { id: `norm-${Date.now()}`, ...normativeData, created_at: new Date().toISOString() };
+  }
+};
+
+export const updateWebNormative = async (id: string, normativeData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_normativas').update(normativeData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('updateWebNormative failed. Returning simulated data:', error);
+    return { id, ...normativeData };
+  }
+};
+
+export const deleteWebNormative = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('web_normativas').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('deleteWebNormative failed:', error);
+    return true;
+  }
+};
+
+// 4. Guides API
+export const getWebGuides = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_guides').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getWebGuides failed. Falling back to MOCK_GUIDES:', error);
+    return MOCK_GUIDES;
+  }
+};
+
+export const createWebGuide = async (guideData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_guides').insert([guideData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createWebGuide failed. Returning simulated data:', error);
+    return { id: `guide-${Date.now()}`, ...guideData, created_at: new Date().toISOString() };
+  }
+};
+
+export const updateWebGuide = async (id: string, guideData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_guides').update(guideData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('updateWebGuide failed. Returning simulated data:', error);
+    return { id, ...guideData };
+  }
+};
+
+export const deleteWebGuide = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('web_guides').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('deleteWebGuide failed:', error);
+    return true;
+  }
+};
+
+// 5. Testimonials API
+export const getWebTestimonials = async () => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_testimonials').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getWebTestimonials failed. Falling back to MOCK_TESTIMONIALS:', error);
+    return MOCK_TESTIMONIALS;
+  }
+};
+
+export const createWebTestimonial = async (testimonialData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_testimonials').insert([testimonialData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createWebTestimonial failed. Returning simulated data:', error);
+    return { id: `test-${Date.now()}`, ...testimonialData, created_at: new Date().toISOString() };
+  }
+};
+
+export const updateWebTestimonial = async (id: string, testimonialData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('web_testimonials').update(testimonialData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('updateWebTestimonial failed. Returning simulated data:', error);
+    return { id, ...testimonialData };
+  }
+};
+
+export const deleteWebTestimonial = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('web_testimonials').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('deleteWebTestimonial failed:', error);
+    return true;
+  }
+};
+
 
 
 

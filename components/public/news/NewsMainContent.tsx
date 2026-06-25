@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { NewsArticle } from '../../../types';
+import { PublicAdSpace } from '../PublicAdSpace';
 
 interface NewsMainContentProps {
   newsItems: NewsArticle[];
@@ -24,6 +25,11 @@ const NewsMainContent: React.FC<NewsMainContentProps> = ({ newsItems }) => {
           <p className="text-slate-300 text-lg line-clamp-2">{featuredNews.summary.es}</p>
         </div>
       </Link>
+
+      {/* Native In-Feed Ad Space Placement */}
+      <div className="mb-12">
+        <PublicAdSpace format="in_feed_card" />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {otherNews.map(news => (

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getNewsArticles, deleteNewsArticle, createNewsArticle, updateNewsArticle, uploadFile } from '../services/supabaseApi';
+import { getNewsArticles, deleteNewsArticle, createNewsArticle, updateNewsArticle, uploadFile, getStoragePublicUrl } from '../services/supabaseApi';
 import { Language, NewsArticle, User, UserRole } from '../types';
 import { FileUploaderWithPreview } from '../components/FileUploaderWithPreview';
 import { GoogleGenAI } from '@google/genai';
@@ -327,13 +327,14 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
         publish_date: art.publish_date,
         author: `Prensa Externa (${art.source})`,
         featuredImage: art.featuredImage,
-        attachments: []
+        attachments: [],
+        url: art.url
       };
 
       await createNewsArticle(newArticle);
       
       // Update discovered state to reflect approval
-      setDiscoveredNews(prev => prev.map(item => item.id === art.id ? { ...item, approvedStatus: targetStatus === 'published' ? 'approved' : 'draft' } : item));
+      setDiscoveredNews(prev => prev.map(item => item.id === art.id ? { ...item, approvedStatus: 'approved' } : item));
       alert(targetStatus === 'published' ? '¡Artículo aprobado y publicado directamente en el portal público!' : '¡Artículo guardado como borrador en su listado!');
       fetchNews();
     } catch (error) {
@@ -356,7 +357,8 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
       publish_date: art.publish_date,
       author: `Prensa Externa (${art.source})`,
       featuredImage: art.featuredImage,
-      attachments: []
+      attachments: [],
+      url: art.url
     });
     setActiveTab('editor');
     alert('Se ha cargado el contenido externo en el editor. Puede realizar cambios y guardarlo para publicar.');
@@ -422,7 +424,7 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
         const fileType = data.base64.split(';')[0].split(':')[1] || 'image/png';
         const fileName = `${Date.now()}_${data.fileName || 'news_image'}`;
         await uploadFile('news-images', fileName, data.base64, fileType);
-        imageUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/news-images/${fileName}`;
+        imageUrl = getStoragePublicUrl('news-images', fileName);
       }
       
       if (imageUrl) {
@@ -451,7 +453,7 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
   const canApprove = !user || user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
 
   return (
-    <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-700">
+    <div className="p-4 sm:p-8 lg:p-12 space-y-12 animate-in fade-in duration-700 max-w-full overflow-hidden">
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-10">
         <div className="space-y-2">
@@ -659,6 +661,20 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
                     </select>
                   </div>
 
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Enlace Original (URL)</label>
+                    <div className="relative group">
+                        <span className="absolute inset-y-0 left-5 flex items-center text-slate-400"><span className="material-symbols-outlined text-lg">link</span></span>
+                        <input 
+                          type="url" 
+                          value={editingArticle.url || ''}
+                          onChange={(e) => setEditingArticle({ ...editingArticle, url: e.target.value })}
+                          placeholder="https://ejemplo.com/noticia-completa"
+                          className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-5 pl-14 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all shadow-inner" 
+                        />
+                    </div>
+                  </div>
+
                   <div className="pt-4">
                       <button 
                         onClick={handleSave}
@@ -838,8 +854,8 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
               </div>
 
               {/* Right Terminal Log Panel */}
-              <div className="lg:col-span-8 bg-slate-950 text-emerald-400 rounded-[3rem] p-8 border border-slate-900 shadow-2xl flex flex-col justify-between font-mono h-[420px]">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+              <div className="lg:col-span-8 bg-slate-950 text-emerald-400 rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-8 border border-slate-900 shadow-2xl flex flex-col justify-between font-mono h-[420px] max-w-full overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 mb-4 gap-2">
                   <div className="flex items-center gap-2 font-mono">
                     <span className="size-3 rounded-full bg-red-500"></span>
                     <span className="size-3 rounded-full bg-amber-500"></span>
@@ -858,7 +874,7 @@ const NewsManagement: React.FC<NewsManagementProps> = ({ user }) => {
                     </div>
                   ) : (
                     terminalLogs.map((log, i) => (
-                      <div key={i} className="animate-fadeIn font-mono leading-relaxed">
+                      <div key={i} className="animate-fadeIn font-mono leading-relaxed break-all">
                         <span className="text-slate-600 mr-2">[{new Date().toLocaleTimeString()}]</span>
                         <span className={log.includes('[SUCCESS]') ? 'text-emerald-300 font-bold' : log.includes('[SYSTEM]') ? 'text-blue-400' : log.includes('[WARNING]') ? 'text-amber-400' : 'text-emerald-400/90'}>
                           {log}

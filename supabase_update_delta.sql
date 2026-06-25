@@ -4,6 +4,10 @@
 -- requeridos por las nuevas características de subida de archivos (Base64/URL) y vistas previas.
 -- ========================================================================================
 
+-- 0.5 Soporte para status en la tabla de categorías web (web_categories)
+ALTER TABLE public.web_categories 
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'published'::text;
+
 -- 1. Soporte para avatar_url en la tabla de usuarios (usado en el frontend)
 ALTER TABLE public.users 
 ADD COLUMN IF NOT EXISTS avatar_url TEXT;
@@ -34,9 +38,13 @@ CREATE TABLE IF NOT EXISTS public.advertisements (
     spend NUMERIC DEFAULT 0,
     impressions INTEGER DEFAULT 0,
     clicks INTEGER DEFAULT 0,
+    format TEXT DEFAULT 'top_banner',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- Asegurar que la columna format exista si la tabla ya había sido creada anteriormente
+ALTER TABLE public.advertisements ADD COLUMN IF NOT EXISTS format TEXT DEFAULT 'top_banner';
 
 -- Habilitar Row Level Security para la tabla de anuncios
 ALTER TABLE public.advertisements ENABLE ROW LEVEL SECURITY;

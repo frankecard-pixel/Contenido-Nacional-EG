@@ -1,21 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MOCK_NEWS, MOCK_NEWS_ARTICLES } from '../services/mockService';
+import { getNewsArticleById } from '../services/supabaseApi';
 import PublicBanner from '../components/public/PublicBanner';
 import MinisterialCertification from '../components/public/MinisterialCertification';
-import { Calendar, User, ArrowLeft, Share2, Download } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Share2, Download, Loader2 } from 'lucide-react';
 
 const NewsDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  
-  // Try to find in both mock lists
-  const newsItem = MOCK_NEWS.find(n => n.id === id) || 
-                   MOCK_NEWS_ARTICLES.find(n => n.id === id);
+  const [newsItem, setNewsItem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        if (!id) return;
+        const dbArticle = await getNewsArticleById(id);
+        if (dbArticle) {
+          setNewsItem(dbArticle);
+        } else {
+          const localItem = MOCK_NEWS.find(n => n.id === id) || 
+                            MOCK_NEWS_ARTICLES.find(n => n.id === id);
+          setNewsItem(localItem || null);
+        }
+      } catch (error) {
+        console.error("Error loading news article:", error);
+        if (id) {
+          const localItem = MOCK_NEWS.find(n => n.id === id) || 
+                            MOCK_NEWS_ARTICLES.find(n => n.id === id);
+          setNewsItem(localItem || null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
+      </div>
+    );
+  }
 
   if (!newsItem) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6">
-        <h2 className="text-2xl font-black mb-4">Noticia no encontrada</h2>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-950">
+        <h2 className="text-2xl font-black mb-4 dark:text-white">Noticia no encontrada</h2>
         <Link to="/news" className="text-blue-600 font-bold hover:underline flex items-center gap-2">
           <ArrowLeft className="size-4" /> Volver a noticias
         </Link>
@@ -81,6 +115,24 @@ const NewsDetail: React.FC = () => {
         <article className="prose prose-slate dark:prose-invert max-w-none">
           <div dangerouslySetInnerHTML={{ __html: content }} className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed space-y-6" />
         </article>
+
+        {newsItem.url && (
+          <div className="mt-12 p-8 bg-blue-50/40 dark:bg-primary/5 rounded-[2.5rem] border border-blue-100/60 dark:border-primary/10 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div>
+              <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-1">Fuente Original de la Noticia</h4>
+              <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">Esta noticia fue recopilada mediante el rastreador de prensa oficial sectorial.</p>
+            </div>
+            <a 
+              href={newsItem.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-6 py-4 bg-primary hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2 shrink-0"
+            >
+              <span className="material-symbols-outlined text-base">open_in_new</span>
+              Leer Noticia Original
+            </a>
+          </div>
+        )}
 
         {'attachments' in newsItem && newsItem.attachments && newsItem.attachments.length > 0 && (
           <div className="mt-20 p-8 md:p-12 bg-slate-50 dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800">

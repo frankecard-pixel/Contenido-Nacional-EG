@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole, User } from '../types';
 import AdBanner from './AdBanner';
+import { getAdvertisements } from '../services/supabaseApi';
 
 interface SidebarProps {
   forcedUser?: User;
@@ -18,6 +19,21 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const currentUser = forcedUser; 
+  const [sidebarAd, setSidebarAd] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchAd = async () => {
+      const ads = await getAdvertisements();
+      const activeSidebarAd = ads.find((ad: any) => ad.status === 'active' && ad.format === 'sidebar');
+      setSidebarAd(activeSidebarAd || {
+        title: "Soluciones Logísticas Offshore",
+        description: "Transporte seguro y eficiente para sus operaciones marítimas.",
+        sponsor: "Guinea Logistics S.L.",
+        image_url: "https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=400&auto=format&fit=crop"
+      });
+    };
+    fetchAd();
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -210,15 +226,18 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
           })}
           
           {/* Ad Banner in Sidebar */}
-          <div className="px-2 mt-8">
-            <AdBanner 
-              type="sidebar" 
-              title="Soluciones Logísticas Offshore" 
-              description="Transporte seguro y eficiente para sus operaciones marítimas."
-              sponsor="Guinea Logistics S.L."
-              imageUrl="https://images.unsplash.com/photo-1580828369019-1813202851f1?q=80&w=400&auto=format&fit=crop"
-            />
-          </div>
+          {sidebarAd && (
+            <div className="px-2 mt-8">
+              <AdBanner 
+                type="sidebar" 
+                title={sidebarAd.title}
+                description={sidebarAd.description}
+                sponsor={sidebarAd.sponsor}
+                imageUrl={sidebarAd.image_url}
+                link={sidebarAd.link_url}
+              />
+            </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">

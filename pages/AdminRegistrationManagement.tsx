@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../services/supabaseClient';
-import { createUser } from '../services/supabaseApi';
+import { createUser, createCompany } from '../services/supabaseApi';
 import { UserRole } from '../types';
 import { CheckCircle, XCircle, Clock, Eye, Download, FileText, Loader2, Search, Filter, CreditCard, UserPlus } from 'lucide-react';
 
@@ -107,15 +107,14 @@ const AdminRegistrationManagement: React.FC = () => {
       });
 
       // 2. Create Company Record
-      await supabase.from('companies').insert([{
+      await createCompany({
         name: request.company_name,
         taxId: request.tax_id,
         type: request.role === UserRole.EMPRESA_LOCAL ? 'local' : 'international',
         sector: request.sectors,
-        status: 'active',
-        email: request.email,
-        registrationDate: new Date().toISOString()
-      }]);
+        status: 'certified',
+        email: request.email
+      });
 
       // 3. Update Request Status
       await supabase

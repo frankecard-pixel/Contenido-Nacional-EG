@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProjects, createOpportunity } from '../../../services/supabaseApi';
+import { getProjects, createOpportunity, createProject } from '../../../services/supabaseApi';
 import { Project, Language } from '../../../types';
 import { Loader2, Plus, X } from 'lucide-react';
 
@@ -9,6 +9,10 @@ const OpportunityPostingForm: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDesc, setNewProjectDesc] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [formData, setFormData] = useState({
     title: { es: '', en: '', fr: '' },
     description: { es: '', en: '', fr: '' },
@@ -74,6 +78,34 @@ const OpportunityPostingForm: React.FC = () => {
     }
   };
 
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) {
+      alert("El nombre del proyecto es obligatorio");
+      return;
+    }
+    setIsCreatingProject(true);
+    try {
+      const created = await createProject({
+        name: newProjectName.trim(),
+        description: newProjectDesc.trim(),
+        status: 'active'
+      });
+      if (created) {
+        setProjects(prev => [created, ...prev]);
+        setFormData(prev => ({ ...prev, projectId: created.id }));
+        setIsProjectModalOpen(false);
+        setNewProjectName('');
+        setNewProjectDesc('');
+        alert("¡Proyecto creado y seleccionado automáticamente!");
+      }
+    } catch (error) {
+      console.error("Error creating project:", error);
+      alert("No se pudo crear el proyecto");
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
+
   const addRequirement = () => {
     if (newRequirement.trim()) {
       setFormData({
@@ -112,7 +144,17 @@ const OpportunityPostingForm: React.FC = () => {
             />
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Proyecto Relacionado <span className="text-red-500">*</span></label>
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Proyecto Relacionado <span className="text-red-500">*</span></label>
+              <button 
+                type="button"
+                onClick={() => setIsProjectModalOpen(true)}
+                className="text-[10px] font-black text-primary hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer"
+              >
+                <Plus size={12} />
+                Nuevo Proyecto
+              </button>
+            </div>
             <select 
               value={formData.projectId}
               onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
@@ -249,6 +291,70 @@ const OpportunityPostingForm: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* DIALOG FOR QUICK PROJECT CREATION */}
+      {isProjectModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-lg p-10 border border-slate-100 dark:border-slate-700/60 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-700">
+              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">folder</span>
+                Nuevo Proyecto Relacionado
+              </h4>
+              <button 
+                type="button" 
+                onClick={() => setIsProjectModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Nombre del Proyecto <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all" 
+                  placeholder="Ej: Ampliación de Planta Turbogás..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Descripción <span className="text-slate-400 font-medium">(Opcional)</span></label>
+                <textarea 
+                  rows={3} 
+                  value={newProjectDesc}
+                  onChange={(e) => setNewProjectDesc(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all resize-none" 
+                  placeholder="Escriba los detalles generales del proyecto..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <button 
+                type="button" 
+                onClick={() => setIsProjectModalOpen(false)}
+                className="px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                onClick={handleCreateProject}
+                disabled={isCreatingProject}
+                className="px-6 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isCreatingProject ? <Loader2 className="animate-spin" size={14} /> : null}
+                Crear Proyecto
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

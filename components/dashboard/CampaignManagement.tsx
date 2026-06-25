@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone, Plus, Search, Filter, Eye, MousePointerClick, TrendingUp, MoreVertical, X, Upload, Loader2, CheckCircle, XCircle, Trash2 } from 'lucide-react';
-import { getAdvertisements, createAdvertisement, deleteAdvertisement, uploadFile, updateAdvertisement } from '../../services/supabaseApi';
+import { getAdvertisements, createAdvertisement, deleteAdvertisement, uploadFile, updateAdvertisement, getStoragePublicUrl } from '../../services/supabaseApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types';
 import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
@@ -20,7 +20,8 @@ const CampaignManagement: React.FC = () => {
     image_url: '',
     link_url: '',
     status: 'active',
-    budget: 0
+    budget: 0,
+    format: 'top_banner'
   });
 
   useEffect(() => {
@@ -48,7 +49,7 @@ const CampaignManagement: React.FC = () => {
         const fileType = data.base64.split(';')[0].split(':')[1] || 'image/png';
         const fileName = `ad_${Date.now()}_${data.fileName || 'banner'}`;
         await uploadFile('advertisements', fileName, data.base64, fileType);
-        imageUrl = `${process.env.VITE_SUPABASE_URL || 'https://vsp-supabase.co'}/storage/v1/object/public/advertisements/${fileName}`;
+        imageUrl = getStoragePublicUrl('advertisements', fileName);
       }
       
       if (imageUrl) {
@@ -194,6 +195,32 @@ const CampaignManagement: React.FC = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Descripción Breve</label>
+                  <input 
+                    type="text" 
+                    value={newAd.description}
+                    onChange={(e) => setNewAd({ ...newAd, description: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 font-bold"
+                    placeholder="Ej: Acceda al portal para registrar su empresa..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Espacio Publicitario / Formato</label>
+                  <select
+                    value={newAd.format}
+                    onChange={(e) => setNewAd({ ...newAd, format: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-4 py-4 font-bold"
+                  >
+                    <option value="top_banner">Banner Principal Superior (Horizontal)</option>
+                    <option value="sidebar_banner">Banner Lateral Derecho (Columna)</option>
+                    <option value="in_feed_card">Tarjeta de Contenido Integrado (In-Feed)</option>
+                    <option value="footer_banner">Banner Inferior (Cierre de Página)</option>
+                  </select>
+                </div>
+              </div>
+
               <button 
                 onClick={handleCreateAd}
                 disabled={isSaving}
@@ -253,7 +280,15 @@ const CampaignManagement: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{cam.title}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">ID: {cam.id.slice(0, 8)}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="text-[9px] font-black bg-blue-50 dark:bg-blue-900/30 text-blue-600 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">
+                            {cam.format === 'top_banner' ? 'Banner Superior' :
+                             cam.format === 'sidebar_banner' ? 'Banner Lateral' :
+                             cam.format === 'in_feed_card' ? 'Tarjeta Integrada' :
+                             cam.format === 'footer_banner' ? 'Banner Inferior' : cam.format || 'Banner Superior'}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase shrink-0">ID: {cam.id.slice(0, 8)}</span>
+                        </div>
                       </div>
                     </div>
                   </td>
