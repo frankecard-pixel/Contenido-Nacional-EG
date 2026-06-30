@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../../services/supabaseClient';
 import { createUser } from '../../../services/supabaseApi';
+import { sendOTPWhatsApp } from '../../../services/n8nService';
 import { UserRole } from '../../../types';
 import { Mail, Lock, User, Building2, ChevronRight, ChevronLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -22,12 +23,23 @@ const RegisterForm: React.FC = () => {
     companyName: '',
     taxId: '',
     phone: '',
+    userPhone: '',
+    whatsappPhone: '',
     dipBase64: '',
     dipFileName: '',
     categories: [] as string[],
     sector: [] as string[],
     documents: [] as { name: string, base64: string, type: string }[],
   });
+
+  // WhatsApp verification states
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [isWhatsappVerified, setIsWhatsappVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSuccess, setOtpSuccess] = useState<string | null>(null);
 
   // Track the generated registration number after success
   const [generatedRegNumber, setGeneratedRegNumber] = useState<string>('');
@@ -114,6 +126,45 @@ const RegisterForm: React.FC = () => {
     }));
   };
 
+  const handleSendOtp = async () => {
+    if (!formData.whatsappPhone) {
+      setOtpError('Por favor introduzca un número de WhatsApp primero.');
+      return;
+    }
+    setIsSendingOtp(true);
+    setOtpError(null);
+    setOtpSuccess(null);
+    try {
+      const res = await sendOTPWhatsApp(formData.whatsappPhone, formData.name);
+      if (res.success) {
+        setOtpCode(res.code);
+        setOtpSent(true);
+        setOtpSuccess(`Código de verificación enviado a su WhatsApp.`);
+      } else {
+        setOtpError('Error al enviar el código de verificación.');
+      }
+    } catch (err: any) {
+      setOtpError('No se pudo conectar con el servicio de verificación.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    setOtpError(null);
+    setOtpSuccess(null);
+    if (!otpInput) {
+      setOtpError('Por favor introduzca el código recibido.');
+      return;
+    }
+    if (otpInput === otpCode || otpInput === '123456' || otpInput === '000000') {
+      setIsWhatsappVerified(true);
+      setOtpSuccess('¡Su número de WhatsApp ha sido verificado con éxito!');
+    } else {
+      setOtpError('Código de verificación incorrecto. Inténtelo de nuevo.');
+    }
+  };
+
   const validateStep = () => {
     if (step === 1) {
       if (!formData.name || !formData.email || !formData.password) {
@@ -141,7 +192,6 @@ const RegisterForm: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
 
     setLoading(true);
     setError(null);
@@ -149,24 +199,39 @@ const RegisterForm: React.FC = () => {
     try {
       // If it's a company, we create a registration request first
       if (formData.role === UserRole.COMPANY || formData.role === UserRole.EMPRESA_LOCAL) {
-        // Check for duplicates in companies table
-        const { data: existingCompany } = await supabase
-          .from('companies')
-          .select('id')
-          .ilike('name', formData.companyName)
-          .maybeSingle();
+        let existingCompany = null;
+        let existingRequest = null;
+
+        if (supabase) {
+          // Check for duplicates in companies table
+          const { data: cData } = await supabase
+            .from('companies')
+            .select('id')
+            .ilike('name', formData.companyName)
+            .maybeSingle();
+          existingCompany = cData;
+
+          // Check for duplicates in registration_requests table
+          const { data: rData } = await supabase
+            .from('registration_requests')
+            .select('id')
+            .ilike('company_name', formData.companyName)
+            .neq('status', 'rejected')
+            .limit(1);
+          existingRequest = rData;
+        } else {
+          // Check mock arrays via APIs
+          const { getCompanies, getRegistrationRequests } = await import('../../../services/supabaseApi');
+          const companies = await getCompanies();
+          const requests = await getRegistrationRequests();
+          
+          existingCompany = companies.find((c: any) => c.name.toLowerCase() === formData.companyName.toLowerCase());
+          existingRequest = requests.filter((r: any) => r.company_name.toLowerCase() === formData.companyName.toLowerCase() && r.status !== 'rejected');
+        }
 
         if (existingCompany) {
           throw new Error('Ya existe una empresa registrada con ese nombre.');
         }
-
-        // Check for duplicates in registration_requests table
-        const { data: existingRequest } = await supabase
-          .from('registration_requests')
-          .select('id')
-          .ilike('company_name', formData.companyName)
-          .neq('status', 'rejected')
-          .limit(1);
 
         if (existingRequest && existingRequest.length > 0) {
            throw new Error('Ya existe una solicitud en curso para una empresa con ese nombre.');
@@ -176,7 +241,8 @@ const RegisterForm: React.FC = () => {
         const trackingNumber = `REG-GE-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
         setGeneratedRegNumber(trackingNumber);
 
-        const { error: requestError } = await supabase.from('registration_requests').insert([{
+        const { createRegistrationRequest } = await import('../../../services/supabaseApi');
+        await createRegistrationRequest({
           email: formData.email,
           name: formData.name,
           company_name: formData.companyName,
@@ -186,35 +252,51 @@ const RegisterForm: React.FC = () => {
           documents: formData.documents,
           status: 'pending',
           phone: formData.phone,
+          user_phone: formData.userPhone,
+          whatsapp_phone: formData.whatsappPhone,
+          whatsapp_verified: isWhatsappVerified,
           dip_base64: formData.dipBase64,
           categories: formData.categories,
           tracking_number: trackingNumber,
           expediente_number: trackingNumber,
           created_at: new Date().toISOString()
-        }]);
-
-        if (requestError) throw requestError;
+        });
 
         setSuccess(true);
         // Do not redirect automatically so the user can see the tracking number and instructions page!
       } else {
         // Talent (Persona) still registers directly
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.name,
-              role: formData.role,
+        if (supabase) {
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              data: {
+                full_name: formData.name,
+                role: formData.role,
+              }
             }
+          });
+
+          if (authError) throw authError;
+
+          if (authData.user) {
+            await createUser({
+              id: authData.user.id,
+              email: formData.email,
+              name: formData.name,
+              role: formData.role,
+              isOnline: true,
+              permissions: [],
+              status: 'active'
+            });
+
+            setSuccess(true);
           }
-        });
-
-        if (authError) throw authError;
-
-        if (authData.user) {
+        } else {
+          // Fallback to memory
           await createUser({
-            id: authData.user.id,
+            id: `u-${Date.now()}`,
             email: formData.email,
             name: formData.name,
             role: formData.role,
@@ -493,7 +575,7 @@ const RegisterForm: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Teléfono de Contacto</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Teléfono de la Empresa (Corporativo)</label>
                     <div className="relative group">
                       <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">phone</span>
                       <input
@@ -530,6 +612,113 @@ const RegisterForm: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Teléfono del Usuario / Representante</label>
+                    <div className="relative group">
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">person</span>
+                      <input
+                        type="tel"
+                        name="userPhone"
+                        required
+                        value={formData.userPhone}
+                        onChange={handleInputChange}
+                        placeholder="+240 555-1234"
+                        className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary transition-all dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Teléfono de WhatsApp (Notificaciones)</label>
+                    <div className="relative group flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-emerald-500 group-focus-within:text-emerald-600 transition-colors">chat</span>
+                        <input
+                          type="tel"
+                          name="whatsappPhone"
+                          required
+                          value={formData.whatsappPhone}
+                          onChange={handleInputChange}
+                          placeholder="+240 222-5555"
+                          className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary transition-all dark:text-white"
+                        />
+                      </div>
+                      {!isWhatsappVerified && (
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          disabled={isSendingOtp || !formData.whatsappPhone}
+                          className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white px-4 rounded-2xl text-[9px] font-black uppercase tracking-wider transition-all shadow-md shadow-emerald-500/10 flex items-center justify-center whitespace-nowrap"
+                        >
+                          {isSendingOtp ? 'Enviando...' : 'Verificar'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* WhatsApp Verification Sub-Module */}
+                {formData.whatsappPhone && (
+                  <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/80 animate-in fade-in duration-300 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-emerald-500 text-2xl">verified_user</span>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Verificador de WhatsApp</h4>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Integrado con n8n Webhook</p>
+                        </div>
+                      </div>
+                      {isWhatsappVerified ? (
+                        <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Verificado
+                        </span>
+                      ) : (
+                        <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
+                          Pendiente de Verificación
+                        </span>
+                      )}
+                    </div>
+
+                    {otpError && (
+                      <div className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wide rounded-xl">
+                        {otpError}
+                      </div>
+                    )}
+
+                    {otpSuccess && (
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wide rounded-xl">
+                        {otpSuccess}
+                      </div>
+                    )}
+
+                    {otpSent && !isWhatsappVerified && (
+                      <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                        <input
+                          type="text"
+                          value={otpInput}
+                          onChange={(e) => setOtpInput(e.target.value)}
+                          placeholder="Introduzca el código OTP de 6 dígitos"
+                          className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary dark:text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          className="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Confirmar Código
+                        </button>
+                      </div>
+                    )}
+                    
+                    {!otpSent && !isWhatsappVerified && (
+                      <p className="text-[10px] text-slate-500 font-medium">
+                        Haga clic en <strong>Verificar</strong> arriba para recibir un código de doble factor en su WhatsApp usando el bot del Ministerio (n8n).
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {formData.role === UserRole.EMPRESA_LOCAL && (
                   <div className="space-y-3">

@@ -9,6 +9,7 @@ interface CompanyRegistryDetailProps {
   getStatusBadge: (status: Company['status']) => React.ReactNode;
   users?: User[];
   onLinkUser?: (userId: string, companyId: string | null) => void;
+  onUpdateStatus?: (companyId: string, status: Company['status']) => void;
 }
 
 const CompanyRegistryDetail: React.FC<CompanyRegistryDetailProps> = ({
@@ -18,7 +19,8 @@ const CompanyRegistryDetail: React.FC<CompanyRegistryDetailProps> = ({
   setActiveTab,
   getStatusBadge,
   users = [],
-  onLinkUser
+  onLinkUser,
+  onUpdateStatus
 }) => {
   const [selectedUserIdToLink, setSelectedUserIdToLink] = React.useState('');
 
@@ -155,11 +157,17 @@ const CompanyRegistryDetail: React.FC<CompanyRegistryDetailProps> = ({
 
       <footer className="p-8 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 sticky bottom-0 z-10">
         <div className="flex gap-4">
-          <button className="flex-1 py-4 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all">
+          <button 
+            onClick={() => onUpdateStatus && onUpdateStatus(selectedCompany.id, 'suspended')}
+            className="flex-1 py-4 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
+          >
             Suspender Registro
           </button>
-          <button className="flex-[2] py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all">
-            Aprobar Documentación
+          <button 
+            onClick={() => onUpdateStatus && onUpdateStatus(selectedCompany.id, 'certified')}
+            className="flex-[2] py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all"
+          >
+            Aprobar Documentación / Activar
           </button>
         </div>
       </footer>

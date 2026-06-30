@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../services/supabaseClient';
-import { createUser, createCompany } from '../services/supabaseApi';
+import { createUser, createCompany, getRegistrationRequests, updateRegistrationRequest } from '../services/supabaseApi';
 import { UserRole } from '../types';
 import { CheckCircle, XCircle, Clock, Eye, Download, FileText, Loader2, Search, Filter, CreditCard, UserPlus } from 'lucide-react';
 
@@ -25,32 +25,32 @@ const AdminRegistrationManagement: React.FC = () => {
   }, []);
 
   const fetchRequests = async () => {
-    if (!supabase) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('registration_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (data) setRequests(data);
-    setLoading(false);
+    try {
+      const data = await getRegistrationRequests();
+      if (data) setRequests(data);
+    } catch (err) {
+      console.error('Error fetching registration requests:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateStatus = async (id: string, status: string, extraData: any = {}) => {
-    if (!supabase) return;
     setProcessing(true);
-    const { error } = await supabase
-      .from('registration_requests')
-      .update({ status, ...extraData })
-      .eq('id', id);
-    
-    if (!error) {
-      await fetchRequests();
-      if (selectedRequest?.id === id) {
-        setSelectedRequest((prev: any) => ({ ...prev, status, ...extraData }));
+    try {
+      const updated = await updateRegistrationRequest(id, { status, ...extraData });
+      if (updated) {
+        await fetchRequests();
+        if (selectedRequest?.id === id) {
+          setSelectedRequest((prev: any) => ({ ...prev, status, ...extraData }));
+        }
       }
+    } catch (err) {
+      console.error('Error updating status:', err);
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const generateContract = async (request: any) => {
@@ -87,7 +87,6 @@ const AdminRegistrationManagement: React.FC = () => {
   };
 
   const approveRegistration = async (request: any) => {
-    if (!supabase) return;
     setProcessing(true);
     try {
       // 1. Create Supabase Auth User (in a real app, this would be a server-side function)
@@ -117,10 +116,7 @@ const AdminRegistrationManagement: React.FC = () => {
       });
 
       // 3. Update Request Status
-      await supabase
-        .from('registration_requests')
-        .update({ status: 'approved' })
-        .eq('id', request.id);
+      await updateRegistrationRequest(request.id, { status: 'approved' });
 
       await fetchRequests();
       setSelectedRequest(null);
@@ -134,16 +130,13 @@ const AdminRegistrationManagement: React.FC = () => {
   };
 
   const rejectRegistration = async () => {
-    if (!supabase || !rejectingRequest) return;
+    if (!rejectingRequest) return;
     setProcessing(true);
     try {
-      await supabase
-        .from('registration_requests')
-        .update({ 
-          status: 'rejected',
-          rejection_reason: rejectionReason
-        })
-        .eq('id', rejectingRequest.id);
+      await updateRegistrationRequest(rejectingRequest.id, { 
+        status: 'rejected',
+        rejection_reason: rejectionReason
+      });
 
       await fetchRequests();
       setSelectedRequest(null);

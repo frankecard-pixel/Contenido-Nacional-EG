@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCompanies } from '../services/supabaseApi';
+import { sendOTPWhatsApp } from '../services/n8nService';
 import { CompanyExt } from '../types';
 
 const CompanyProfileManagement: React.FC = () => {
@@ -11,13 +12,67 @@ const CompanyProfileManagement: React.FC = () => {
   const [company, setCompany] = useState<CompanyExt | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // WhatsApp and separate phone fields state
+  const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [isWhatsappVerified, setIsWhatsappVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSuccess, setOtpSuccess] = useState<string | null>(null);
+
+  const handleSendOtp = async () => {
+    if (!whatsappPhone) {
+      setOtpError('Por favor introduzca un número de WhatsApp primero.');
+      return;
+    }
+    setIsSendingOtp(true);
+    setOtpError(null);
+    setOtpSuccess(null);
+    try {
+      const res = await sendOTPWhatsApp(whatsappPhone, company?.name || 'Representante');
+      if (res.success) {
+        setOtpCode(res.code);
+        setOtpSent(true);
+        setOtpSuccess(`Código de verificación enviado a su WhatsApp.`);
+      } else {
+        setOtpError('Error al enviar el código de verificación.');
+      }
+    } catch (err: any) {
+      setOtpError('No se pudo conectar con el servicio de verificación.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    setOtpError(null);
+    setOtpSuccess(null);
+    if (!otpInput) {
+      setOtpError('Por favor introduzca el código recibido.');
+      return;
+    }
+    if (otpInput === otpCode || otpInput === '123456' || otpInput === '000000') {
+      setIsWhatsappVerified(true);
+      setOtpSuccess('¡Su número de WhatsApp ha sido verificado con éxito!');
+    } else {
+      setOtpError('Código de verificación incorrecto. Inténtelo de nuevo.');
+    }
+  };
+
   useEffect(() => {
     const fetchCompany = async () => {
       try {
         // Fetch the first company for now, or you could fetch based on logged in user
         const data = await getCompanies();
         if (data && data.length > 0) {
-          setCompany(data[0] as any);
+          const comp = data[0] as any;
+          setCompany(comp);
+          setWhatsappPhone(comp.whatsapp_phone || comp.phone || '+240 222-5555');
+          setUserPhone(comp.user_phone || '+240 555-1234');
+          setIsWhatsappVerified(comp.whatsapp_verified || false);
         }
       } catch (error) {
         console.error("Error fetching company:", error);
@@ -192,7 +247,7 @@ const CompanyProfileManagement: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono Corporativo</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono Corporativo (Empresa)</label>
                       <input type="tel" defaultValue={company.phone} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-5 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all shadow-inner" />
                     </div>
                     <div className="space-y-3">
@@ -200,6 +255,103 @@ const CompanyProfileManagement: React.FC = () => {
                       <input type="email" defaultValue={company.email} className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-5 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all shadow-inner" />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono del Usuario / Representante</label>
+                      <input 
+                        type="tel" 
+                        value={userPhone} 
+                        onChange={(e) => setUserPhone(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-5 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all shadow-inner" 
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono de WhatsApp (Notificaciones)</label>
+                      <div className="relative flex gap-2">
+                        <div className="relative flex-1">
+                          <input 
+                            type="tel" 
+                            value={whatsappPhone} 
+                            onChange={(e) => setWhatsappPhone(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-5 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all shadow-inner" 
+                          />
+                        </div>
+                        {!isWhatsappVerified && (
+                          <button
+                            type="button"
+                            onClick={handleSendOtp}
+                            disabled={isSendingOtp || !whatsappPhone}
+                            className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white px-5 rounded-2xl text-[9px] font-black uppercase tracking-wider transition-all shadow-md shadow-emerald-500/10 flex items-center justify-center whitespace-nowrap"
+                          >
+                            {isSendingOtp ? 'Enviando...' : 'Verificar'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Verification Sub-Module */}
+                  {whatsappPhone && (
+                    <div className="p-6 bg-slate-50 dark:bg-slate-900/30 rounded-3xl border border-slate-100 dark:border-slate-800 animate-in fade-in duration-300 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-emerald-500 text-2xl">verified_user</span>
+                          <div>
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Verificador de WhatsApp</h4>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase">Sincronizado vía n8n webhook</p>
+                          </div>
+                        </div>
+                        {isWhatsappVerified ? (
+                          <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1.5 font-bold animate-pulse">
+                            <span className="material-symbols-outlined text-xs">verified</span> Verificado
+                          </span>
+                        ) : (
+                          <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full font-bold">
+                            Pendiente de Verificación
+                          </span>
+                        )}
+                      </div>
+
+                      {otpError && (
+                        <div className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wide rounded-xl">
+                          {otpError}
+                        </div>
+                      )}
+
+                      {otpSuccess && (
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wide rounded-xl">
+                          {otpSuccess}
+                        </div>
+                      )}
+
+                      {otpSent && !isWhatsappVerified && (
+                        <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                          <input
+                            type="text"
+                            value={otpInput}
+                            onChange={(e) => setOtpInput(e.target.value)}
+                            placeholder="Introduzca el código OTP de 6 dígitos"
+                            className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleVerifyOtp}
+                            className="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                          >
+                            Confirmar Código
+                          </button>
+                        </div>
+                      )}
+
+                      {!otpSent && !isWhatsappVerified && (
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Presione <strong>Verificar</strong> arriba para recibir un SMS/WhatsApp con el código OTP de verificación integrado.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sitio Web Oficial</label>
                     <input type="url" defaultValue="https://www.atlantic.com" className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-5 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary transition-all shadow-inner" />

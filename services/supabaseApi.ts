@@ -274,7 +274,10 @@ export const mapDboToUser = (dbo: any) => {
     companyId: dbo.company_id || dbo.companyId,
     companyRole: dbo.company_role || dbo.companyRole || (dbo.role === 'company' || dbo.role === 'petrolera' ? 'admin' : 'viewer'),
     isOnline: dbo.is_online !== undefined ? dbo.is_online : (dbo.isOnline || false),
-    permissions: Array.isArray(dbo.permissions) ? dbo.permissions : []
+    permissions: Array.isArray(dbo.permissions) ? dbo.permissions : [],
+    allow_search: dbo.allow_search !== undefined ? dbo.allow_search : true,
+    linkedin_url: dbo.linkedin_url || '',
+    linkedin_profile: dbo.linkedin_profile || null
   };
 };
 
@@ -298,6 +301,10 @@ export const mapUserToDbo = (user: Partial<User>) => {
   if (user.permissions !== undefined) {
     dbo.permissions = Array.isArray(user.permissions) ? user.permissions : [];
   }
+  
+  if (user.allow_search !== undefined) dbo.allow_search = user.allow_search;
+  if (user.linkedin_url !== undefined) dbo.linkedin_url = user.linkedin_url;
+  if (user.linkedin_profile !== undefined) dbo.linkedin_profile = user.linkedin_profile;
   
   return dbo;
 };
@@ -335,7 +342,9 @@ export const createUser = async (userData: Partial<User>) => {
     return mapDboToUser(data);
   } catch (error) {
     console.warn('createUser failed. Falling back to mock user creation:', error);
-    return { id: userData.id || `u-${Date.now()}`, ...userData };
+    const newUser = { id: userData.id || `u-${Date.now()}`, ...userData } as User;
+    MOCK_USERS.push(newUser);
+    return newUser;
   }
 };
 
@@ -348,6 +357,11 @@ export const updateUser = async (id: string, userData: Partial<User>) => {
     return mapDboToUser(data);
   } catch (error) {
     console.warn(`updateUser for '${id}' failed. Falling back to mock response:`, error);
+    const idx = MOCK_USERS.findIndex(u => u.id === id);
+    if (idx !== -1) {
+      MOCK_USERS[idx] = { ...MOCK_USERS[idx], ...userData };
+      return MOCK_USERS[idx];
+    }
     return { id, ...userData };
   }
 };
@@ -436,7 +450,24 @@ export const createCompany = async (companyData: Partial<Company>) => {
     return mapDboToCompany(data);
   } catch (error) {
     console.warn('createCompany failed. Falling back to mock creation:', error);
-    return { id: `c-${Date.now()}`, ...companyData };
+    const newCompany = { 
+      id: `c-${Date.now()}`, 
+      ...companyData,
+      taxId: companyData.taxId || 'N/A',
+      rugeId: companyData.rugeId || `RG-${Math.floor(1000 + Math.random() * 9000)}`,
+      certificationLevel: companyData.certificationLevel || 'basic',
+      complianceScore: companyData.complianceScore || 0,
+      nationalEmployeeCount: companyData.nationalEmployeeCount || 0,
+      totalEmployeeCount: companyData.totalEmployeeCount || 0,
+      localSpendPercentage: companyData.localSpendPercentage || 0,
+      registrationDate: new Date().toLocaleDateString(),
+      legalRepresentative: companyData.legalRepresentative || { name: 'Representante General', avatar: '' },
+      auditHistory: companyData.auditHistory || [],
+      sector: companyData.sector || ['Varios'],
+      badges: companyData.badges || []
+    } as unknown as Company;
+    MOCK_COMPANIES.push(newCompany as any);
+    return newCompany;
   }
 };
 
@@ -465,6 +496,11 @@ export const updateCompany = async (id: string, companyData: Partial<Company>) =
     return mapDboToCompany(data);
   } catch (error) {
     console.warn(`updateCompany for '${id}' failed. Falling back to mock response:`, error);
+    const idx = MOCK_COMPANIES.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      MOCK_COMPANIES[idx] = { ...MOCK_COMPANIES[idx], ...companyData };
+      return MOCK_COMPANIES[idx];
+    }
     return { id, ...companyData };
   }
 };
@@ -1292,6 +1328,26 @@ export const deleteWebCategory = async (id: string) => {
 // ==========================================
 // REGISTRATION REQUESTS
 // ==========================================
+export let MOCK_REGISTRATION_REQUESTS: any[] = [
+  {
+    id: "req-1",
+    email: "contacto@pyme-guinea.gq",
+    name: "Teodoro Nguema",
+    company_name: "Guinea Logistics & Supply S.L.",
+    tax_id: "GQ-887766-A",
+    role: "EMPRESA_LOCAL",
+    sectors: ["Logística", "Transporte"],
+    documents: [],
+    status: "pending",
+    phone: "+240 222-3333",
+    dip_base64: "",
+    categories: ["CAT_B"],
+    tracking_number: "REG-GE-2024-88912",
+    expediente_number: "REG-GE-2024-88912",
+    created_at: "2024-06-28T12:00:00Z"
+  }
+];
+
 export const getRegistrationRequests = async () => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
@@ -1299,8 +1355,8 @@ export const getRegistrationRequests = async () => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.warn('getRegistrationRequests failed. Returning empty list:', error);
-    return [];
+    console.warn('getRegistrationRequests failed. Returning mock list:', error);
+    return MOCK_REGISTRATION_REQUESTS;
   }
 };
 
@@ -1311,8 +1367,8 @@ export const getRegistrationRequestByEmail = async (email: string) => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.warn(`getRegistrationRequestByEmail failed for '${email}'. Returning null:`, error);
-    return null;
+    console.warn(`getRegistrationRequestByEmail failed for '${email}'. Returning from mock:`, error);
+    return MOCK_REGISTRATION_REQUESTS.find(r => r.email === email) || null;
   }
 };
 
@@ -1324,7 +1380,9 @@ export const createRegistrationRequest = async (requestData: any) => {
     return data;
   } catch (error) {
     console.warn('createRegistrationRequest failed. Falling back to mock creation:', error);
-    return { id: `req-${Date.now()}`, ...requestData, created_at: new Date().toISOString() };
+    const newRequest = { id: `req-${Date.now()}`, ...requestData, created_at: new Date().toISOString() };
+    MOCK_REGISTRATION_REQUESTS.push(newRequest);
+    return newRequest;
   }
 };
 
@@ -1336,6 +1394,11 @@ export const updateRegistrationRequest = async (id: string, requestData: any) =>
     return data;
   } catch (error) {
     console.warn(`updateRegistrationRequest for '${id}' failed. Falling back to mock update:`, error);
+    const idx = MOCK_REGISTRATION_REQUESTS.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      MOCK_REGISTRATION_REQUESTS[idx] = { ...MOCK_REGISTRATION_REQUESTS[idx], ...requestData };
+      return MOCK_REGISTRATION_REQUESTS[idx];
+    }
     return { id, ...requestData };
   }
 };
@@ -1363,29 +1426,41 @@ export const DEFAULT_BANNERS = [
 
 export const getWebBanners = async () => {
   try {
-    if (!isSupabaseActive()) return DEFAULT_BANNERS;
+    let localBannersStr = localStorage.getItem('local_web_banners');
+    let localBanners = localBannersStr ? JSON.parse(localBannersStr) : [];
+
+    if (!isSupabaseActive()) {
+      const bannersMap = new Map(DEFAULT_BANNERS.map(b => [b.id, b]));
+      localBanners.forEach((b: any) => {
+        bannersMap.set(b.id, b);
+      });
+      return Array.from(bannersMap.values());
+    }
     const { data, error } = await supabase.from('web_banners').select('*');
     if (error) {
-      // Si la tabla no existe, Supabase dará un error. Capturamos esto con gracia.
-      console.warn('web_banners table might not exist yet. Returning defaults.');
-      return DEFAULT_BANNERS;
-    }
-    
-    if (!data || data.length === 0) {
-      return DEFAULT_BANNERS;
-    }
-    
-    // Fusionar por ID para sobrescribir los valores por defecto con los configurados en BD
-    const bannersMap = new Map(DEFAULT_BANNERS.map(b => [b.id, b]));
-    data.forEach((b: any) => {
-      bannersMap.set(b.id, {
-        id: b.id,
-        page_key: b.page_key,
-        banner_key: b.banner_key,
-        image_url: b.image_url,
-        title: b.title || ''
+      console.warn('web_banners table might not exist yet. Returning defaults merged with local storage.');
+      const bannersMap = new Map(DEFAULT_BANNERS.map(b => [b.id, b]));
+      localBanners.forEach((b: any) => {
+        bannersMap.set(b.id, b);
       });
+      return Array.from(bannersMap.values());
+    }
+    
+    const bannersMap = new Map(DEFAULT_BANNERS.map(b => [b.id, b]));
+    localBanners.forEach((b: any) => {
+      bannersMap.set(b.id, b);
     });
+    if (data && data.length > 0) {
+      data.forEach((b: any) => {
+        bannersMap.set(b.id, {
+          id: b.id,
+          page_key: b.page_key,
+          banner_key: b.banner_key,
+          image_url: b.image_url,
+          title: b.title || ''
+        });
+      });
+    }
     return Array.from(bannersMap.values());
   } catch (error) {
     console.warn("getWebBanners failed, returning defaults:", error);
@@ -1394,22 +1469,33 @@ export const getWebBanners = async () => {
 };
 
 export const updateWebBanner = async (id: string, pageKey: string, bannerKey: string, imageUrl: string, title?: string) => {
+  const bannerData = {
+    id,
+    page_key: pageKey,
+    banner_key: bannerKey,
+    image_url: imageUrl,
+    title: title || '',
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    let localBannersStr = localStorage.getItem('local_web_banners');
+    let localBanners = localBannersStr ? JSON.parse(localBannersStr) : [];
+    localBanners = localBanners.filter((b: any) => b.id !== id);
+    localBanners.push(bannerData);
+    localStorage.setItem('local_web_banners', JSON.stringify(localBanners));
+  } catch (e) {
+    console.error("Failed to write web banner to local storage", e);
+  }
+
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const bannerData = {
-      id,
-      page_key: pageKey,
-      banner_key: bannerKey,
-      image_url: imageUrl,
-      title: title || '',
-      updated_at: new Date().toISOString()
-    };
     const { data, error } = await supabase.from('web_banners').upsert([bannerData]).select().single();
     if (error) throw error;
     return data;
   } catch (error) {
     console.warn(`updateWebBanner failed for ${id}. Simulating success in state:`, error);
-    return { id, page_key: pageKey, banner_key: bannerKey, image_url: imageUrl, title: title || '' };
+    return bannerData;
   }
 };
 
@@ -1620,10 +1706,26 @@ export const deleteWebFAQ = async (id: string) => {
 // 2. Images / Gallery API
 export const getWebImages = async () => {
   try {
-    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    let localImagesStr = localStorage.getItem('local_web_images');
+    let localImages = localImagesStr ? JSON.parse(localImagesStr) : [];
+
+    if (!isSupabaseActive()) {
+      return [...localImages, ...MOCK_GALLERY_IMAGES];
+    }
     const { data, error } = await supabase.from('web_images').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.warn('getWebImages from DB failed, returning local storage + mock:', error);
+      return [...localImages, ...MOCK_GALLERY_IMAGES];
+    }
+    const dbImages = data || [];
+    const combined = [...dbImages, ...localImages];
+    const seen = new Set();
+    const unique = combined.filter(el => {
+      const duplicate = seen.has(el.id);
+      seen.add(el.id);
+      return !duplicate;
+    });
+    return unique.length > 0 ? unique : MOCK_GALLERY_IMAGES;
   } catch (error) {
     console.warn('getWebImages failed. Falling back to MOCK_GALLERY_IMAGES:', error);
     return MOCK_GALLERY_IMAGES;
@@ -1631,18 +1733,44 @@ export const getWebImages = async () => {
 };
 
 export const createWebImage = async (imageData: any) => {
+  const newImage = { 
+    id: imageData.id || `img-${Date.now()}`, 
+    ...imageData, 
+    created_at: imageData.created_at || new Date().toISOString() 
+  };
+
+  try {
+    let localImagesStr = localStorage.getItem('local_web_images');
+    let localImages = localImagesStr ? JSON.parse(localImagesStr) : [];
+    localImages.unshift(newImage);
+    localStorage.setItem('local_web_images', JSON.stringify(localImages));
+  } catch (e) {
+    console.error("Failed to save web image to local storage:", e);
+  }
+
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('web_images').insert([imageData]).select().single();
+    const { data, error } = await supabase.from('web_images').insert([newImage]).select().single();
     if (error) throw error;
     return data;
   } catch (error) {
-    console.warn('createWebImage failed. Returning simulated data:', error);
-    return { id: `img-${Date.now()}`, ...imageData, created_at: new Date().toISOString() };
+    console.warn('createWebImage failed. Returning simulated/local data:', error);
+    return newImage;
   }
 };
 
 export const deleteWebImage = async (id: string) => {
+  try {
+    let localImagesStr = localStorage.getItem('local_web_images');
+    if (localImagesStr) {
+      let localImages = JSON.parse(localImagesStr);
+      localImages = localImages.filter((img: any) => img.id !== id);
+      localStorage.setItem('local_web_images', JSON.stringify(localImages));
+    }
+  } catch (e) {
+    console.error("Failed to delete web image from local storage:", e);
+  }
+
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { error } = await supabase.from('web_images').delete().eq('id', id);

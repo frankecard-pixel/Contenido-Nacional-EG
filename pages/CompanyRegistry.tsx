@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getCompanies, getUsers, updateUser } from '../services/supabaseApi';
+import { getCompanies, getUsers, updateUser, updateCompany } from '../services/supabaseApi';
 import { Company, User } from '../types';
 import CompanyRegistryHeader from '../components/admin/CompanyRegistryHeader';
 import CompanyRegistryFilters from '../components/admin/CompanyRegistryFilters';
@@ -12,6 +12,7 @@ import CompanyCreateModal from '../components/admin/CompanyCreateModal';
 const CompanyRegistry: React.FC = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('Perfil');
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -49,13 +50,36 @@ const CompanyRegistry: React.FC = () => {
     }
   };
 
+  const handleUpdateCompanyStatus = async (companyId: string, status: Company['status']) => {
+    try {
+      setLoading(true);
+      await updateCompany(companyId, { status });
+      await fetchRegistryData(); // Refresh registry
+    } catch (error) {
+      console.error("Error updating company status:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredCompanies = useMemo(() => {
-    return companies.filter(c => 
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.rugeId && c.rugeId.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.taxId && c.taxId.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [searchQuery, companies]);
+    return companies.filter(c => {
+      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (c.rugeId && c.rugeId.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                            (c.taxId && c.taxId.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      let matchesStatus = true;
+      if (statusFilter === 'Activos') {
+        matchesStatus = c.status === 'certified';
+      } else if (statusFilter === 'Pendientes') {
+        matchesStatus = c.status === 'pending';
+      } else if (statusFilter === 'Suspendidos') {
+        matchesStatus = c.status === 'suspended' || c.status === 'rejected';
+      }
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchQuery, statusFilter, companies]);
 
   const selectedCompany = useMemo(() => 
     companies.find(c => c.id === selectedCompanyId) || null
@@ -107,6 +131,8 @@ const CompanyRegistry: React.FC = () => {
         <CompanyRegistryFilters 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
         />
 
         {/* Data Table */}
@@ -134,6 +160,7 @@ const CompanyRegistry: React.FC = () => {
           getStatusBadge={getStatusBadge}
           users={users}
           onLinkUser={handleLinkUser}
+          onUpdateStatus={handleUpdateCompanyStatus}
         />
       )}
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getCompanyById } from '../services/supabaseApi';
 import { Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import InteractiveMap from '../components/InteractiveMap';
 
 const CompanyProfileView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -101,6 +102,31 @@ const CompanyProfileView: React.FC = () => {
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{reviews.length} Reseñas</div>
             </div>
           </div>
+
+          {/* Location Map Section */}
+          {company.lat && company.lng && (
+            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 shadow-xl border border-slate-100 dark:border-slate-800">
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Ubicación de la Sede</h2>
+                  <p className="text-xs text-slate-500 mt-1">{company.address || 'Sede oficial registrada en Guinea Ecuatorial'}</p>
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">OpenStreetMap</span>
+              </div>
+              <InteractiveMap 
+                points={[{
+                  id: company.id,
+                  lat: Number(company.lat),
+                  lng: Number(company.lng),
+                  title: company.name,
+                  type: 'company'
+                }]} 
+                center={[Number(company.lat), Number(company.lng)]} 
+                zoom={11} 
+                height="350px" 
+              />
+            </div>
+          )}
 
           {/* Reviews Section */}
           <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 shadow-xl border border-slate-100 dark:border-slate-800">

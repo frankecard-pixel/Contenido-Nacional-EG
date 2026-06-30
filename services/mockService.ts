@@ -209,6 +209,13 @@ export const MOCK_TRAINING_CENTERS = [
   { id: 'tc-2', lat: 1.86, lng: 9.76, name: 'Instituto de Hidrocarburos Bata', image: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?q=80&w=2000&auto=format&fit=crop', location: 'Bata, Litoral', capacity: '250 estudiantes', specialties: ['Geología', 'Drilling', 'Administración'] }
 ];
 
+export const MOCK_COURSES = [
+  { id: 'course-1', lat: 3.45, lng: 8.57, title: 'Curso Avanzado de Soldadura Subacuática', location: 'Luba, Puerto de Luba', centerName: 'Centro de Formación Técnica Luba', duration: '120 horas', level: 'Avanzado', vacancies: 15 },
+  { id: 'course-2', lat: 3.74, lng: 8.77, title: 'HSE & Control de Riesgos Críticos', location: 'Malabo, Campo Alba', centerName: 'Centro de Formación Técnica Luba', duration: '60 horas', level: 'Intermedio', vacancies: 20 },
+  { id: 'course-3', lat: 1.86, lng: 9.76, title: 'Operaciones de Perforación Offshore', location: 'Bata, Sector Litoral', centerName: 'Instituto de Hidrocarburos Bata', duration: '150 horas', level: 'Profesional', vacancies: 12 },
+  { id: 'course-4', lat: 1.85, lng: 9.77, title: 'Tecnologías de Refino y Procesamiento de Gas', location: 'Bata, Terminal de Gas', centerName: 'Instituto de Hidrocarburos Bata', duration: '90 horas', level: 'Avanzado', vacancies: 8 }
+];
+
 export const MOCK_COMPANY_DOCUMENTS: CompanyDocument[] = [
   { id: 'doc-1', name: 'Registro_Mercantil.pdf', category: 'Legal', status: 'approved', uploadDate: '12 Ago 2024', size: '1.2 MB', format: 'PDF' },
   { id: 'doc-2', name: 'Solvencia_Fiscal.pdf', category: 'Financiero', status: 'pending', uploadDate: '10 Nov 2024', size: '0.9 MB', format: 'PDF' },

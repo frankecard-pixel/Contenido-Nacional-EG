@@ -1,12 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getUsers, getCompanies } from '../services/supabaseApi';
+import { getUsers, getCompanies, updateUser, createUser } from '../services/supabaseApi';
 import { User, UserRole, UserStatus, Company } from '../types';
 import UserFilters from '../components/admin/UserFilters';
 import UserTable from '../components/admin/UserTable';
 import InviteUserModal from '../components/admin/InviteUserModal';
-import { createUser } from '../services/supabaseApi';
 
 const AdminUserManagementPage: React.FC = () => {
   const { t } = useTranslation();
@@ -44,26 +43,72 @@ const AdminUserManagementPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleInviteUser = async (email: string, name: string, role: string) => {
+  const handleInviteUser = async (
+    email: string, 
+    name: string, 
+    role: string, 
+    extraData?: { 
+      isDirect: boolean; 
+      password?: string; 
+      phone?: string; 
+      department?: string; 
+      position?: string;
+    }
+  ) => {
     try {
       setIsLoading(true);
-      // Map the simple roles from modal to UserRole if needed
-      // For now, let's assume the modal provides the correct role string or we map it
+      const isDirect = extraData?.isDirect || false;
       const newUser: Partial<User> = {
         email,
         name,
         role: role as UserRole,
-        status: 'pending',
+        status: isDirect ? 'active' : 'pending',
         isOnline: false,
-        permissions: []
+        permissions: [],
+        phone: extraData?.phone || undefined,
+        department: extraData?.department || undefined,
+        position: extraData?.position || undefined,
       };
       
       await createUser(newUser);
+
+      // Trigger WhatsApp/n8n notification
+      if (extraData?.phone) {
+        const { triggerN8nNotification } = await import('../services/n8nService');
+        await triggerN8nNotification(
+          'user_created', 
+          extraData.phone, 
+          name, 
+          { 
+            email, 
+            role, 
+            status: isDirect ? 'active' : 'invited',
+            password_assigned: isDirect ? (extraData.password || 'contraseña temporal') : 'autoregistro',
+            department: extraData.department || '',
+            position: extraData.position || '',
+            link: window.location.origin + '/login'
+          }
+        );
+      }
+      
       await fetchData(); // Refresh list
       setIsInviteModalOpen(false);
     } catch (err: any) {
       console.error('Error creating user:', err);
       setError('Error al crear el usuario: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleActivateUser = async (user: User) => {
+    try {
+      setIsLoading(true);
+      await updateUser(user.id, { status: 'active' });
+      await fetchData(); // Refresh list
+    } catch (err: any) {
+      console.error('Error activating user:', err);
+      setError('Error al activar el usuario: ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -292,6 +337,7 @@ const AdminUserManagementPage: React.FC = () => {
           getStatusBadge={getStatusBadge}
           companies={companiesData}
           onEditPermissions={openPermissionsModal}
+          onActivateUser={handleActivateUser}
         />
 
         {/* Pagination */}

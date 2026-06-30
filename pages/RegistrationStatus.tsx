@@ -93,6 +93,246 @@ const RegistrationStatus: React.FC = () => {
     setUploading(false);
   };
 
+  const handleDownloadNota = () => {
+    if (!request) return;
+    
+    const isInternational = request.categories ? request.categories.includes('CAT_C') || request.company_name.toLowerCase().includes('intl') || request.company_name.toLowerCase().includes('ltd') : false;
+    const rateAmount = isInternational ? "2.500.000 FCFA" : "500.000 FCFA";
+    const bankDetails = isInternational 
+      ? "Société Générale Guinea Ecuatorial, IBAN: GQ93 3004 0001 0200 1234 5678 90, Ref: CN-INTL-" + (request.expediente_number || '2026')
+      : "Banco Nacional de Guinea Ecuatorial (BANGE), Cuenta: 371000-01-0987-65, Ref: CN-LOCAL-" + (request.expediente_number || '2026');
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Nota de Ingreso - ${request.company_name}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+            body {
+              font-family: 'Inter', sans-serif;
+              color: #1e293b;
+              margin: 40px;
+              line-height: 1.5;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 3px double #0f172a;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .logo {
+              height: 80px;
+              margin-bottom: 15px;
+            }
+            .title {
+              font-size: 18px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin: 5px 0;
+            }
+            .subtitle {
+              font-size: 12px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+            }
+            .meta-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 30px;
+            }
+            .meta-card {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 15px;
+            }
+            .meta-title {
+              font-size: 10px;
+              font-weight: 900;
+              text-transform: uppercase;
+              color: #94a3b8;
+              letter-spacing: 1px;
+              margin-bottom: 5px;
+            }
+            .meta-value {
+              font-size: 13px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .details-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .details-table th {
+              background: #0f172a;
+              color: #ffffff;
+              text-align: left;
+              padding: 10px 15px;
+              font-size: 11px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .details-table td {
+              border-bottom: 1px solid #e2e8f0;
+              padding: 15px;
+              font-size: 12px;
+            }
+            .bank-box {
+              background: #eff6ff;
+              border: 1px solid #bfdbfe;
+              border-radius: 16px;
+              padding: 20px;
+              margin-bottom: 40px;
+            }
+            .bank-title {
+              font-size: 12px;
+              font-weight: 900;
+              text-transform: uppercase;
+              color: #1e40af;
+              margin-bottom: 8px;
+              letter-spacing: 1px;
+            }
+            .bank-text {
+              font-size: 13px;
+              font-weight: 700;
+              color: #1e3a8a;
+            }
+            .footer-notes {
+              font-size: 11px;
+              color: #64748b;
+              text-align: center;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 20px;
+              margin-top: 50px;
+            }
+            .stamps-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 40px;
+              margin-top: 40px;
+              text-align: center;
+            }
+            .signature-line {
+              border-top: 1px solid #94a3b8;
+              width: 200px;
+              margin: 60px auto 10px;
+            }
+            .signature-text {
+              font-size: 10px;
+              font-weight: 900;
+              text-transform: uppercase;
+              color: #475569;
+            }
+            @media print {
+              .no-print { display: none; }
+            }
+            .print-btn {
+              background: #0f172a;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              font-size: 11px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              border-radius: 8px;
+              cursor: pointer;
+              margin-bottom: 20px;
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="text-align: right;">
+            <button class="print-btn" onclick="window.print()">Imprimir / Guardar como PDF</button>
+          </div>
+          
+          <div class="header">
+            <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Coat_of_arms_of_Equatorial_Guinea.svg" alt="GE Coat of Arms" />
+            <div class="title">República de Guinea Ecuatorial</div>
+            <div class="title" style="font-size: 14px; color: #475569;">Ministerio de Hidrocarburos, Minas y Electricidad</div>
+            <div class="subtitle" style="margin-top: 10px;">Dirección General de Contenido Nacional</div>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; color: #0f172a; letter-spacing: -0.5px;">Nota de Ingreso y Orden de Pago</h2>
+            <p style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; tracking: 1px; margin-top: 5px;">Ref: ${request.expediente_number || request.tracking_number || 'REG-PENDIENTE'}</p>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-card">
+              <div class="meta-title">Contribuyente / Empresa</div>
+              <div class="meta-value">${request.company_name}</div>
+              <div style="font-size: 11px; margin-top: 5px; color: #64748b; font-weight: 500;">NIF: ${request.tax_id || 'PENDIENTE'}</div>
+            </div>
+            <div class="meta-card">
+              <div class="meta-title">Fecha de Emisión</div>
+              <div class="meta-value">${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              <div style="font-size: 11px; margin-top: 5px; color: #64748b; font-weight: 500;">Estado: Pendiente de Ingreso</div>
+            </div>
+          </div>
+
+          <table class="details-table">
+            <thead>
+              <tr>
+                <th style="width: 70%;">Concepto y Descripción</th>
+                <th style="width: 30%; text-align: right;">Importe (FCFA)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong style="font-size: 13px; color: #0f172a;">Tasa de Certificación de Contenido Nacional</strong><br />
+                  <span style="font-size: 11px; color: #64748b;">Derecho de homologación y registro oficial en la base de datos de empresas del sector de hidrocarburos. Tipo: ${isInternational ? 'Empresa Internacional (CAT_C/Especializada)' : 'Empresa Nacional (PYME Local)'}</span>
+                </td>
+                <td style="text-align: right; font-size: 14px; font-weight: 900; color: #0f172a;">${rateAmount}</td>
+              </tr>
+              <tr>
+                <td style="text-align: right; font-weight: 700;">Total a Depositar:</td>
+                <td style="text-align: right; font-size: 16px; font-weight: 900; color: #1e3a8a;">${rateAmount}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="bank-box">
+            <div class="bank-title">Instrucciones de Depósito Bancario</div>
+            <div class="bank-text">${bankDetails}</div>
+            <p style="font-size: 10px; color: #1e40af; margin-top: 8px; font-weight: 500; font-style: italic;">* Importante: El comprobante de pago con el número de expediente impreso por el cajero debe ser escaneado y subido a este portal para completar la activación de la cuenta.</p>
+          </div>
+
+          <div class="stamps-grid">
+            <div>
+              <div class="signature-line"></div>
+              <div class="signature-text">Firma y Sello de la Empresa</div>
+            </div>
+            <div>
+              <div class="signature-line"></div>
+              <div class="signature-text">Dirección General de Contenido Nacional</div>
+              <div style="font-size: 9px; color: #64748b; margin-top: 2px;">DOCUMENTO AUTORIZADO ELECTRÓNICAMENTE</div>
+            </div>
+          </div>
+
+          <div class="footer-notes">
+            Este documento constituye una orden de ingreso oficial autorizada por el Ministerio de Hidrocarburos, Minas y Electricidad de Guinea Ecuatorial.<br />
+            Para soporte o dudas, póngase en contacto con dcn@mmh.gob.gq.
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const steps = [
     { id: 'pending', label: 'Validación Inicial', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
     { id: 'payment_pending', label: 'Nota de Pago Emitida', icon: Download, color: 'text-orange-500', bg: 'bg-orange-50' },
@@ -366,7 +606,10 @@ const RegistrationStatus: React.FC = () => {
                           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Descargue el documento para realizar el ingreso en el banco.</p>
                         </div>
                       </div>
-                      <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 flex items-center gap-2">
+                      <button 
+                        onClick={handleDownloadNota}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 flex items-center gap-2"
+                      >
                         <Download className="w-4 h-4" /> Descargar Nota
                       </button>
                     </div>

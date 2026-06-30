@@ -39,6 +39,14 @@ export interface User {
   phone?: string;
   cv_url?: string;
   last_seen?: string; // Added for WhatsApp-like features
+  allow_search?: boolean; // Toggle for whether user is searchable by other users
+  linkedin_url?: string; // URL to LinkedIn profile
+  linkedin_profile?: {
+    headline?: string;
+    summary?: string;
+    skills?: string[];
+    experience?: Array<{ company: string; position: string; period: string }>;
+  }; // Imported LinkedIn profile data
 }
 
 export interface AuditActivity {

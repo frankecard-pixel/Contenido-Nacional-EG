@@ -8,9 +8,10 @@ interface UserTableProps {
   getStatusBadge: (status?: UserStatus) => React.ReactNode;
   companies?: Company[];
   onEditPermissions?: (user: User) => void;
+  onActivateUser?: (user: User) => void;
 }
 
-const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getStatusBadge, companies = [], onEditPermissions }) => {
+const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getStatusBadge, companies = [], onEditPermissions, onActivateUser }) => {
   const getCompanyName = (companyId?: string) => {
     if (!companyId) return null;
     const company = companies.find(c => c.id === companyId);
@@ -74,6 +75,15 @@ const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getS
               </td>
               <td className="px-10 py-8 text-right">
                 <div className="flex items-center justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                  {user.status === 'pending' && onActivateUser && (
+                    <button 
+                      onClick={() => onActivateUser(user)}
+                      className="p-3 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-xl transition-all" 
+                      title="Aprobar / Activar Usuario"
+                    >
+                      <span className="material-symbols-outlined font-black">check_circle</span>
+                    </button>
+                  )}
                   {onEditPermissions && (
                     <button 
                       onClick={() => onEditPermissions(user)}

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 const AboutMinisterProfile: React.FC = () => {
   const { t } = useTranslation();
-  const ministerPhoto = "https://www.adipec.com/media/hcpphzh1/antonio.jpg";
+  const ministerPhoto = localStorage.getItem('minister_photo_url') || "https://www.adipec.com/media/hcpphzh1/antonio.jpg";
 
   return (
     <section className="mb-12 md:mb-32 py-10 md:py-20 bg-slate-950 rounded-[2rem] md:rounded-[4rem] px-4 sm:px-6 md:px-12 lg:px-24 border border-white/5 text-white">

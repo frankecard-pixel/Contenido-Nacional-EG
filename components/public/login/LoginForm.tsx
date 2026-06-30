@@ -164,13 +164,23 @@ const LoginForm: React.FC = () => {
         </button>
       </form>
 
-      <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-slate-800">
+      <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           ¿No tiene una cuenta institucional?{' '}
           <Link to="/register" title="Registrarse" className="text-blue-600 hover:underline">
             Solicitar Registro
           </Link>
         </p>
+        
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1">
+          <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            ¿Ya solicitó su registro como empresa?
+          </p>
+          <Link to="/registration-status" className="inline-flex items-center gap-2 text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest">
+            <span className="material-symbols-outlined text-sm">find_in_page</span>
+            Consultar Estado de Expediente / Descargar Nota de Ingreso
+          </Link>
+        </div>
       </div>
     </div>
   );

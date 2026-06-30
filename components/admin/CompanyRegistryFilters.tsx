@@ -4,11 +4,15 @@ import { Company } from '../../types';
 interface CompanyRegistryFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  statusFilter: string;
+  setStatusFilter: (filter: string) => void;
 }
 
 const CompanyRegistryFilters: React.FC<CompanyRegistryFiltersProps> = ({
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter
 }) => {
   return (
     <section className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-wrap lg:flex-nowrap items-center justify-between gap-6">
@@ -26,7 +30,17 @@ const CompanyRegistryFilters: React.FC<CompanyRegistryFiltersProps> = ({
       </div>
       <div className="flex items-center gap-4 px-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
          {['Todos', 'Activos', 'Pendientes', 'Suspendidos'].map(f => (
-           <button key={f} className="px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all">{f}</button>
+           <button 
+             key={f} 
+             onClick={() => setStatusFilter(f)}
+             className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+               statusFilter === f 
+                 ? 'bg-primary text-white border-primary shadow-lg shadow-blue-500/25' 
+                 : 'border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'
+             }`}
+           >
+             {f}
+           </button>
          ))}
          <div className="w-px h-8 bg-slate-100 dark:bg-slate-700 mx-2"></div>
          <button className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-primary"><span className="material-symbols-outlined">filter_list</span></button>

@@ -6,6 +6,7 @@ import { getSocialProjectById } from '../services/supabaseApi';
 import { SocialProject } from '../types';
 import SocialProjectDetailHeader from '../components/public/social-project-detail/SocialProjectDetailHeader';
 import SocialProjectDetailContent from '../components/public/social-project-detail/SocialProjectDetailContent';
+import InteractiveMap from '../components/InteractiveMap';
 
 const SocialProjectDetail: React.FC = () => {
   const { id } = useParams();
@@ -61,6 +62,30 @@ const SocialProjectDetail: React.FC = () => {
           impact={project.impact}
         />
       </div>
+
+      {project.lat && project.lng && (
+        <div className="mt-12 bg-white dark:bg-slate-900 rounded-[4rem] p-10 shadow-2xl border border-slate-100 dark:border-slate-800">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Ubicación del Proyecto Social</h3>
+              <p className="text-xs text-slate-500 mt-1">{project.location}</p>
+            </div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">OpenStreetMap</span>
+          </div>
+          <InteractiveMap 
+            points={[{
+              id: project.id,
+              lat: Number(project.lat),
+              lng: Number(project.lng),
+              title: getTranslatedText(project.title),
+              type: 'project'
+            }]} 
+            center={[Number(project.lat), Number(project.lng)]} 
+            zoom={10} 
+            height="380px" 
+          />
+        </div>
+      )}
     </div>
   );
 };

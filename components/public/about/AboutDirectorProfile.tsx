@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 const AboutDirectorProfile: React.FC = () => {
   const { t } = useTranslation();
-  // Professional photo of an African businessman for the Director
-  const directorPhoto = "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop";
+  const directorPhoto = localStorage.getItem('director_photo_url') || "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop";
 
   return (
     <section className="mb-12 md:mb-32 py-10 md:py-16 bg-white dark:bg-slate-900 rounded-[2rem] md:rounded-[4rem] px-4 sm:px-6 md:px-12 lg:px-24 border border-slate-100 dark:border-slate-800 shadow-sm">

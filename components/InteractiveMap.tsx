@@ -97,6 +97,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ points, center = [2.5, 
                <div className="w-3 h-3 rounded-full bg-amber-600"></div>
                <span className="text-[10px] font-bold text-slate-700">Social</span>
             </div>
+            <div className="flex items-center space-x-2">
+               <div className="w-3 h-3 rounded-full bg-red-600"></div>
+               <span className="text-[10px] font-bold text-slate-700">Cursos</span>
+            </div>
          </div>
       </div>
     </div>

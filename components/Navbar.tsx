@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LanguageSelector from './LanguageSelector';
 
 const Navbar: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -55,8 +57,10 @@ const Navbar: React.FC = () => {
       label: 'Certificación', 
       links: [
         { label: 'Registro de Empresas', desc: 'Inscripción en el registro oficial', path: '/register' },
+        { label: 'Estado de Registro', desc: 'Verificar expediente y nota de pago', path: '/registration-status' },
         { label: 'Requisitos', desc: 'Documentación y criterios necesarios', path: '/requirements' },
-        { label: 'Empresas Certificadas', desc: 'Directorio público de empresas', path: '/directory' }
+        { label: 'Empresas Certificadas', desc: 'Directorio público de empresas', path: '/directory' },
+        { label: 'Geolocalización de Industrias', desc: 'Mapa interactivo de empresas del sector', path: '/directory?view=map' }
       ] 
     },
     { 
@@ -78,6 +82,13 @@ const Navbar: React.FC = () => {
       ] 
     }
   ];
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setMobileMenuOpen(false);
+    navigate(`/news?search=${encodeURIComponent(searchQuery.trim())}`);
+  };
 
   return (
     <>
@@ -155,6 +166,29 @@ const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="xl:hidden fixed inset-0 z-[90] bg-white dark:bg-slate-900 pt-[100px] overflow-y-auto animate-in slide-in-from-right duration-300">
            <div className="p-8 space-y-8">
+              {/* Barra de Búsqueda Móvil */}
+              <div className="relative">
+                <form onSubmit={handleSearchSubmit}>
+                  <input
+                    type="text"
+                    placeholder="Buscar noticias, licitaciones, etc..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-10 py-3.5 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 rounded-2xl text-sm font-bold transition-all text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                  <span className="material-symbols-outlined absolute left-4 top-3.5 text-slate-400">search</span>
+                  {searchQuery && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSearchQuery('')} 
+                      className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                  )}
+                </form>
+              </div>
+
               {navItems.map((group) => (
                 <div key={group.id} className="space-y-3">
                    <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 border-b border-slate-200 dark:border-slate-800 pb-2">

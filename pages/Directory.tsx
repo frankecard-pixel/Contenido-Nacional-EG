@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import InteractiveMap from '../components/InteractiveMap';
 import { getCompanies } from '../services/supabaseApi';
 import { Company } from '../types';
@@ -15,12 +15,29 @@ import MinisterialCertification from '../components/public/MinisterialCertificat
 const Directory: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [filter, setFilter] = useState('all');
-  const [view, setView] = useState<'grid' | 'map'>('grid');
+  const [view, setView] = useState<'grid' | 'map'>(searchParams.get('view') === 'map' ? 'map' : 'grid');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Sync view state with URL search param
+  useEffect(() => {
+    const vParam = searchParams.get('view');
+    if (vParam === 'map' || vParam === 'grid') {
+      setView(vParam);
+    }
+  }, [searchParams]);
+
+  const handleSetView = (newView: 'grid' | 'map') => {
+    setView(newView);
+    setSearchParams(prev => {
+      prev.set('view', newView);
+      return prev;
+    });
+  };
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -80,7 +97,13 @@ const Directory: React.FC = () => {
           <MinisterialCertification />
         </div>
         <div className="mx-auto px-6 mt-20" style={{ maxWidth: 'var(--layout-max-width)' }}>
-          <DirectoryFilters sectors={sectors} filter={filter} setFilter={setFilter} />
+          <DirectoryFilters 
+            sectors={sectors} 
+            filter={filter} 
+            setFilter={setFilter} 
+            view={view}
+            setView={handleSetView}
+          />
 
           {view === 'map' ? (
             <div className="animate-in fade-in zoom-in-95 duration-500">

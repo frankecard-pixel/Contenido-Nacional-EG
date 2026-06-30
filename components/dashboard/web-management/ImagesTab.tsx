@@ -49,6 +49,59 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
     group_name: 'Instalaciones',
   });
 
+  const [ministerPhoto, setMinisterPhoto] = useState(
+    localStorage.getItem('minister_photo_url') || 'https://www.adipec.com/media/hcpphzh1/antonio.jpg'
+  );
+  const [directorPhoto, setDirectorPhoto] = useState(
+    localStorage.getItem('director_photo_url') || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop'
+  );
+  const [isUploadingMinister, setIsUploadingMinister] = useState(false);
+  const [isUploadingDirector, setIsUploadingDirector] = useState(false);
+
+  const handleMinisterFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingMinister(true);
+      const url = await onUploadGalleryImage(file);
+      setMinisterPhoto(url);
+      localStorage.setItem('minister_photo_url', url);
+      toast.success('Foto del Ministro subida con éxito');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al subir la foto del Ministro');
+    } finally {
+      setIsUploadingMinister(false);
+    }
+  };
+
+  const handleDirectorFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingDirector(true);
+      const url = await onUploadGalleryImage(file);
+      setDirectorPhoto(url);
+      localStorage.setItem('director_photo_url', url);
+      toast.success('Foto del Director subida con éxito');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al subir la foto del Director');
+    } finally {
+      setIsUploadingDirector(false);
+    }
+  };
+
+  const handleMinisterUrlChange = (url: string) => {
+    setMinisterPhoto(url);
+    localStorage.setItem('minister_photo_url', url);
+  };
+
+  const handleDirectorUrlChange = (url: string) => {
+    setDirectorPhoto(url);
+    localStorage.setItem('director_photo_url', url);
+  };
+
   // Cropper State
   const [cropperImage, setCropperImage] = useState<string | null>(null);
   const [cropperAspect, setCropperAspect] = useState(16 / 9);
@@ -125,6 +178,80 @@ export const ImagesTab: React.FC<ImagesTabProps> = ({
         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-xl">
           <span className="material-symbols-outlined text-sm">cloud_done</span>
           Sincronizado con Storage
+        </div>
+      </div>
+
+      {/* SECTION: FOTOS DE AUTORIDADES EN SOBRE NOSOTROS */}
+      <div className="space-y-6 border-t border-slate-100 dark:border-slate-800 pt-10">
+        <div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Fotos de Autoridades (Sobre Nosotros)</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">Configure las fotos del Excmo. Sr. Ministro y del Director General que se muestran en la sección "Sobre el Contenido Nacional".</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Card Ministro */}
+          <div className="p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] flex flex-col sm:flex-row gap-6 shadow-sm">
+            <div className="w-28 h-36 rounded-2xl overflow-hidden shadow-md shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-200">
+              <img src={ministerPhoto} alt="Ministro" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Excmo. Sr. Ministro</h4>
+                <p className="text-sm font-black text-slate-900 dark:text-white uppercase mt-0.5">Antonio Oburu Ondo</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">URL de la Imagen</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="url"
+                    value={ministerPhoto}
+                    onChange={(e) => handleMinisterUrlChange(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold dark:text-white focus:ring-2 focus:ring-primary"
+                  />
+                  <label className="flex items-center justify-center px-3.5 bg-slate-200 dark:bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shrink-0">
+                    <span className="material-symbols-outlined text-sm text-slate-600 dark:text-slate-300">upload</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleMinisterFileSelect} disabled={isUploadingMinister} />
+                  </label>
+                </div>
+                {isUploadingMinister && (
+                  <p className="text-[9px] font-bold text-primary animate-pulse">Subiendo foto del Ministro...</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Card Director */}
+          <div className="p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] flex flex-col sm:flex-row gap-6 shadow-sm">
+            <div className="w-28 h-36 rounded-2xl overflow-hidden shadow-md shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-200">
+              <img src={directorPhoto} alt="Director General" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Director General</h4>
+                <p className="text-sm font-black text-slate-900 dark:text-white uppercase mt-0.5">Contenido Nacional</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">URL de la Imagen</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="url"
+                    value={directorPhoto}
+                    onChange={(e) => handleDirectorUrlChange(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold dark:text-white focus:ring-2 focus:ring-primary"
+                  />
+                  <label className="flex items-center justify-center px-3.5 bg-slate-200 dark:bg-slate-700 rounded-xl cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shrink-0">
+                    <span className="material-symbols-outlined text-sm text-slate-600 dark:text-slate-300">upload</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleDirectorFileSelect} disabled={isUploadingDirector} />
+                  </label>
+                </div>
+                {isUploadingDirector && (
+                  <p className="text-[9px] font-bold text-primary animate-pulse">Subiendo foto del Director...</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
