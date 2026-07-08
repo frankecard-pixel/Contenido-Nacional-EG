@@ -27,6 +27,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
   
   // Direct creation additions
   const [isDirect, setIsDirect] = useState(false);
+  const [activeTemplateGroup, setActiveTemplateGroup] = useState<'ministerio' | 'empresas' | 'pymes'>('ministerio');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('');
@@ -101,6 +102,274 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          {/* Quick templates for ministry directors/ministro grouped by category */}
+          {isDirect && (
+            <div className="p-4 bg-blue-50/50 dark:bg-slate-900/40 rounded-2xl border border-blue-100/50 dark:border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full bg-blue-500 animate-pulse"></span> Plantillas de Autocompletado
+                </span>
+                <span className="text-[8px] text-slate-400 font-bold uppercase">Selecciona rol</span>
+              </div>
+              
+              {/* Category Segmented Buttons */}
+              <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setActiveTemplateGroup('ministerio')}
+                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                    activeTemplateGroup === 'ministerio'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  Ministerio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTemplateGroup('empresas')}
+                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                    activeTemplateGroup === 'empresas'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  Operadoras / IOCs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTemplateGroup('pymes')}
+                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                    activeTemplateGroup === 'pymes'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  PYMEs Locales
+                </button>
+              </div>
+
+              {/* Group 1: Ministerio */}
+              {activeTemplateGroup === 'ministerio' && (
+                <div className="grid grid-cols-2 gap-2 animate-in fade-in duration-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Ministro de Hidrocarburos");
+                      setEmail("ministro@mmh.gob.gq");
+                      setPhone("+240 222-1111");
+                      setRole(UserRole.SUPER_ADMIN);
+                      setDepartment("Despacho del Ministro");
+                      setPosition("Ministro");
+                      setPassword("Ministro2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Ministro</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">ministro@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Director General de Contenido Nacional");
+                      setEmail("dgcn@mmh.gob.gq");
+                      setPhone("+240 222-2222");
+                      setRole(UserRole.SUPER_ADMIN);
+                      setDepartment("Dirección de Contenido Nacional");
+                      setPosition("Director General");
+                      setPassword("DGCN2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">DGCN (Contenido Nac.)</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">dgcn@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Director de Inspección y Cumplimiento");
+                      setEmail("inspeccion@mmh.gob.gq");
+                      setPhone("+240 222-3333");
+                      setRole(UserRole.CUERPO_TECNICO);
+                      setDepartment("Inspección y Cumplimiento");
+                      setPosition("Director de Área");
+                      setPassword("Inspeccion2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Director Inspección</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">inspeccion@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Director de Comunicación");
+                      setEmail("comunicacion@mmh.gob.gq");
+                      setPhone("+240 222-4444");
+                      setRole(UserRole.COMUNICACION);
+                      setDepartment("Comunicaciones");
+                      setPosition("Director de Prensa");
+                      setPassword("Prensa2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Director Comunicación</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">comunicacion@mmh.gob.gq</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Group 2: Empresas/Operadoras */}
+              {activeTemplateGroup === 'empresas' && (
+                <div className="grid grid-cols-2 gap-2 animate-in fade-in duration-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Director de Empresa Operadora");
+                      setEmail("director.gq@marathonoil.com");
+                      setPhone("+240 555-0101");
+                      setRole(UserRole.PETROLERA);
+                      setDepartment("Dirección General");
+                      setPosition("Director General GQ");
+                      setPassword("Marathon2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Director de Empresa</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">director.gq@marathonoil.com</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Jefe de Recursos Humanos");
+                      setEmail("rrhh.gq@chevron.com");
+                      setPhone("+240 555-0202");
+                      setRole(UserRole.PETROLERA);
+                      setDepartment("Recursos Humanos");
+                      setPosition("Director de RRHH");
+                      setPassword("ChevronHR2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Jefe de RRHH</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">rrhh.gq@chevron.com</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Representante Técnico");
+                      setEmail("ops.gq@exxonmobil.com");
+                      setPhone("+240 555-0303");
+                      setRole(UserRole.COMPANY);
+                      setDepartment("Operaciones");
+                      setPosition("Representante Técnico");
+                      setPassword("ExxonOps2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Representante Técnico</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">ops.gq@exxonmobil.com</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Administrador de Contratos");
+                      setEmail("contracts.gq@nobleenergy.com");
+                      setPhone("+240 555-0404");
+                      setRole(UserRole.COMPANY);
+                      setDepartment("Suministros y Licitaciones");
+                      setPosition("Gestor de Contratos");
+                      setPassword("NobleContract2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Admin Contratos</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">contracts.gq@nobleenergy.com</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Group 3: PYMEs */}
+              {activeTemplateGroup === 'pymes' && (
+                <div className="grid grid-cols-2 gap-2 animate-in fade-in duration-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Director de PYME Nacional");
+                      setEmail("director@serviciosguinea.gq");
+                      setPhone("+240 333-0101");
+                      setRole(UserRole.EMPRESA_LOCAL);
+                      setDepartment("Gerencia General");
+                      setPosition("Director de Empresa");
+                      setPassword("ServiciosG2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Dir. PYME Nacional</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">director@serviciosguinea.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Administrador de PYME");
+                      setEmail("admin@logisticalitoral.gq");
+                      setPhone("+240 333-0202");
+                      setRole(UserRole.EMPRESA_LOCAL);
+                      setDepartment("Administración");
+                      setPosition("Administrador de Empresa");
+                      setPassword("LogisticaL2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Admin de PYME</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">admin@logisticalitoral.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Responsable de Cuentas");
+                      setEmail("comercial@consultoriaecuatorial.gq");
+                      setPhone("+240 333-0303");
+                      setRole(UserRole.ADVERTISER);
+                      setDepartment("Comercial");
+                      setPosition("Gestor de Cuentas");
+                      setPassword("ConsultoriaE2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Anunciante Especializado</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">comercial@consultoriaecuatorial.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Representante de la Comunidad");
+                      setEmail("comunidad@rebola.gq");
+                      setPhone("+240 444-0101");
+                      setRole(UserRole.COMUNIDAD);
+                      setDepartment("Desarrollo Comunitario");
+                      setPosition("Portavoz Local");
+                      setPassword("Rebola2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Líder Comunitario</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">comunidad@rebola.gq</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Nombre Completo</label>
             <input 

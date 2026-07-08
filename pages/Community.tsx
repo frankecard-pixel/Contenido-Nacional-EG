@@ -61,7 +61,7 @@ const Community: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [socialProjects, setSocialProjects] = useState<SocialProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'works' | 'tour' | 'charts' | 'acts' | 'sql'>('works');
+  const [activeTab, setActiveTab] = useState<'works' | 'tour' | 'charts' | 'acts'>('works');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -295,18 +295,6 @@ CREATE POLICY "Manage ministerial acts" ON public.ministerial_social_acts
             <Heart size={16} />
             <span>Actos Sociales del MMH</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('sql')}
-            className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all ${
-              activeTab === 'sql'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'
-            }`}
-          >
-            <Terminal size={16} />
-            <span>Código Supabase (SQL)</span>
-          </button>
         </div>
 
         {/* TAB 1: WORKS AND INTERACTIVE MAP */}
@@ -395,87 +383,6 @@ CREATE POLICY "Manage ministerial acts" ON public.ministerial_social_acts
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: DATABASE SCHEMAS (SUPABASE) */}
-        {activeTab === 'sql' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 lg:p-8 shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 mb-2">
-                    <Terminal size={12} /> Esquema de Base de Datos
-                  </span>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                    Estructura Supabase Base (DCN-GE)
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Ejecute este script SQL en el editor de consultas SQL de su panel de Supabase para estructurar las tablas de proyectos y actos oficiales.
-                  </p>
-                </div>
-                <button
-                  onClick={copySqlToClipboard}
-                  className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 self-start"
-                >
-                  {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                  <span>{copied ? '¡Copiado!' : 'Copiar Código SQL'}</span>
-                </button>
-              </div>
-
-              {/* Code Panel */}
-              <div className="relative rounded-2xl overflow-hidden bg-slate-950 p-6 border border-slate-800">
-                <pre className="text-xs text-slate-300 font-mono overflow-x-auto whitespace-pre leading-relaxed scrollbar-thin">
-{`-- ========================================================
--- TABLA DE OBRAS SOCIALES (social_projects)
--- ========================================================
-CREATE TABLE IF NOT EXISTS public.social_projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title JSONB NOT NULL,               -- {"es": "...", "en": "..."}
-    description JSONB NOT NULL,         -- {"es": "...", "en": "..."}
-    impact TEXT,
-    location TEXT,
-    image TEXT,
-    petrolera_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    status TEXT DEFAULT 'proposed',     -- 'proposed', 'active', 'completed', 'delayed'
-    budget NUMERIC DEFAULT 0,
-    progress INTEGER DEFAULT 0,
-    end_date DATE,
-    investor TEXT,
-    lat NUMERIC,
-    lng NUMERIC,
-    category TEXT DEFAULT 'Educación',  -- 'Educación', 'Salud', 'Infraestructura'
-    beneficiaries INTEGER DEFAULT 0,
-    tour_360_url TEXT,                  -- Enlace interactivo o assets
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- ========================================================
--- TABLA DE ACTOS SOCIALES DEL MINISTERIO (ministerial_social_acts)
--- ========================================================
-CREATE TABLE IF NOT EXISTS public.ministerial_social_acts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    image TEXT,
-    act_date DATE DEFAULT CURRENT_DATE,
-    location TEXT,
-    author TEXT DEFAULT 'Prensa MMH',
-    impact_area TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Habilitar seguridad RLS
-ALTER TABLE public.social_projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.ministerial_social_acts ENABLE ROW LEVEL SECURITY;
-
--- Políticas de lectura pública
-CREATE POLICY "View social projects" ON public.social_projects FOR SELECT USING (true);
-CREATE POLICY "View public acts" ON public.ministerial_social_acts FOR SELECT USING (true);`}
-                </pre>
-              </div>
             </div>
           </div>
         )}

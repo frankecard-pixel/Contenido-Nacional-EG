@@ -48,37 +48,39 @@ const Navbar: React.FC = () => {
       label: 'Institución', 
       links: [
         { label: 'Sobre Nosotros', desc: 'Misión, visión y valores de la DCN-GE', path: '/about' },
-        { label: 'Marco Legal', desc: 'Leyes y normativas de contenido nacional', path: '/resources' },
-        { label: 'Directorio', desc: 'Autoridades y personal clave', path: '/directory' }
+        { label: 'Visión Estratégica', desc: 'Plan de desarrollo y objetivos clave', path: '/vision' },
+        { label: 'Directorio', desc: 'Autoridades y personal del ministerio', path: '/directory' },
+        { label: 'Contacto Directo', desc: 'Canales oficiales de comunicación', path: '/contact' }
       ] 
     },
     { 
       id: 'certification',
       label: 'Certificación', 
       links: [
-        { label: 'Registro de Empresas', desc: 'Inscripción en el registro oficial', path: '/register' },
-        { label: 'Estado de Registro', desc: 'Verificar expediente y nota de pago', path: '/registration-status' },
-        { label: 'Requisitos', desc: 'Documentación y criterios necesarios', path: '/requirements' },
-        { label: 'Empresas Certificadas', desc: 'Directorio público de empresas', path: '/directory' },
-        { label: 'Geolocalización de Industrias', desc: 'Mapa interactivo de empresas del sector', path: '/directory?view=map' }
+        { label: 'Registro de Empresas', desc: 'Inscripción en el registro de Contenido Nacional', path: '/register' },
+        { label: 'Estado de Registro', desc: 'Verificar expediente y notas oficiales', path: '/registration-status' },
+        { label: 'Requisitos', desc: 'Documentación y criterios mínimos', path: '/requirements' },
+        { label: 'Empresas Certificadas', desc: 'Directorio de empresas habilitadas', path: '/directory' }
       ] 
     },
     { 
       id: 'opportunities',
       label: 'Oportunidades', 
       links: [
-        { label: 'Licitaciones', desc: 'Concursos y proyectos abiertos', path: '/opportunities' },
-        { label: 'Bolsa de Empleo', desc: 'Ofertas laborales en el sector', path: '/jobs' },
-        { label: 'Capacitación', desc: 'Programas de formación y desarrollo', path: '/training' }
+        { label: 'Licitaciones', desc: 'Licitaciones y concursos abiertos', path: '/opportunities' },
+        { label: 'Bolsa de Empleo', desc: 'Oportunidades de empleo técnico', path: '/jobs' },
+        { label: 'Capacitación', desc: 'Programas oficiales de becas y cursos', path: '/training' },
+        { label: 'Marco Legal', desc: 'Leyes y normativas de fomento nacional', path: '/resources' }
       ] 
     },
     { 
       id: 'transparency',
       label: 'Transparencia', 
       links: [
-        { label: 'Noticias', desc: 'Últimas novedades y comunicados', path: '/news' },
-        { label: 'Estadísticas', desc: 'Datos y reportes del sector', path: '/sector-stats' },
-        { label: 'Impacto Social', desc: 'Proyectos de desarrollo comunitario', path: '/community' }
+        { label: 'Noticias', desc: 'Comunicados y prensa del ministerio', path: '/news' },
+        { label: 'Estadísticas', desc: 'Métricas de valor agregado local', path: '/sector-stats' },
+        { label: 'Impacto Social', desc: 'Obras de desarrollo comunitario', path: '/community' },
+        { label: 'Mapa Industrial', desc: 'Geolocalización interactiva del sector', path: '/directory?view=map' }
       ] 
     }
   ];
