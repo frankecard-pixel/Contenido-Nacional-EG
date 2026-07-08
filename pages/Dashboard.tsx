@@ -52,6 +52,7 @@ import JobPostingForm from '../components/dashboard/jobs/JobPostingForm';
 import OpportunityPostingForm from '../components/dashboard/opportunities/OpportunityPostingForm';
 import ContractCreationForm from '../components/public/contract-management/ContractCreationForm';
 import InternalJobs from '../components/dashboard/InternalJobs';
+import PortalNewsViewer from '../components/dashboard/PortalNewsViewer';
 import { UserRole, User, Company } from '../types';
 import { getUsers, getCompanies, getUserById } from '../services/supabaseApi';
 import { MOCK_USERS } from '../services/mockService';
@@ -294,6 +295,7 @@ const Dashboard: React.FC = () => {
             <Route path=":role/messages" element={<Messages user={currentUser} />} />
             <Route path=":role/settings" element={<Settings user={currentUser} />} />
             <Route path=":role/lex" element={<div className="p-12 h-full max-w-5xl mx-auto"><LexAssistant /></div>} />
+            <Route path=":role/news" element={<PortalNewsViewer user={currentUser} />} />
             
             {/* REDIRECCIÓN POR DEFECTO */}
             <Route index element={<Navigate to={`/dashboard/${getNormalizedRole(currentUser.role)}/overview`} replace />} />

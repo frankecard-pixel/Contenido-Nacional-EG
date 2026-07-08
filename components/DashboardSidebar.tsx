@@ -59,6 +59,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.FUNCIONARIO]: [
       { path: '/dashboard/funcionario/overview', label: 'dashboard.overview', icon: '📊' },
+      { path: '/dashboard/funcionario/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/funcionario/notifications', label: 'dashboard.notifications', icon: '🔔' },
       { path: '/dashboard/funcionario/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/funcionario/companies', label: 'dashboard.company_files', icon: '🏢' },
@@ -69,6 +70,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.CUERPO_TECNICO]: [
       { path: '/dashboard/cuerpo_tecnico/overview', label: 'dashboard.overview', icon: '⚓' },
+      { path: '/dashboard/cuerpo_tecnico/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/cuerpo_tecnico/notifications', label: 'dashboard.field_alerts', icon: '🔔' },
       { path: '/dashboard/cuerpo_tecnico/messages', label: 'dashboard.messages', icon: '💬' },
       { path: '/dashboard/cuerpo_tecnico/inspections', label: 'dashboard.inspections', icon: '🔎' },
@@ -85,6 +87,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.COMUNIDAD]: [
       { path: '/dashboard/comunidad/overview', label: 'dashboard.overview', icon: '🏗️' },
+      { path: '/dashboard/comunidad/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/comunidad/community', label: 'dashboard.social_impact', icon: '🌳' },
       { path: '/dashboard/comunidad/feedback', label: 'dashboard.citizen_feedback', icon: '📢' },
       { path: '/dashboard/comunidad/messages', label: 'dashboard.messages', icon: '💬' },
@@ -93,6 +96,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.PETROLERA]: [
       { path: '/dashboard/petrolera/overview', label: 'dashboard.overview', icon: '⛽' },
+      { path: '/dashboard/petrolera/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/petrolera/network', label: 'Red Social Sector', icon: '🌐' },
       { path: '/dashboard/petrolera/users', label: 'Usuarios y Accesos', icon: '👥' },
       { path: '/dashboard/petrolera/opportunities', label: 'dashboard.my_tenders', icon: '📜' },
@@ -103,6 +107,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.COMPANY]: [
       { path: '/dashboard/company/overview', label: 'dashboard.overview', icon: '🏭' },
+      { path: '/dashboard/company/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/company/network', label: 'Red Social Sector', icon: '🌐' },
       { path: '/dashboard/company/users', label: 'Usuarios y Accesos', icon: '👥' },
       { path: '/dashboard/company/profile', label: 'dashboard.my_company_profile', icon: '🏢' },
@@ -117,6 +122,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.EMPRESA_LOCAL]: [
       { path: '/dashboard/empresa_local/overview', label: 'dashboard.overview', icon: '💡' },
+      { path: '/dashboard/empresa_local/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/empresa_local/network', label: 'Red Social Sector', icon: '🌐' },
       { path: '/dashboard/empresa_local/users', label: 'Usuarios y Accesos', icon: '👥' },
       { path: '/dashboard/empresa_local/profile', label: 'dashboard.my_sme_profile', icon: '🏢' },
@@ -131,6 +137,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.PERSONA]: [
       { path: '/dashboard/persona/overview', label: 'dashboard.overview', icon: '👷' },
+      { path: '/dashboard/persona/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/persona/profile', label: 'dashboard.my_digital_cv', icon: '👤' },
       { path: '/dashboard/persona/jobs', label: 'dashboard.job_board', icon: '🔍' },
       { path: '/dashboard/persona/certificates', label: 'dashboard.certifications', icon: '🎓' },
@@ -140,6 +147,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     ],
     [UserRole.ADVERTISER]: [
       { path: '/dashboard/advertiser/overview', label: 'dashboard.overview', icon: '📊' },
+      { path: '/dashboard/advertiser/news', label: 'dashboard.portal_news', icon: '📰' },
       { path: '/dashboard/advertiser/campaigns', label: 'dashboard.campaigns', icon: '📢' },
       { path: '/dashboard/advertiser/billing', label: 'dashboard.billing', icon: '💳' },
       { path: '/dashboard/advertiser/analytics', label: 'dashboard.analytics', icon: '📈' },
