@@ -723,10 +723,67 @@ export const getContracts = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('contracts').select('*, company:companies(*), opportunity:opportunities(title, project:projects(name))');
     if (error) throw error;
-    return data || [];
+    
+    if (data) {
+      return data.map((c: any) => ({
+        id: c.id,
+        ref: c.ref || `CTR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        title: typeof c.title === 'string' ? c.title : (c.title?.es || c.title?.en || 'Contrato de Registro'),
+        awardedTo: c.awarded_to || (c.company ? c.company.name : ''),
+        companyId: c.company_id,
+        status: c.status || 'pending',
+        value: c.value ? Number(c.value) : 0,
+        startDate: c.start_date || new Date().toISOString().split('T')[0],
+        endDate: c.end_date || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+        location: c.location || 'Malabo, Guinea Ecuatorial',
+        progress: c.progress || 0,
+        nationalCompliance: c.national_compliance || {
+          localStaff: 80,
+          localStaffReq: 80,
+          localGoods: 50,
+          localGoodsReq: 50
+        },
+        company: c.company ? { name: c.company.name } : undefined,
+        milestones: []
+      }));
+    }
+    return [];
   } catch (error) {
     console.error('getContracts failed:', error);
     return [];
+  }
+};
+
+export const createContract = async (contractData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    
+    const dbPayload = {
+      ref: contractData.ref || `CTR-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+      title: typeof contractData.title === 'string' ? contractData.title : (contractData.title?.es || 'Contrato de Registro'),
+      awarded_to: contractData.awardedTo || contractData.awarded_to || '',
+      company_id: contractData.companyId || contractData.company_id || null,
+      opportunity_id: contractData.opportunityId || contractData.opportunity_id || null,
+      status: contractData.status || 'pending',
+      value: contractData.value || 0,
+      start_date: contractData.startDate || contractData.start_date || new Date().toISOString().split('T')[0],
+      end_date: contractData.endDate || contractData.end_date || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+      location: contractData.location || 'Malabo, Guinea Ecuatorial',
+      progress: contractData.progress || 0,
+      national_compliance: contractData.nationalCompliance || contractData.national_compliance || {
+        localStaff: 80,
+        localStaffReq: 80,
+        localGoods: 50,
+        localGoodsReq: 50
+      }
+    };
+
+    const { data, error } = await supabase.from('contracts').insert([dbPayload]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('createContract failed:', error);
+    return null;
   }
 };
 
@@ -1194,10 +1251,89 @@ export const getHelpRequests = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('help_requests').select('*, company:companies(name)').order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map((req: any) => {
+      let title = req.title || '';
+      let description = req.description || '';
+      let companyName = req.company_name || req.company?.name || 'Empresa';
+      
+      if (!title && companyName && companyName.startsWith('[TITLE:')) {
+        const titleMatch = companyName.match(/^\[TITLE:([^\]]*)\]/);
+        const descMatch = companyName.match(/\[DESC:([^\]]*)\]/);
+        if (titleMatch) {
+          title = titleMatch[1];
+          companyName = companyName.replace(/^\[TITLE:[^\]]*\]\s*/, '');
+        }
+        if (descMatch) {
+          description = descMatch[1];
+          companyName = companyName.replace(/\[DESC:[^\]]*\]\s*/, '');
+        }
+      }
+      
+      if (!title) {
+        title = `Consulta sobre ${req.type || 'Soporte'}`;
+      }
+      if (!description) {
+        description = `Consulta enviada el ${new Date(req.created_at || req.date).toLocaleDateString()}`;
+      }
+
+      return {
+        ...req,
+        companyName,
+        title,
+        description,
+        date: new Date(req.created_at || req.date).toLocaleDateString()
+      };
+    });
   } catch (error) {
     console.warn('getHelpRequests failed. Falling back to MOCK_HELP_REQUESTS:', error);
-    return MOCK_HELP_REQUESTS;
+    return MOCK_HELP_REQUESTS.map(req => ({
+      ...req,
+      title: req.title || `Consulta sobre ${req.type}`,
+      description: req.description || `Solicitud en estado ${req.status}`,
+      created_at: req.date || new Date().toISOString()
+    }));
+  }
+};
+
+export const createHelpRequest = async (requestData: any) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    
+    const payload = {
+      company_id: requestData.company_id || requestData.companyId || null,
+      company_name: requestData.company_name || requestData.companyName || 'Empresa',
+      type: requestData.type || 'technical',
+      urgency: requestData.urgency || 'medium',
+      status: requestData.status || 'pending',
+    };
+    
+    // Attempt with title and description columns
+    const fullPayload = {
+      ...payload,
+      title: requestData.title,
+      description: requestData.description
+    };
+
+    const { data, error } = await supabase.from('help_requests').insert([fullPayload]).select().single();
+    if (error) {
+      if (error.message && (error.message.includes('column "title"') || error.message.includes('column "description"'))) {
+        // Fallback: serialize fields inside company_name
+        const serializedCompanyName = `[TITLE:${requestData.title || ''}] [DESC:${requestData.description || ''}] ${payload.company_name}`;
+        const fallbackPayload = {
+          ...payload,
+          company_name: serializedCompanyName
+        };
+        const { data: retryData, error: retryError } = await supabase.from('help_requests').insert([fallbackPayload]).select().single();
+        if (retryError) throw retryError;
+        return retryData;
+      }
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    console.warn("createHelpRequest failed. Falling back to simulation:", error);
+    return { id: `req-${Date.now()}`, ...requestData, created_at: new Date().toISOString() };
   }
 };
 
@@ -1264,12 +1400,167 @@ export const getNotifications = async (userId: string) => {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    
+    if (data) {
+      return data.map((n: any) => ({
+        id: n.id,
+        type: n.type || (n.title.toLowerCase().includes('licitaci') ? 'opportunity' : n.title.toLowerCase().includes('mensaje') ? 'message' : 'system'),
+        title: n.title,
+        description: n.content || n.description || '',
+        timestamp: new Date(n.created_at).toLocaleDateString(),
+        isRead: n.read !== undefined ? n.read : (n.is_read || false),
+        actionLabel: n.action_label || (n.title.toLowerCase().includes('licitaci') ? 'Ver Licitación' : undefined),
+        category: n.category || (n.title.toLowerCase().includes('licitaci') ? 'Oportunidades' : 'Sistema')
+      }));
+    }
   } catch (error) {
-    console.warn(`getNotifications failed for '${userId}'. Returning mock notifications:`, error);
-    return [
-      { id: 'notif-1', user_id: userId, title: 'Bienvenido al Portal', content: 'Su registro se ha completado con éxito.', read: false, created_at: new Date().toISOString() }
-    ];
+    console.warn(`getNotifications failed for '${userId}'. Using local/mock fallback:`, error);
+  }
+
+  const storageKey = `notifications_${userId}`;
+  const stored = localStorage.getItem(storageKey);
+  if (stored) {
+    return JSON.parse(stored);
+  }
+
+  const defaultNotifications = [
+    {
+      id: 'notif-1',
+      type: 'system',
+      title: 'Bienvenido al Portal de Contenido Nacional',
+      description: 'Su registro se ha completado con éxito. Ahora tiene acceso completo a la plataforma.',
+      isRead: false,
+      timestamp: new Date().toLocaleDateString(),
+      category: 'Sistema'
+    },
+    {
+      id: 'notif-2',
+      type: 'opportunity',
+      title: 'Nueva Licitación de Marathon Oil',
+      description: 'Marathon Oil ha publicado una nueva oportunidad para suministro de válvulas y mantenimiento preventivo.',
+      isRead: false,
+      timestamp: new Date().toLocaleDateString(),
+      category: 'Oportunidades',
+      actionLabel: 'Ver Licitación'
+    },
+    {
+      id: 'notif-3',
+      type: 'application',
+      title: 'Certificado de Contenido Nacional Emitido',
+      description: 'El Ministerio ha aprobado y firmado digitalmente su Certificado de Contenido Nacional.',
+      isRead: true,
+      timestamp: new Date(Date.now() - 86400000).toLocaleDateString(),
+      category: 'Documentos',
+      actionLabel: 'Descargar Certificado'
+    },
+    {
+      id: 'notif-4',
+      type: 'message',
+      title: 'Nuevo Mensaje de Soporte Técnico',
+      description: 'Un asesor técnico ha respondido a su consulta sobre requisitos de subcontratación local.',
+      isRead: false,
+      timestamp: new Date(Date.now() - 172800000).toLocaleDateString(),
+      category: 'Mensajes',
+      actionLabel: 'Responder Chat'
+    }
+  ];
+
+  localStorage.setItem(storageKey, JSON.stringify(defaultNotifications));
+  return defaultNotifications;
+};
+
+export const createNotification = async (userId: string, title: string, content: string, type: string = 'system', actionLabel?: string, category?: string) => {
+  try {
+    const dbPayload = {
+      user_id: userId,
+      title: title,
+      content: content,
+      read: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (isSupabaseActive()) {
+      const { data, error } = await supabase.from('notifications').insert([dbPayload]).select().single();
+      if (!error && data) {
+        // Also update local storage so local UI is immediately updated
+        const storageKey = `notifications_${userId}`;
+        const stored = localStorage.getItem(storageKey);
+        const list = stored ? JSON.parse(stored) : [];
+        const newNotif = {
+          id: data.id,
+          type: type,
+          title: title,
+          description: content,
+          timestamp: new Date().toLocaleDateString(),
+          isRead: false,
+          actionLabel,
+          category: category || 'Sistema'
+        };
+        localStorage.setItem(storageKey, JSON.stringify([newNotif, ...list]));
+        return data;
+      }
+    }
+  } catch (error) {
+    console.error('createNotification failed:', error);
+  }
+
+  // Fallback to localStorage
+  const storageKey = `notifications_${userId}`;
+  const stored = localStorage.getItem(storageKey);
+  const list = stored ? JSON.parse(stored) : [];
+  const newNotif = {
+    id: `notif-${Date.now()}`,
+    type: type,
+    title: title,
+    description: content,
+    timestamp: new Date().toLocaleDateString(),
+    isRead: false,
+    actionLabel,
+    category: category || 'Sistema'
+  };
+  localStorage.setItem(storageKey, JSON.stringify([newNotif, ...list]));
+  return newNotif;
+};
+
+export const updateNotificationReadState = async (userId: string, notificationId: string, isRead: boolean) => {
+  try {
+    if (isSupabaseActive() && notificationId.length === 36) {
+      await supabase
+        .from('notifications')
+        .update({ read: isRead })
+        .eq('id', notificationId);
+    }
+  } catch (error) {
+    console.error("Failed to update notification read state:", error);
+  }
+
+  const storageKey = `notifications_${userId}`;
+  const stored = localStorage.getItem(storageKey);
+  if (stored) {
+    const list = JSON.parse(stored);
+    const updated = list.map((n: any) => n.id === notificationId ? { ...n, isRead } : n);
+    localStorage.setItem(storageKey, JSON.stringify(updated));
+  }
+};
+
+export const markAllNotificationsAsRead = async (userId: string) => {
+  try {
+    if (isSupabaseActive()) {
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', userId);
+    }
+  } catch (error) {
+    console.error("Failed to mark all notifications as read:", error);
+  }
+
+  const storageKey = `notifications_${userId}`;
+  const stored = localStorage.getItem(storageKey);
+  if (stored) {
+    const list = JSON.parse(stored);
+    const updated = list.map((n: any) => ({ ...n, isRead: true }));
+    localStorage.setItem(storageKey, JSON.stringify(updated));
   }
 };
 

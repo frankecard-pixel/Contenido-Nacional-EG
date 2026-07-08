@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getNotifications } from '../services/supabaseApi';
+import { supabase } from '../services/supabaseClient';
+import { getNotifications, updateNotificationReadState, markAllNotificationsAsRead } from '../services/supabaseApi';
 import { Notification, User } from '../types';
+import { toast } from 'sonner';
 
 interface NotificationsProps {
   user?: User | null;
@@ -14,20 +16,79 @@ const Notifications: React.FC<NotificationsProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
 
+  const fetchNotifications = async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const data = await getNotifications(user.id);
+      setNotifications(data as Notification[]);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!user?.id) return;
-      try {
-        const data = await getNotifications(user.id);
-        setNotifications(data as Notification[]);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchNotifications();
+
+    if (!user?.id || !supabase) return;
+
+    // Set up real-time listener for the 'notifications' table where user_id = user.id
+    const channel = supabase
+      .channel(`realtime-notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          const newDbNotif = payload.new;
+          const mapped: Notification = {
+            id: newDbNotif.id,
+            type: newDbNotif.type || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'opportunity' : newDbNotif.title?.toLowerCase().includes('mensaje') ? 'message' : 'system'),
+            title: newDbNotif.title,
+            description: newDbNotif.content || newDbNotif.description || '',
+            timestamp: new Date(newDbNotif.created_at).toLocaleDateString(),
+            isRead: newDbNotif.read !== undefined ? newDbNotif.read : (newDbNotif.is_read || false),
+            actionLabel: newDbNotif.action_label || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'Ver Licitación' : undefined),
+            category: newDbNotif.category || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'Oportunidades' : 'Sistema')
+          };
+          setNotifications(prev => [mapped, ...prev]);
+          toast.info(`Nueva Notificación: ${mapped.title}`);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
+
+  const handleMarkAsRead = async (id: string, currentlyRead: boolean) => {
+    if (!user?.id || currentlyRead) return;
+    try {
+      await updateNotificationReadState(user.id, id, true);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      toast.success('Notificación marcada como leída');
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const handleMarkAllAsReadClick = async () => {
+    if (!user?.id) return;
+    try {
+      await markAllNotificationsAsRead(user.id);
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      toast.success('Todas las notificaciones han sido marcadas como leídas');
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
 
   const filteredNotifications = useMemo(() => 
     filter === 'all' 
@@ -59,7 +120,10 @@ const Notifications: React.FC<NotificationsProps> = ({ user }) => {
           <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Centro de Notificaciones</h1>
           <p className="mt-3 text-lg text-slate-500 dark:text-slate-400 font-medium">Gestione sus alertas y comunicaciones oficiales del Ministerio de Hidrocarburos, Minas y Electricidad.</p>
         </div>
-        <button className="inline-flex items-center justify-center gap-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+        <button 
+          onClick={handleMarkAllAsReadClick}
+          className="inline-flex items-center justify-center gap-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+        >
           <span className="material-symbols-outlined text-lg">done_all</span>
           <span>Marcar todas como leídas</span>
         </button>
@@ -107,7 +171,11 @@ const Notifications: React.FC<NotificationsProps> = ({ user }) => {
               </div>
             ) : (
               filteredNotifications.map((n) => (
-                <div key={n.id} className={`relative group overflow-hidden rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all ${getStyle(n.type, n.isRead)}`}>
+                <div 
+                  key={n.id} 
+                  onClick={() => handleMarkAsRead(n.id, n.isRead)}
+                  className={`relative group overflow-hidden rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer ${getStyle(n.type, n.isRead)}`}
+                >
                   <div className="flex gap-6">
                     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.25rem] shadow-inner ${
                       n.type === 'critical' ? 'bg-red-50 dark:bg-red-900/20 text-red-600' : 

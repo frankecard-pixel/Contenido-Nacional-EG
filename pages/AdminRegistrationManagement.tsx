@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../services/supabaseClient';
-import { createUser, createCompany, getRegistrationRequests, updateRegistrationRequest } from '../services/supabaseApi';
+import { createUser, createCompany, getRegistrationRequests, updateRegistrationRequest, createContract, createNotification } from '../services/supabaseApi';
 import { UserRole } from '../types';
 import { CheckCircle, XCircle, Clock, Eye, Download, FileText, Loader2, Search, Filter, CreditCard, UserPlus } from 'lucide-react';
 
@@ -19,6 +19,7 @@ const AdminRegistrationManagement: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [successNotification, setSuccessNotification] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<{ name: string, base64: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchRequests();
@@ -35,6 +36,19 @@ const AdminRegistrationManagement: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const filteredRequests = requests.filter((req) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (req.company_name || '').toLowerCase().includes(q) ||
+      (req.name || '').toLowerCase().includes(q) ||
+      (req.email || '').toLowerCase().includes(q) ||
+      (req.tracking_number || '').toLowerCase().includes(q) ||
+      (req.expediente_number || '').toLowerCase().includes(q) ||
+      (req.tax_id || '').toLowerCase().includes(q)
+    );
+  });
 
   const updateStatus = async (id: string, status: string, extraData: any = {}) => {
     setProcessing(true);
@@ -62,9 +76,13 @@ const AdminRegistrationManagement: React.FC = () => {
       const template = templates?.[0] || { content: 'Contrato de Registro para {{company_name}}' };
       
       // 2. Replace variables
-      const content = template.content
-        .replace('{{company_name}}', request.company_name)
-        .replace('{{tax_id}}', request.tax_id)
+      const templateContent = template && typeof template.content === 'string'
+        ? template.content
+        : 'Contrato de Registro para {{company_name}}';
+
+      const content = templateContent
+        .replace('{{company_name}}', request.company_name || '')
+        .replace('{{tax_id}}', request.tax_id || '')
         .replace('{{date}}', new Date().toLocaleDateString());
       
       // 3. Create contract record
@@ -106,7 +124,7 @@ const AdminRegistrationManagement: React.FC = () => {
       });
 
       // 2. Create Company Record
-      await createCompany({
+      const company = await createCompany({
         name: request.company_name,
         taxId: request.tax_id,
         type: request.role === UserRole.EMPRESA_LOCAL ? 'local' : 'international',
@@ -115,7 +133,41 @@ const AdminRegistrationManagement: React.FC = () => {
         email: request.email
       });
 
-      // 3. Update Request Status
+      // 3. Create Anual Renewable Contract for the Company
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setFullYear(startDate.getFullYear() + 1); // Anual renovable!
+
+      await createContract({
+        ref: `CONTRATO-REG-${Math.floor(100000 + Math.random() * 900000)}`,
+        title: `Contrato Anual Renovable de Registro y Cumplimiento - ${request.company_name}`,
+        awardedTo: request.company_name,
+        companyId: company?.id,
+        status: 'execution', // Set to active execution immediately so it shows up in Contract panel!
+        value: 1500000, // 1.5M FCFA standard annual fee
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        location: 'Malabo, Guinea Ecuatorial',
+        progress: 100, // Registration active
+        nationalCompliance: {
+          localStaff: 85,
+          localStaffReq: 80,
+          localGoods: 60,
+          localGoodsReq: 50
+        }
+      });
+
+      // 4. Create Notification for the User
+      await createNotification(
+        userId,
+        'Registro de Empresa Aprobado',
+        `Estimado/a ${request.name}, su solicitud de registro para la empresa ${request.company_name} ha sido aprobada con éxito. Su Contrato Anual Renovable de Registro y Cumplimiento se ha generado y está activo en el panel.`,
+        'system',
+        'Ver Mi Perfil',
+        'Solicitudes'
+      );
+
+      // 5. Update Request Status
       await updateRegistrationRequest(request.id, { status: 'approved' });
 
       await fetchRequests();
@@ -174,15 +226,20 @@ const AdminRegistrationManagement: React.FC = () => {
         {/* Requests List */}
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Lista de Solicitudes</h3>
-              <div className="flex gap-2">
-                <button className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 hover:text-primary transition-colors">
-                  <Search className="w-4 h-4" />
-                </button>
-                <button className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 hover:text-primary transition-colors">
-                  <Filter className="w-4 h-4" />
-                </button>
+            <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Lista de Solicitudes</h3>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Sigue el estado de registros por código de seguimiento</p>
+              </div>
+              <div className="relative flex-1 max-w-xs">
+                <input
+                  type="text"
+                  placeholder="Buscar por código, empresa, usuario..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-10 pr-4 text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               </div>
             </div>
             <div className="divide-y divide-slate-50 dark:divide-slate-700">
@@ -190,10 +247,12 @@ const AdminRegistrationManagement: React.FC = () => {
                 <div className="p-20 flex justify-center">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
-              ) : requests.length === 0 ? (
-                <div className="p-20 text-center opacity-50 italic uppercase text-[10px] font-black tracking-widest">No hay solicitudes pendientes</div>
+              ) : filteredRequests.length === 0 ? (
+                <div className="p-20 text-center opacity-50 italic uppercase text-[10px] font-black tracking-widest">
+                  {searchQuery ? 'No hay solicitudes que coincidan con la búsqueda' : 'No hay solicitudes pendientes'}
+                </div>
               ) : (
-                requests.map((req) => (
+                filteredRequests.map((req) => (
                   <button
                     key={req.id}
                     onClick={() => setSelectedRequest(req)}
@@ -201,16 +260,27 @@ const AdminRegistrationManagement: React.FC = () => {
                       selectedRequest?.id === req.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-primary' : 'border-l-4 border-transparent'
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                    <div className="flex items-start gap-4">
+                      <div className="size-12 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 shrink-0 mt-0.5">
                         <Building2 className="w-6 h-6" />
                       </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{req.company_name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{req.email}</p>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{req.company_name}</p>
+                          <span className="text-[9px] font-mono font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded tracking-widest uppercase">
+                            {req.tracking_number || req.expediente_number || 'CÓDIGO: PENDIENTE'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          NIF/ID: {req.tax_id || 'PENDIENTE'}
+                        </p>
+                        <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[11px] font-medium pt-1">
+                          <span className="material-symbols-outlined text-[13px] shrink-0">person</span>
+                          <span>Usuario: <strong className="font-bold text-slate-700 dark:text-slate-300">{req.name || 'N/A'}</strong> ({req.email})</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2 shrink-0">
                       <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
                         req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
                         req.status === 'payment_pending' ? 'bg-orange-100 text-orange-700' :
@@ -242,6 +312,18 @@ const AdminRegistrationManagement: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800">
+                <div className="col-span-2 space-y-1 bg-blue-500/10 dark:bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20">
+                  <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Código de Seguimiento (Tracking Code)</p>
+                  <p className="text-xs font-mono font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest mt-0.5">
+                    {selectedRequest.tracking_number || 'PENDIENTE'}
+                  </p>
+                  {selectedRequest.expediente_number && (
+                    <div className="mt-2 pt-2 border-t border-blue-500/10">
+                      <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Número de Expediente</p>
+                      <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-0.5">{selectedRequest.expediente_number}</p>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">NIF / Registro</p>
                   <p className="text-xs font-bold text-slate-900 dark:text-white uppercase leading-none">{selectedRequest.tax_id}</p>
@@ -251,8 +333,13 @@ const AdminRegistrationManagement: React.FC = () => {
                   <p className="text-xs font-bold text-slate-900 dark:text-white uppercase leading-none">{selectedRequest.name}</p>
                 </div>
                 <div className="space-y-1 pt-2 col-span-2 border-t border-slate-200/50 dark:border-slate-700/50">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Correo de Contacto</p>
-                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate leading-none">{selectedRequest.email}</p>
+                  <p className="text-[9px] font-black text-primary uppercase tracking-widest">Usuario de Contacto Relacionado</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="material-symbols-outlined text-base text-slate-400">person</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate leading-none">
+                      {selectedRequest.name} ({selectedRequest.email})
+                    </span>
+                  </div>
                 </div>
                 {selectedRequest.phone && (
                   <div className="space-y-1 pt-2 col-span-2 border-t border-slate-200/50 dark:border-slate-700/50">

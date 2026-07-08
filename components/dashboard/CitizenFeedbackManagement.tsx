@@ -128,11 +128,13 @@ const CitizenFeedbackManagement: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       <div className="size-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-blue-600 font-black text-xs shadow-sm">
-                        {(fb.company?.name || 'CI').substring(0, 2).toUpperCase()}
+                        {(fb.companyName || fb.company?.name || 'Ciudadano').substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{fb.company?.name || 'Ciudadano'}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{new Date(fb.created_at).toLocaleDateString()}</p>
+                        <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{fb.companyName || fb.company?.name || 'Ciudadano'}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">
+                          {fb.created_at ? new Date(fb.created_at).toLocaleDateString() : fb.date || 'Reciente'}
+                        </p>
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
