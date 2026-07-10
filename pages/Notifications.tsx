@@ -32,39 +32,62 @@ const Notifications: React.FC<NotificationsProps> = ({ user }) => {
   useEffect(() => {
     fetchNotifications();
 
-    if (!user?.id || !supabase) return;
+    if (!user?.id) return;
 
-    // Set up real-time listener for the 'notifications' table where user_id = user.id
-    const channel = supabase
-      .channel(`realtime-notifications-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          const newDbNotif = payload.new;
-          const mapped: Notification = {
-            id: newDbNotif.id,
-            type: newDbNotif.type || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'opportunity' : newDbNotif.title?.toLowerCase().includes('mensaje') ? 'message' : 'system'),
-            title: newDbNotif.title,
-            description: newDbNotif.content || newDbNotif.description || '',
-            timestamp: new Date(newDbNotif.created_at).toLocaleDateString(),
-            isRead: newDbNotif.read !== undefined ? newDbNotif.read : (newDbNotif.is_read || false),
-            actionLabel: newDbNotif.action_label || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'Ver Licitación' : undefined),
-            category: newDbNotif.category || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'Oportunidades' : 'Sistema')
-          };
-          setNotifications(prev => [mapped, ...prev]);
-          toast.info(`Nueva Notificación: ${mapped.title}`);
-        }
-      )
-      .subscribe();
+    // Local notification event listener (for local fallback / immediate updates)
+    const handleLocalNotif = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.userId === user.id) {
+        const notif = customEvent.detail.notification;
+        setNotifications(prev => {
+          if (prev.some(n => n.id === notif.id)) return prev;
+          return [notif, ...prev];
+        });
+        toast.info(`Nueva Notificación: ${notif.title}`);
+      }
+    };
+    window.addEventListener('local-notification-created', handleLocalNotif);
+
+    let channel: any = null;
+    if (supabase) {
+      // Set up real-time listener for the 'notifications' table where user_id = user.id
+      channel = supabase
+        .channel(`realtime-notifications-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            const newDbNotif = payload.new;
+            const mapped: Notification = {
+              id: newDbNotif.id,
+              type: newDbNotif.type || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'opportunity' : newDbNotif.title?.toLowerCase().includes('mensaje') ? 'message' : 'system'),
+              title: newDbNotif.title,
+              description: newDbNotif.content || newDbNotif.description || '',
+              timestamp: new Date(newDbNotif.created_at).toLocaleDateString(),
+              isRead: newDbNotif.read !== undefined ? newDbNotif.read : (newDbNotif.is_read || false),
+              actionLabel: newDbNotif.action_label || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'Ver Licitación' : undefined),
+              category: newDbNotif.category || (newDbNotif.title?.toLowerCase().includes('licitaci') ? 'Oportunidades' : 'Sistema')
+            };
+            setNotifications(prev => {
+              if (prev.some(n => n.id === mapped.id)) return prev;
+              return [mapped, ...prev];
+            });
+            toast.info(`Nueva Notificación: ${mapped.title}`);
+          }
+        )
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      window.removeEventListener('local-notification-created', handleLocalNotif);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [user]);
 

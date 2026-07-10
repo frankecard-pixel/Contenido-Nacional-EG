@@ -41,6 +41,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       { path: '/dashboard/super_admin/news', label: 'dashboard.news_management', icon: '📰' },
       { path: '/dashboard/super_admin/web', label: 'dashboard.public_portal', icon: '🌐' },
       { path: '/dashboard/super_admin/newsletter', label: 'Newsletter', icon: '📧' },
+      { path: '/dashboard/super_admin/denuncias', label: 'Denuncias por Abuso', icon: '🚩' },
       { path: '/dashboard/super_admin/certifications', label: 'Verificaciones', icon: '✅' },
       { path: '/dashboard/super_admin/registrations', label: 'Registros', icon: '🏢' },
       { path: '/dashboard/super_admin/contract-templates', label: 'Templates', icon: '📄' },
@@ -80,6 +81,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     [UserRole.COMUNICACION]: [
       { path: '/dashboard/comunicacion/overview', label: 'dashboard.overview', icon: '📰' },
       { path: '/dashboard/comunicacion/news', label: 'dashboard.news_editor', icon: '✍️' },
+      { path: '/dashboard/comunicacion/denuncias', label: 'Denuncias por Abuso', icon: '🚩' },
       { path: '/dashboard/comunicacion/web', label: 'dashboard.web_portal', icon: '🌐' },
       { path: '/dashboard/comunicacion/notifications', label: 'dashboard.notifications', icon: '🔔' },
       { path: '/dashboard/comunicacion/messages', label: 'dashboard.press_messages', icon: '💬' },

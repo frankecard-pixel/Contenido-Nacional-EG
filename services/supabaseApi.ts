@@ -35,6 +35,31 @@ import {
   MOCK_GALLERY_IMAGES
 } from './mockService';
 
+// Load mock data from localStorage if present to ensure persistence across refreshes
+if (typeof window !== 'undefined') {
+  const localCompanies = localStorage.getItem('MOCK_COMPANIES');
+  if (localCompanies) {
+    try {
+      const parsed = JSON.parse(localCompanies);
+      MOCK_COMPANIES.length = 0;
+      MOCK_COMPANIES.push(...parsed);
+    } catch (e) {
+      console.warn('Error parsing MOCK_COMPANIES from localStorage:', e);
+    }
+  }
+
+  const localUsers = localStorage.getItem('MOCK_USERS');
+  if (localUsers) {
+    try {
+      const parsed = JSON.parse(localUsers);
+      MOCK_USERS.length = 0;
+      MOCK_USERS.push(...parsed);
+    } catch (e) {
+      console.warn('Error parsing MOCK_USERS from localStorage:', e);
+    }
+  }
+}
+
 // Helper to check if supabase client is available and active
 const isSupabaseActive = () => {
   return !!supabase;
@@ -344,6 +369,13 @@ export const createUser = async (userData: Partial<User>) => {
     console.warn('createUser failed. Falling back to mock user creation:', error);
     const newUser = { id: userData.id || `u-${Date.now()}`, ...userData } as User;
     MOCK_USERS.push(newUser);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('MOCK_USERS', JSON.stringify(MOCK_USERS));
+      } catch (e) {
+        console.warn('Error saving MOCK_USERS to localStorage:', e);
+      }
+    }
     return newUser;
   }
 };
@@ -360,6 +392,13 @@ export const updateUser = async (id: string, userData: Partial<User>) => {
     const idx = MOCK_USERS.findIndex(u => u.id === id);
     if (idx !== -1) {
       MOCK_USERS[idx] = { ...MOCK_USERS[idx], ...userData };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('MOCK_USERS', JSON.stringify(MOCK_USERS));
+        } catch (e) {
+          console.warn('Error saving MOCK_USERS to localStorage:', e);
+        }
+      }
       return MOCK_USERS[idx];
     }
     return { id, ...userData };
@@ -442,7 +481,9 @@ export const createCompany = async (companyData: Partial<Company>) => {
       local_spend_percentage: companyData.localSpendPercentage || 0,
       address: companyData.address || '',
       phone: companyData.phone || '',
-      email: companyData.email || ''
+      email: companyData.email || '',
+      lat: companyData.lat || null,
+      lng: companyData.lng || null
     };
 
     const { data, error } = await supabase.from('companies').insert([dbPayload]).select().single();
@@ -466,44 +507,58 @@ export const createCompany = async (companyData: Partial<Company>) => {
       sector: companyData.sector || ['Varios'],
       badges: companyData.badges || []
     } as unknown as Company;
-    MOCK_COMPANIES.push(newCompany as any);
-    return newCompany;
-  }
-};
-
-export const updateCompany = async (id: string, companyData: Partial<Company>) => {
-  try {
-    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    
-    const dbPayload: any = {};
-    if (companyData.name !== undefined) dbPayload.name = companyData.name;
-    if (companyData.taxId !== undefined) dbPayload.tax_id = companyData.taxId;
-    if (companyData.rugeId !== undefined) dbPayload.ruge_id = companyData.rugeId;
-    if (companyData.type !== undefined) dbPayload.type = companyData.type;
-    if (companyData.sector !== undefined) dbPayload.sector = companyData.sector;
-    if (companyData.status !== undefined) dbPayload.status = companyData.status;
-    if (companyData.certificationLevel !== undefined) dbPayload.certification_level = companyData.certificationLevel;
-    if (companyData.complianceScore !== undefined) dbPayload.compliance_score = companyData.complianceScore;
-    if (companyData.nationalEmployeeCount !== undefined) dbPayload.national_employee_count = companyData.nationalEmployeeCount;
-    if (companyData.totalEmployeeCount !== undefined) dbPayload.total_employee_count = companyData.totalEmployeeCount;
-    if (companyData.localSpendPercentage !== undefined) dbPayload.local_spend_percentage = companyData.localSpendPercentage;
-    if (companyData.address !== undefined) dbPayload.address = companyData.address;
-    if (companyData.phone !== undefined) dbPayload.phone = companyData.phone;
-    if (companyData.email !== undefined) dbPayload.email = companyData.email;
-
-    const { data, error } = await supabase.from('companies').update(dbPayload).eq('id', id).select().single();
-    if (error) throw error;
-    return mapDboToCompany(data);
-  } catch (error) {
-    console.warn(`updateCompany for '${id}' failed. Falling back to mock response:`, error);
-    const idx = MOCK_COMPANIES.findIndex(c => c.id === id);
-    if (idx !== -1) {
-      MOCK_COMPANIES[idx] = { ...MOCK_COMPANIES[idx], ...companyData };
-      return MOCK_COMPANIES[idx];
-    }
-    return { id, ...companyData };
-  }
-};
+     MOCK_COMPANIES.push(newCompany as any);
+     if (typeof window !== 'undefined') {
+       try {
+         localStorage.setItem('MOCK_COMPANIES', JSON.stringify(MOCK_COMPANIES));
+       } catch (e) {
+         console.warn('Error saving MOCK_COMPANIES to localStorage:', e);
+       }
+     }
+     return newCompany;
+   }
+ };
+ 
+ export const updateCompany = async (id: string, companyData: Partial<Company>) => {
+   try {
+     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+     
+     const dbPayload: any = {};
+     if (companyData.name !== undefined) dbPayload.name = companyData.name;
+     if (companyData.taxId !== undefined) dbPayload.tax_id = companyData.taxId;
+     if (companyData.rugeId !== undefined) dbPayload.ruge_id = companyData.rugeId;
+     if (companyData.type !== undefined) dbPayload.type = companyData.type;
+     if (companyData.sector !== undefined) dbPayload.sector = companyData.sector;
+     if (companyData.status !== undefined) dbPayload.status = companyData.status;
+     if (companyData.certificationLevel !== undefined) dbPayload.certification_level = companyData.certificationLevel;
+     if (companyData.complianceScore !== undefined) dbPayload.compliance_score = companyData.complianceScore;
+     if (companyData.nationalEmployeeCount !== undefined) dbPayload.national_employee_count = companyData.nationalEmployeeCount;
+     if (companyData.totalEmployeeCount !== undefined) dbPayload.total_employee_count = companyData.totalEmployeeCount;
+     if (companyData.localSpendPercentage !== undefined) dbPayload.local_spend_percentage = companyData.localSpendPercentage;
+     if (companyData.address !== undefined) dbPayload.address = companyData.address;
+     if (companyData.phone !== undefined) dbPayload.phone = companyData.phone;
+     if (companyData.email !== undefined) dbPayload.email = companyData.email;
+ 
+     const { data, error } = await supabase.from('companies').update(dbPayload).eq('id', id).select().single();
+     if (error) throw error;
+     return mapDboToCompany(data);
+   } catch (error) {
+     console.warn(`updateCompany for '${id}' failed. Falling back to mock response:`, error);
+     const idx = MOCK_COMPANIES.findIndex(c => c.id === id);
+     if (idx !== -1) {
+       MOCK_COMPANIES[idx] = { ...MOCK_COMPANIES[idx], ...companyData };
+       if (typeof window !== 'undefined') {
+         try {
+           localStorage.setItem('MOCK_COMPANIES', JSON.stringify(MOCK_COMPANIES));
+         } catch (e) {
+           console.warn('Error saving MOCK_COMPANIES to localStorage:', e);
+         }
+       }
+       return MOCK_COMPANIES[idx];
+     }
+     return { id, ...companyData };
+   }
+ };
 
 // ==========================================
 // OPPORTUNITIES
@@ -1470,6 +1525,12 @@ export const getNotifications = async (userId: string) => {
 };
 
 export const createNotification = async (userId: string, title: string, content: string, type: string = 'system', actionLabel?: string, category?: string) => {
+  const dispatchLocalEvent = (notif: any) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('local-notification-created', { detail: { userId, notification: notif } }));
+    }
+  };
+
   try {
     const dbPayload = {
       user_id: userId,
@@ -1497,6 +1558,7 @@ export const createNotification = async (userId: string, title: string, content:
           category: category || 'Sistema'
         };
         localStorage.setItem(storageKey, JSON.stringify([newNotif, ...list]));
+        dispatchLocalEvent(newNotif);
         return data;
       }
     }
@@ -1519,6 +1581,7 @@ export const createNotification = async (userId: string, title: string, content:
     category: category || 'Sistema'
   };
   localStorage.setItem(storageKey, JSON.stringify([newNotif, ...list]));
+  dispatchLocalEvent(newNotif);
   return newNotif;
 };
 
@@ -1639,6 +1702,19 @@ export let MOCK_REGISTRATION_REQUESTS: any[] = [
   }
 ];
 
+if (typeof window !== 'undefined') {
+  const localRequests = localStorage.getItem('MOCK_REGISTRATION_REQUESTS');
+  if (localRequests) {
+    try {
+      const parsed = JSON.parse(localRequests);
+      MOCK_REGISTRATION_REQUESTS.length = 0;
+      MOCK_REGISTRATION_REQUESTS.push(...parsed);
+    } catch (e) {
+      console.warn('Error parsing MOCK_REGISTRATION_REQUESTS from localStorage:', e);
+    }
+  }
+}
+
 export const getRegistrationRequests = async () => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
@@ -1673,6 +1749,13 @@ export const createRegistrationRequest = async (requestData: any) => {
     console.warn('createRegistrationRequest failed. Falling back to mock creation:', error);
     const newRequest = { id: `req-${Date.now()}`, ...requestData, created_at: new Date().toISOString() };
     MOCK_REGISTRATION_REQUESTS.push(newRequest);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('MOCK_REGISTRATION_REQUESTS', JSON.stringify(MOCK_REGISTRATION_REQUESTS));
+      } catch (e) {
+        console.warn('Error saving MOCK_REGISTRATION_REQUESTS to localStorage:', e);
+      }
+    }
     return newRequest;
   }
 };
@@ -1688,6 +1771,13 @@ export const updateRegistrationRequest = async (id: string, requestData: any) =>
     const idx = MOCK_REGISTRATION_REQUESTS.findIndex(r => r.id === id);
     if (idx !== -1) {
       MOCK_REGISTRATION_REQUESTS[idx] = { ...MOCK_REGISTRATION_REQUESTS[idx], ...requestData };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('MOCK_REGISTRATION_REQUESTS', JSON.stringify(MOCK_REGISTRATION_REQUESTS));
+        } catch (e) {
+          console.warn('Error saving MOCK_REGISTRATION_REQUESTS to localStorage:', e);
+        }
+      }
       return MOCK_REGISTRATION_REQUESTS[idx];
     }
     return { id, ...requestData };
@@ -2227,6 +2317,144 @@ export const deleteWebTestimonial = async (id: string) => {
     console.warn('deleteWebTestimonial failed:', error);
     return true;
   }
+};
+
+// ==========================================
+// DENUNCIAS / REPORTS
+// ==========================================
+export interface Denuncia {
+  id: string;
+  commentId: string;
+  commentText: string;
+  commentAuthorName: string;
+  commentAuthorRole: string;
+  reportedBy: string;
+  reason: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  created_at: string;
+  newsTitle?: string;
+  newsId?: string;
+}
+
+export let MOCK_DENUNCIAS: Denuncia[] = [];
+
+if (typeof window !== 'undefined') {
+  const localDenuncias = localStorage.getItem('MOCK_DENUNCIAS');
+  if (localDenuncias) {
+    try {
+      MOCK_DENUNCIAS = JSON.parse(localDenuncias);
+    } catch (e) {
+      console.warn('Error parsing MOCK_DENUNCIAS:', e);
+    }
+  } else {
+    MOCK_DENUNCIAS = [
+      {
+        id: 'den-1',
+        commentId: 'comment-def-1',
+        commentText: 'Este servicio es una estafa total, no pierdan su dinero aquí. Son unos ladrones corruptos del ministerio.',
+        commentAuthorName: 'Juan Nguema',
+        commentAuthorRole: 'persona',
+        reportedBy: 'Admin de Prensa',
+        reason: 'Insultos graves y difamación sin fundamento contra la institución.',
+        status: 'pending',
+        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+        newsTitle: 'Nuevas Regulaciones para el Sector Hidrocarburos 2026',
+        newsId: '1'
+      },
+      {
+        id: 'den-2',
+        commentId: 'comment-def-2',
+        commentText: '¡¡¡VENDAN TODO YA!!! ¡EL SECTOR SE CAE! Spammeen este link para ganar dinero fácil: bit.ly/fake-link',
+        commentAuthorName: 'AnonymousUser',
+        commentAuthorRole: 'persona',
+        reportedBy: 'Sistema Automático',
+        reason: 'Spam comercial, enlaces sospechosos e intentos de phishing.',
+        status: 'pending',
+        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+        newsTitle: 'Licitaciones Públicas de Contenido Nacional',
+        newsId: '2'
+      }
+    ];
+    localStorage.setItem('MOCK_DENUNCIAS', JSON.stringify(MOCK_DENUNCIAS));
+  }
+}
+
+export const getDenuncias = async (): Promise<Denuncia[]> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('comment_reports').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('getDenuncias failed. Falling back to MOCK_DENUNCIAS:', error);
+    return MOCK_DENUNCIAS;
+  }
+};
+
+export const createDenuncia = async (denunciaData: Partial<Denuncia>): Promise<Denuncia> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('comment_reports').insert([denunciaData]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('createDenuncia failed. Falling back to MOCK_DENUNCIAS:', error);
+    const newDenuncia: Denuncia = {
+      id: `den-${Date.now()}`,
+      commentId: denunciaData.commentId || `c-${Date.now()}`,
+      commentText: denunciaData.commentText || '',
+      commentAuthorName: denunciaData.commentAuthorName || 'Anónimo',
+      commentAuthorRole: denunciaData.commentAuthorRole || 'persona',
+      reportedBy: denunciaData.reportedBy || 'Anónimo',
+      reason: denunciaData.reason || 'Reportado por abuso',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      newsTitle: denunciaData.newsTitle,
+      newsId: denunciaData.newsId
+    };
+    MOCK_DENUNCIAS.unshift(newDenuncia);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('MOCK_DENUNCIAS', JSON.stringify(MOCK_DENUNCIAS));
+    }
+    return newDenuncia;
+  }
+};
+
+export const updateDenunciaStatus = async (id: string, status: 'resolved' | 'dismissed'): Promise<any> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase.from('comment_reports').update({ status }).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.warn('updateDenunciaStatus failed. Falling back to MOCK_DENUNCIAS:', error);
+    const idx = MOCK_DENUNCIAS.findIndex(d => d.id === id);
+    if (idx !== -1) {
+      MOCK_DENUNCIAS[idx].status = status;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('MOCK_DENUNCIAS', JSON.stringify(MOCK_DENUNCIAS));
+      }
+      return MOCK_DENUNCIAS[idx];
+    }
+    return null;
+  }
+};
+
+export const deleteCommentGlobal = async (commentId: string, newsId?: string): Promise<boolean> => {
+  if (typeof window !== 'undefined' && newsId) {
+    const key = `news_comments_${newsId}`;
+    const localComments = localStorage.getItem(key);
+    if (localComments) {
+      try {
+        const parsed = JSON.parse(localComments);
+        const filtered = parsed.filter((c: any) => c.id !== commentId);
+        localStorage.setItem(key, JSON.stringify(filtered));
+      } catch (e) {
+        console.warn('Error deleting comment in localStorage:', e);
+      }
+    }
+  }
+  return true;
 };
 
 

@@ -6,6 +6,7 @@ import { createUser } from '../../../services/supabaseApi';
 import { sendOTPWhatsApp } from '../../../services/n8nService';
 import { UserRole } from '../../../types';
 import { Mail, Lock, User, Building2, ChevronRight, ChevronLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { LocationPicker } from './LocationPicker';
 
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
@@ -30,6 +31,10 @@ const RegisterForm: React.FC = () => {
     categories: [] as string[],
     sector: [] as string[],
     documents: [] as { name: string, base64: string, type: string }[],
+    address: '',
+    lat: 3.75,
+    lng: 8.78,
+    city: 'Malabo',
   });
 
   // WhatsApp verification states
@@ -259,6 +264,10 @@ const RegisterForm: React.FC = () => {
           categories: formData.categories,
           tracking_number: trackingNumber,
           expediente_number: trackingNumber,
+          address: formData.address || `${formData.city}, Guinea Ecuatorial`,
+          lat: formData.lat,
+          lng: formData.lng,
+          city: formData.city,
           created_at: new Date().toISOString()
         });
 
@@ -572,6 +581,20 @@ const RegisterForm: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Location Picker */}
+                <LocationPicker
+                  lat={formData.lat}
+                  lng={formData.lng}
+                  address={formData.address}
+                  onChange={(data) => setFormData(prev => ({
+                    ...prev,
+                    address: data.address,
+                    lat: data.lat,
+                    lng: data.lng,
+                    city: data.city
+                  }))}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">

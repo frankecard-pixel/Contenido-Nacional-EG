@@ -9,9 +9,10 @@ interface UserTableProps {
   companies?: Company[];
   onEditPermissions?: (user: User) => void;
   onActivateUser?: (user: User) => void;
+  onToggleBlockUser?: (user: User) => void;
 }
 
-const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getStatusBadge, companies = [], onEditPermissions, onActivateUser }) => {
+const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getStatusBadge, companies = [], onEditPermissions, onActivateUser, onToggleBlockUser }) => {
   const getCompanyName = (companyId?: string) => {
     if (!companyId) return null;
     const company = companies.find(c => c.id === companyId);
@@ -91,6 +92,17 @@ const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getS
                       title="Editar Permisos"
                     >
                       <span className="material-symbols-outlined">edit</span>
+                    </button>
+                  )}
+                  {onToggleBlockUser && (
+                    <button 
+                      onClick={() => onToggleBlockUser(user)}
+                      className={`p-3 rounded-xl transition-all ${user.status === 'suspended' ? 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50/50' : 'text-red-500 hover:text-red-700 hover:bg-red-50/50'}`}
+                      title={user.status === 'suspended' ? "Activar / Desbloquear Usuario" : "Bloquear / Suspender Usuario"}
+                    >
+                      <span className="material-symbols-outlined font-black">
+                        {user.status === 'suspended' ? 'lock_open' : 'lock'}
+                      </span>
                     </button>
                   )}
                   <button className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all" title="Opciones">

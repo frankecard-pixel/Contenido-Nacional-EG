@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getOpportunityById, createApplication } from '../services/supabaseApi';
+import { getOpportunityById, createApplication, createNotification } from '../services/supabaseApi';
 import { OpportunityExt } from '../types';
 
 const ApplicationForm: React.FC = () => {
@@ -54,6 +54,18 @@ const ApplicationForm: React.FC = () => {
           status: 'under_review',
           step: 4
         });
+        
+        // Trigger a real user notification
+        const activeUserId = localStorage.getItem('user_id') || '00000000-0000-0000-0000-000000000000';
+        await createNotification(
+          activeUserId,
+          `Aplicación Presentada: ${opp ? opp.ref || 'Ref' : 'Licitación'}`,
+          `Su solicitud de participación para la licitación ha sido registrada correctamente. El Departamento Técnico iniciará la revisión del cumplimiento de Contenido Nacional de inmediato.`,
+          'opportunity',
+          'Ver Seguimiento',
+          'Oportunidades'
+        );
+
         alert("Aplicación enviada con éxito.");
         navigate('/dashboard/company/applications');
       } catch (error) {

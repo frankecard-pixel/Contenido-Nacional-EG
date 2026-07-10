@@ -28,6 +28,7 @@ import WebContentManagement from './WebContentManagement';
 import NewsletterManagement from './NewsletterManagement';
 import AdminCertificationManagement from './AdminCertificationManagement';
 import AdminRegistrationManagement from './AdminRegistrationManagement';
+import DenunciasManagement from './DenunciasManagement';
 import ContractTemplates from './ContractTemplates';
 import ContractManagement from './ContractManagement';
 import CompanyRegistry from './CompanyRegistry';
@@ -193,6 +194,8 @@ const Dashboard: React.FC = () => {
             <Route path="super_admin/newsletter" element={<NewsletterManagement />} />
             <Route path="super_admin/certifications" element={<AdminCertificationManagement />} />
             <Route path="super_admin/registrations" element={<AdminRegistrationManagement />} />
+            <Route path="super_admin/denuncias" element={<DenunciasManagement />} />
+            <Route path="admin/denuncias" element={<Navigate to="/dashboard/super_admin/denuncias" replace />} />
             <Route path="super_admin/contract-templates" element={<ContractTemplates />} />
             <Route path="super_admin/news" element={<NewsManagement user={currentUser} />} />
             <Route path="super_admin/help-requests" element={<HelpRequestManagement />} />
@@ -217,6 +220,7 @@ const Dashboard: React.FC = () => {
             {/* 4. PRENSA Y GACETA */}
             <Route path="comunicacion/overview" element={<ComunicacionDashboardOverview user={currentUser} />} />
             <Route path="comunicacion/news" element={<NewsManagement user={currentUser} />} />
+            <Route path="comunicacion/denuncias" element={<DenunciasManagement />} />
             <Route path="comunicacion/web" element={<WebContentManagement user={currentUser} />} />
             <Route path="comunicacion/messages" element={<Messages user={currentUser} />} />
 

@@ -111,6 +111,20 @@ const AdminRegistrationManagement: React.FC = () => {
       // For this demo, we'll simulate it by creating the record in the 'users' table
       // and assuming they can now log in (or we'd use a service role to create the auth user)
       
+      // 1. Create Company Record FIRST
+      const company = await createCompany({
+        name: request.company_name,
+        taxId: request.tax_id,
+        type: request.role === UserRole.EMPRESA_LOCAL ? 'local' : 'international',
+        sector: request.sectors,
+        status: 'certified',
+        email: request.email,
+        address: request.address || `${request.city || 'Malabo'}, Guinea Ecuatorial`,
+        lat: request.lat !== undefined ? request.lat : 3.75,
+        lng: request.lng !== undefined ? request.lng : 8.78
+      });
+
+      // 2. Create User linked to the Company
       const userId = crypto.randomUUID(); // Mock ID for demo
       
       await createUser({
@@ -120,17 +134,8 @@ const AdminRegistrationManagement: React.FC = () => {
         role: request.role,
         isOnline: false,
         permissions: [],
-        status: 'active'
-      });
-
-      // 2. Create Company Record
-      const company = await createCompany({
-        name: request.company_name,
-        taxId: request.tax_id,
-        type: request.role === UserRole.EMPRESA_LOCAL ? 'local' : 'international',
-        sector: request.sectors,
-        status: 'certified',
-        email: request.email
+        status: 'active',
+        companyId: company?.id
       });
 
       // 3. Create Anual Renewable Contract for the Company

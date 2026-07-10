@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MOCK_NEWS, MOCK_NEWS_ARTICLES } from '../services/mockService';
-import { getNewsArticleById } from '../services/supabaseApi';
+import { getNewsArticleById, createDenuncia } from '../services/supabaseApi';
 import PublicBanner from '../components/public/PublicBanner';
 import MinisterialCertification from '../components/public/MinisterialCertification';
-import { Calendar, User, ArrowLeft, Share2, Download, Loader2, Star, MessageSquare, Send, Lock, Check } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Share2, Download, Loader2, Star, MessageSquare, Send, Lock, Check, Flag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { triggerN8nNotification } from '../services/n8nService';
 import { supabase } from '../services/supabaseClient';
@@ -139,6 +139,32 @@ const NewsDetail: React.FC = () => {
       console.error('Error triggering n8n for comment:', err);
     } finally {
       setSubmittingComment(false);
+    }
+  };
+
+  const handleReportComment = async (comment: any) => {
+    const reason = window.prompt("Por favor, indique la razón de la denuncia por abuso:");
+    if (reason === null) return; // User cancelled
+    if (!reason.trim()) {
+      alert("Debe especificar una razón para enviar la denuncia.");
+      return;
+    }
+    
+    try {
+      await createDenuncia({
+        commentId: comment.id,
+        commentText: comment.text,
+        commentAuthorName: comment.userName,
+        commentAuthorRole: comment.userRole || 'persona',
+        reportedBy: currentUser?.name || 'Usuario Anónimo',
+        reason: reason.trim(),
+        newsTitle: newsItem ? (newsItem.title?.es || newsItem.title) : 'Noticia',
+        newsId: id
+      });
+      alert("Denuncia enviada correctamente. El equipo técnico auditará este comentario.");
+    } catch (err) {
+      console.error("Error creating report:", err);
+      alert("Error al enviar la denuncia.");
     }
   };
 
@@ -452,7 +478,16 @@ const NewsDetail: React.FC = () => {
                             {t(`roles.${comment.userRole || 'persona'}`)}
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-semibold">{comment.date}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-semibold">{comment.date}</span>
+                          <button 
+                            onClick={() => handleReportComment(comment)}
+                            className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all"
+                            title="Denunciar Abuso"
+                          >
+                            <Flag size={10} className="fill-current" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Display Rating Stars */}

@@ -27,7 +27,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
   
   // Direct creation additions
   const [isDirect, setIsDirect] = useState(false);
-  const [activeTemplateGroup, setActiveTemplateGroup] = useState<'ministerio' | 'empresas' | 'pymes'>('ministerio');
+  const [activeTemplateGroup, setActiveTemplateGroup] = useState<'ministerio' | 'empresas' | 'pymes' | 'otros'>('ministerio');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('');
@@ -113,11 +113,11 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
               </div>
               
               {/* Category Segmented Buttons */}
-              <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+              <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl gap-1 overflow-x-auto scrollbar-none">
                 <button
                   type="button"
                   onClick={() => setActiveTemplateGroup('ministerio')}
-                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all shrink-0 ${
                     activeTemplateGroup === 'ministerio'
                       ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
@@ -128,7 +128,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
                 <button
                   type="button"
                   onClick={() => setActiveTemplateGroup('empresas')}
-                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all shrink-0 ${
                     activeTemplateGroup === 'empresas'
                       ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
@@ -139,13 +139,24 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
                 <button
                   type="button"
                   onClick={() => setActiveTemplateGroup('pymes')}
-                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all shrink-0 ${
                     activeTemplateGroup === 'pymes'
                       ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                   }`}
                 >
                   PYMEs Locales
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTemplateGroup('otros')}
+                  className={`flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all shrink-0 ${
+                    activeTemplateGroup === 'otros'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  Otros Empleados
                 </button>
               </div>
 
@@ -218,6 +229,74 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
                   >
                     <span className="text-slate-800 dark:text-white">Director Comunicación</span>
                     <span className="text-[8px] text-slate-400 normal-case font-bold">comunicacion@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Secretaria Ejecutiva de Despacho");
+                      setEmail("secretaria.ministro@mmh.gob.gq");
+                      setPhone("+240 222-5555");
+                      setRole(UserRole.FUNCIONARIO);
+                      setDepartment("Despacho del Ministro");
+                      setPosition("Secretaría Ejecutiva");
+                      setPassword("Secretaria2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Secretaria de Despacho</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">secretaria.ministro@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Auxiliar del Secretariado General");
+                      setEmail("auxiliar.despacho@mmh.gob.gq");
+                      setPhone("+240 222-6666");
+                      setRole(UserRole.FUNCIONARIO);
+                      setDepartment("Secretariado General");
+                      setPosition("Auxiliar Administrativo");
+                      setPassword("Auxiliar2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Auxiliar Despacho</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">auxiliar.despacho@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Técnico Evaluador de Contenido");
+                      setEmail("tecnico.analista@mmh.gob.gq");
+                      setPhone("+240 222-7777");
+                      setRole(UserRole.CUERPO_TECNICO);
+                      setDepartment("Dirección de Contenido Nacional");
+                      setPosition("Técnico de Contenido");
+                      setPassword("Tecnico2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Técnico de Contenido</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">tecnico.analista@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Secretario de Actas");
+                      setEmail("actas@mmh.gob.gq");
+                      setPhone("+240 222-8888");
+                      setRole(UserRole.FUNCIONARIO);
+                      setDepartment("Secretariado General");
+                      setPosition("Secretario de Actas");
+                      setPassword("Actas2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Secretario de Actas</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">actas@mmh.gob.gq</span>
                   </button>
                 </div>
               )}
@@ -364,6 +443,113 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
                   >
                     <span className="text-slate-800 dark:text-white">Líder Comunitario</span>
                     <span className="text-[8px] text-slate-400 normal-case font-bold">comunidad@rebola.gq</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Group 4: Otros Empleados / Perfiles Generales */}
+              {activeTemplateGroup === 'otros' && (
+                <div className="grid grid-cols-2 gap-2 animate-in fade-in duration-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Funcionario de Administración");
+                      setEmail("funcionario@mmh.gob.gq");
+                      setPhone("+240 222-9901");
+                      setRole(UserRole.FUNCIONARIO);
+                      setDepartment("Recursos Humanos y Finanzas");
+                      setPosition("Técnico Administrativo");
+                      setPassword("Funcionario2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Funcionario Administrativo</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">funcionario@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Analista Técnico de Contenido");
+                      setEmail("analista@mmh.gob.gq");
+                      setPhone("+240 222-9902");
+                      setRole(UserRole.CUERPO_TECNICO);
+                      setDepartment("Dirección de Contenido Nacional");
+                      setPosition("Analista de Datos");
+                      setPassword("Analista2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Analista Técnico</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">analista@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Gestor de Empleo y Capacitación");
+                      setEmail("empleo@mmh.gob.gq");
+                      setPhone("+240 222-9903");
+                      setRole(UserRole.FUNCIONARIO);
+                      setDepartment("Formación y Empleo");
+                      setPosition("Gestor de Plataforma");
+                      setPassword("Empleo2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Gestor Bolsa Empleo</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">empleo@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Asesor Jurídico del Ministerio");
+                      setEmail("legal@mmh.gob.gq");
+                      setPhone("+240 222-9904");
+                      setRole(UserRole.CUERPO_TECNICO);
+                      setDepartment("Gabinete Jurídico");
+                      setPosition("Asesor Legal");
+                      setPassword("Legal2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Asesor Jurídico</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">legal@mmh.gob.gq</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Profesional / Solicitante de Empleo");
+                      setEmail("solicitante@gmail.com");
+                      setPhone("+240 222-9905");
+                      setRole(UserRole.PERSONA);
+                      setDepartment("Sector Público");
+                      setPosition("Candidato / Profesional Independiente");
+                      setPassword("Solicitante2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Persona / Solicitante</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">solicitante@gmail.com</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("Auditor de Cumplimiento Externo");
+                      setEmail("auditor@deloitte.gq");
+                      setPhone("+240 222-9906");
+                      setRole(UserRole.ADMIN);
+                      setDepartment("Auditoría Externa");
+                      setPosition("Auditor Principal de Contratos");
+                      setPassword("Auditor2026*");
+                    }}
+                    className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
+                  >
+                    <span className="text-slate-800 dark:text-white">Auditor Externo</span>
+                    <span className="text-[8px] text-slate-400 normal-case font-bold">auditor@deloitte.gq</span>
                   </button>
                 </div>
               )}

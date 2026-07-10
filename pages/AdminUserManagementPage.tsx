@@ -17,7 +17,7 @@ const AdminUserManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'admin' | 'companies'>('admin');
+  const [activeTab, setActiveTab] = useState<'admin' | 'local_companies' | 'petroleras' | 'personas'>('admin');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const fetchData = async () => {
@@ -114,6 +114,20 @@ const AdminUserManagementPage: React.FC = () => {
     }
   };
 
+  const handleToggleBlockUser = async (user: User) => {
+    try {
+      setIsLoading(true);
+      const newStatus = user.status === 'suspended' ? 'active' : 'suspended';
+      await updateUser(user.id, { status: newStatus });
+      await fetchData(); // Refresh list
+    } catch (err: any) {
+      console.error('Error toggling user block status:', err);
+      setError('Error al cambiar estado del usuario: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const adminUsers = useMemo(() => {
     return usersData.filter(u => 
       u.role === UserRole.SUPER_ADMIN || 
@@ -124,16 +138,40 @@ const AdminUserManagementPage: React.FC = () => {
     );
   }, [usersData]);
 
-  const companyUsers = useMemo(() => {
+  const localCompanyUsers = useMemo(() => {
     return usersData.filter(u => 
-      u.role === UserRole.COMPANY || 
-      u.role === UserRole.EMPRESA || 
       u.role === UserRole.EMPRESA_LOCAL || 
-      u.role === UserRole.PETROLERA
+      u.role === UserRole.EMPRESA
     );
   }, [usersData]);
 
-  const currentUsers = activeTab === 'admin' ? adminUsers : companyUsers;
+  const petroleraUsers = useMemo(() => {
+    return usersData.filter(u => 
+      u.role === UserRole.PETROLERA || 
+      u.role === UserRole.COMPANY
+    );
+  }, [usersData]);
+
+  const personaUsers = useMemo(() => {
+    return usersData.filter(u => 
+      u.role === UserRole.PERSONA
+    );
+  }, [usersData]);
+
+  const currentUsers = useMemo(() => {
+    switch (activeTab) {
+      case 'admin':
+        return adminUsers;
+      case 'local_companies':
+        return localCompanyUsers;
+      case 'petroleras':
+        return petroleraUsers;
+      case 'personas':
+        return personaUsers;
+      default:
+        return adminUsers;
+    }
+  }, [activeTab, adminUsers, localCompanyUsers, petroleraUsers, personaUsers]);
 
   const filteredUsers = useMemo(() => {
     return currentUsers.filter(u => {
@@ -303,18 +341,30 @@ const AdminUserManagementPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-wrap gap-4 border-b border-slate-100 dark:border-slate-800">
         <button 
           onClick={() => setActiveTab('admin')}
           className={`pb-4 px-6 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'admin' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
         >
-          Funcionarios Ministerio
+          Ministerio y Administradores ({adminUsers.length})
         </button>
         <button 
-          onClick={() => setActiveTab('companies')}
-          className={`pb-4 px-6 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'companies' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          onClick={() => setActiveTab('local_companies')}
+          className={`pb-4 px-6 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'local_companies' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
         >
-          Usuarios de Empresas
+          Empresas de Contenido Nacional ({localCompanyUsers.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('petroleras')}
+          className={`pb-4 px-6 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'petroleras' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+        >
+          Operadoras Petroleras ({petroleraUsers.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('personas')}
+          className={`pb-4 px-6 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'personas' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+        >
+          Profesionales y Talento ({personaUsers.length})
         </button>
       </div>
 
@@ -338,12 +388,13 @@ const AdminUserManagementPage: React.FC = () => {
           companies={companiesData}
           onEditPermissions={openPermissionsModal}
           onActivateUser={handleActivateUser}
+          onToggleBlockUser={handleToggleBlockUser}
         />
 
         {/* Pagination */}
         <div className="flex items-center justify-between border-t border-slate-50 bg-slate-50/30 px-10 py-8 dark:border-slate-700 dark:bg-slate-900/20">
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Mostrando <span className="text-slate-900 dark:text-white mx-1">{filteredUsers.length}</span> de <span className="text-slate-900 dark:text-white mx-1">{adminUsers.length}</span> funcionarios
+            Mostrando <span className="text-slate-900 dark:text-white mx-1">{filteredUsers.length}</span> usuarios en esta categoría
           </div>
           <div className="flex items-center gap-4">
             <button disabled className="px-8 py-3 bg-white border border-slate-200 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Anterior</button>

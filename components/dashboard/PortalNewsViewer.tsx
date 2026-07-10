@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getNewsArticles } from '../../services/supabaseApi';
+import { getNewsArticles, createDenuncia } from '../../services/supabaseApi';
 import { triggerN8nNotification } from '../../services/n8nService';
 import { NewsArticle, User } from '../../types';
 import { 
   Search, Calendar, User as UserIcon, Download, 
   ArrowLeft, MessageSquare, Star, Send, Loader2, 
-  FileText, BookOpen, Share2, Eye, Filter, Newspaper 
+  FileText, BookOpen, Share2, Eye, Filter, Newspaper, Flag 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -175,6 +175,32 @@ const PortalNewsViewer: React.FC<PortalNewsViewerProps> = ({ user }) => {
       });
     } catch {
       return dateStr;
+    }
+  };
+
+  const handleReportComment = async (comment: any) => {
+    const reason = window.prompt("Por favor, indique la razón de la denuncia por abuso:");
+    if (reason === null) return; // User cancelled
+    if (!reason.trim()) {
+      toast.error("Debe especificar una razón para enviar la denuncia.");
+      return;
+    }
+    
+    try {
+      await createDenuncia({
+        commentId: comment.id,
+        commentText: comment.text,
+        commentAuthorName: comment.userName,
+        commentAuthorRole: comment.userRole,
+        reportedBy: user?.name || 'Usuario Anónimo',
+        reason: reason.trim(),
+        newsTitle: selectedArticle ? getLocalizedValue(selectedArticle.title) : 'Noticia',
+        newsId: selectedArticle?.id
+      });
+      toast.success("Denuncia enviada correctamente. El equipo técnico auditará este comentario.");
+    } catch (err) {
+      console.error("Error creating report:", err);
+      toast.error("Error al enviar la denuncia.");
     }
   };
 
@@ -358,7 +384,16 @@ const PortalNewsViewer: React.FC<PortalNewsViewerProps> = ({ user }) => {
                             {t(`roles.${comment.userRole}`)}
                           </p>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-semibold">{comment.date}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-semibold">{comment.date}</span>
+                          <button 
+                            onClick={() => handleReportComment(comment)}
+                            className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all"
+                            title="Denunciar Abuso"
+                          >
+                            <Flag size={10} className="fill-current" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="flex items-center space-x-0.5 text-amber-400 mb-2">
