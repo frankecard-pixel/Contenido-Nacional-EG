@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { BarChart3, Megaphone, CreditCard, Eye, MousePointerClick, TrendingUp } from 'lucide-react';
 import StatCard from './StatCard';
 import { User } from '../types';
@@ -23,10 +24,10 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
             Resumen de rendimiento de sus campañas publicitarias.
           </p>
         </div>
-        <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+        <Link to="/dashboard/advertiser/campaigns" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
           <Megaphone className="w-4 h-4" />
           Nueva Campaña
-        </button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -36,6 +37,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
           icon={<Eye className="w-6 h-6 text-blue-600" />}
           trend={{ value: 12, isPositive: true }}
           color="blue"
+          to="/dashboard/advertiser/analytics"
         />
         <StatCard
           title="Clics Totales"
@@ -43,6 +45,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
           icon={<MousePointerClick className="w-6 h-6 text-emerald-600" />}
           trend={{ value: 8, isPositive: true }}
           color="emerald"
+          to="/dashboard/advertiser/analytics"
         />
         <StatCard
           title="CTR Promedio"
@@ -50,6 +53,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
           icon={<TrendingUp className="w-6 h-6 text-purple-600" />}
           trend={{ value: 2, isPositive: true }}
           color="purple"
+          to="/dashboard/advertiser/analytics"
         />
         <StatCard
           title="Gasto Mensual"
@@ -57,6 +61,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
           icon={<CreditCard className="w-6 h-6 text-amber-600" />}
           trend={{ value: 5, isPositive: false }}
           color="amber"
+          to="/dashboard/advertiser/billing"
         />
       </div>
 
@@ -64,7 +69,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl p-4 md:p-6 border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-slate-900 dark:text-white text-sm md:text-base line-clamp-1">Rendimiento de Campañas Activas</h3>
-            <button className="text-xs md:text-sm text-blue-600 font-semibold hover:underline shrink-0">Ver todas</button>
+            <Link to="/dashboard/advertiser/campaigns" className="text-xs md:text-sm text-blue-600 font-semibold hover:underline shrink-0">Ver todas</Link>
           </div>
           <div className="space-y-4">
             {[
@@ -72,7 +77,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
               { name: 'Promoción Equipos de Perforación', status: 'active', impressions: '320K', clicks: '8.5K', spend: '$850', progress: 45 },
               { name: 'Webinar Seguridad Industrial', status: 'pending', impressions: '-', clicks: '-', spend: '-', progress: 0 },
             ].map((campaign, i) => (
-              <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 gap-4">
+              <Link key={i} to="/dashboard/advertiser/campaigns" className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 hover:border-blue-500/40 transition-all gap-4 block">
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
                     campaign.status === 'active' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'
@@ -106,7 +111,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
                     </div>
                   </div>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -122,7 +127,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Alta visibilidad en la página principal de la plataforma.</p>
               <div className="flex justify-between items-center">
                 <span className="font-black text-slate-900 dark:text-white">$500 / mes</span>
-                <button className="text-xs font-bold text-blue-600 hover:text-blue-700">Reservar</button>
+                <Link to="/dashboard/advertiser/campaigns" className="text-xs font-bold text-blue-600 hover:text-blue-700">Reservar</Link>
               </div>
             </div>
 
@@ -134,7 +139,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Visible para usuarios registrados en el panel de control.</p>
               <div className="flex justify-between items-center">
                 <span className="font-black text-slate-900 dark:text-white">$250 / mes</span>
-                <button className="text-xs font-bold text-blue-600 hover:text-blue-700">Reservar</button>
+                <Link to="/dashboard/advertiser/campaigns" className="text-xs font-bold text-blue-600 hover:text-blue-700">Reservar</Link>
               </div>
             </div>
             
@@ -146,7 +151,7 @@ const AdvertiserDashboardOverview: React.FC<AdvertiserDashboardOverviewProps> = 
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Inclusión en el boletín enviado a todas las empresas.</p>
               <div className="flex justify-between items-center">
                 <span className="font-black text-slate-900 dark:text-white">$150 / envío</span>
-                <button className="text-xs font-bold text-blue-600 hover:text-blue-700">Reservar</button>
+                <Link to="/dashboard/advertiser/campaigns" className="text-xs font-bold text-blue-600 hover:text-blue-700">Reservar</Link>
               </div>
             </div>
           </div>

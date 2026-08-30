@@ -71,14 +71,14 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-4 md:mt-0">
-          <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all shadow-sm">
+          <Link to="../documents" className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all shadow-sm">
             <span className="material-symbols-outlined text-lg mr-2">download</span>
             Reporte Mensual
-          </button>
-          <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-primary border border-transparent rounded-2xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+          </Link>
+          <Link to="../profile" className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-primary border border-transparent rounded-2xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
             <span className="material-symbols-outlined text-lg mr-2">edit</span>
             Editar Perfil
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -102,10 +102,10 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
               <p className="text-blue-100 text-sm mb-8 max-w-md font-medium leading-relaxed uppercase tracking-wide">
                 Para acceder a licitaciones de Nivel 1, necesita completar su documentación fiscal y actualizar sus certificaciones ISO.
               </p>
-              <button className="bg-white text-primary text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-all inline-flex items-center shadow-lg">
+              <Link to="../profile" className="bg-white text-primary text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-all inline-flex items-center shadow-lg">
                 Completar ahora
                 <span className="material-symbols-outlined text-base ml-2">arrow_forward</span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -124,34 +124,37 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
               Su <strong>Certificado de Solvencia Fiscal</strong> vence en 5 días. La renovación es necesaria para mantener su estatus activo.
             </p>
           </div>
-          <button className="w-full py-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
+          <Link to="../documents" className="w-full py-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all text-center flex items-center justify-center">
             Subir Documento
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {[
-          { label: "Aplicaciones", val: "12", trend: "+2 este mes", icon: "send", color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Ganados", val: "2", trend: "Total histórico", icon: "trophy", color: "text-purple-600", bg: "bg-purple-50" },
-          { label: "Oportunidades", val: "8", trend: "3 nuevas", icon: "visibility", color: "text-orange-600", bg: "bg-orange-50" },
-          { label: "Cumplimiento", val: "A-", trend: "Score General", icon: "verified", color: "text-teal-600", bg: "bg-teal-50" }
+          { label: "Aplicaciones", val: "12", trend: "+2 este mes", icon: "send", color: "text-blue-600", bg: "bg-blue-50", to: "../applications" },
+          { label: "Ganados", val: "2", trend: "Total histórico", icon: "trophy", color: "text-purple-600", bg: "bg-purple-50", to: "../contracts" },
+          { label: "Oportunidades", val: "8", trend: "3 nuevas", icon: "visibility", color: "text-orange-600", bg: "bg-orange-50", to: "../opportunities" },
+          { label: "Cumplimiento", val: "A-", trend: "Score General", icon: "verified", color: "text-teal-600", bg: "bg-teal-50", to: "../documents" }
         ].map((metric, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
-            <div className="flex items-center gap-4 mb-4">
-              <div className={`p-3 ${metric.bg} dark:bg-opacity-10 rounded-2xl ${metric.color}`}>
-                <span className="material-symbols-outlined text-2xl">{metric.icon}</span>
+          <Link key={i} to={metric.to} className="bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-[1.25rem] sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-primary/40 transition-all group flex flex-col justify-between cursor-pointer active:scale-[0.98]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 sm:p-3 ${metric.bg} dark:bg-opacity-10 rounded-xl sm:rounded-2xl ${metric.color} w-fit group-hover:scale-110 transition-transform`}>
+                  <span className="material-symbols-outlined text-lg sm:text-2xl">{metric.icon}</span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">{metric.label}</span>
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{metric.label}</span>
+              <span className="material-symbols-outlined text-xs text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all hidden sm:inline-block">arrow_forward</span>
             </div>
-            <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{metric.val}</span>
-              <span className={`text-[9px] font-black uppercase tracking-widest ${metric.trend.includes('+') ? 'text-green-600 bg-green-50 px-2 py-1 rounded-lg' : 'text-slate-400'}`}>
+            <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-3">
+              <span className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{metric.val}</span>
+              <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${metric.trend.includes('+') ? 'text-green-600 bg-green-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg' : 'text-slate-400'}`}>
                 {metric.trend}
               </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -326,10 +329,10 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
                 </div>
               ))}
             </div>
-            <button className="w-full py-4 flex items-center justify-center gap-3 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.2em] border-2 border-slate-100 dark:border-slate-700 rounded-2xl hover:bg-slate-50 transition-all">
+            <Link to="../documents" className="w-full py-4 flex items-center justify-center gap-3 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.2em] border-2 border-slate-100 dark:border-slate-700 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all">
               <span className="material-symbols-outlined text-xl">upload_file</span>
               Gestionar Documentos
-            </button>
+            </Link>
           </div>
 
           {/* Support Widget */}
@@ -344,9 +347,9 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
               <p className="text-sm text-slate-300 mb-8 font-medium leading-relaxed uppercase tracking-tight">
                 Contacte con la mesa de ayuda del Ministerio de Hidrocarburos, Minas y Electricidad para soporte técnico o legal sobre el portal.
               </p>
-              <button className="text-[10px] font-black text-white bg-white/10 hover:bg-white/20 border border-white/10 px-6 py-4 rounded-xl w-full transition-all uppercase tracking-[0.2em]">
+              <Link to="../messages" className="text-[10px] font-black text-white bg-white/10 hover:bg-white/20 border border-white/10 px-6 py-4 rounded-xl w-full transition-all uppercase tracking-[0.2em] block text-center">
                 Contactar Soporte
-              </button>
+              </Link>
             </div>
             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600/10 blur-[60px] rounded-full"></div>
           </div>

@@ -53,7 +53,7 @@ const Directory: React.FC = () => {
     fetchCompanies();
   }, []);
 
-  const sectors = ['all', 'Ingeniería', 'Logística', 'Mantenimiento', 'Catering', 'Seguridad'];
+  const sectors = ['all', 'Gas & Energía', 'Ingeniería', 'Logística', 'Mantenimiento', 'Catering', 'Seguridad', 'Construcción'];
 
   const filtered = filter === 'all' 
     ? companies 
@@ -109,8 +109,14 @@ const Directory: React.FC = () => {
             <div className="animate-in fade-in zoom-in-95 duration-500">
               <InteractiveMap points={mapPoints} height="700px" />
             </div>
-          ) : (
+          ) : filtered.length > 0 ? (
             <DirectoryGrid filtered={filtered} onViewProfile={handleViewProfile} />
+          ) : (
+            <div className="py-20 text-center bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+              <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">business_center</span>
+              <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">No se encontraron empresas</h3>
+              <p className="text-slate-400 font-medium mt-2 uppercase text-[10px] tracking-widest">Intente con otro sector o criterio de búsqueda</p>
+            </div>
           )}
         </div>
       </div>

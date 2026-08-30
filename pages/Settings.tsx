@@ -6,9 +6,10 @@ import { User } from '../types';
 
 interface SettingsProps {
   user?: User | null;
+  onUpdate?: () => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ user }) => {
+const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
 
   const tabs = [
@@ -48,7 +49,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
         {/* Contenido Principal */}
         <div className="flex-1 min-w-0">
-          {activeTab === 'profile' && <ProfileSettings user={user} />}
+          {activeTab === 'profile' && <ProfileSettings user={user} onUpdate={onUpdate} />}
           {activeTab === 'security' && <SecuritySettings />}
           {activeTab === 'appearance' && <AppearanceSettings />}
           {activeTab === 'notifications' && (

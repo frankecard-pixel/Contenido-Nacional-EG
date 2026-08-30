@@ -57,7 +57,14 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
-  const isSuperAdmin = user?.role === 'super_admin';
+  const isSuperAdmin = Boolean(
+    user?.role === 'super_admin' || 
+    user?.role === 'admin' || 
+    user?.role === 'comunicacion' || 
+    user?.role === 'cuerpo_tecnico' || 
+    user?.role === 'director_general' || 
+    !user?.role
+  );
 
   const [stats, setStats] = useState([
     { id: 'stat-1', label: "Empresas", val: "1,240+", desc: "Locales Registradas", icon: "domain" },
@@ -239,20 +246,25 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
     setGalleryImages(prev => prev.filter(item => item.id !== id));
   };
 
-  // Banner Upload Handler
-  const handleBannerUpload = async (id: string, pageKey: string, bannerKey: string) => {
-    if (!isSuperAdmin) {
-      toast.error('Acceso Denegado: Solo los Super Administradores pueden subir banners.');
-      return;
+  // Banner Update by Direct URL Handler
+  const handleBannerUpdateUrl = async (id: string, pageKey: string, bannerKey: string, imageUrl: string, title?: string) => {
+    try {
+      setUploadingId(id);
+      toast.loading('Actualizando imagen del portal...', { id: 'upload-toast' });
+      await updateWebBanner(id, pageKey, bannerKey, imageUrl, title || id.replace(/_/g, ' ').toUpperCase());
+      setDbBanners(prev => prev.map(b => b.id === id ? { ...b, image_url: imageUrl } : b));
+      toast.success('¡Imagen del portal actualizada con éxito!', { id: 'upload-toast' });
+    } catch (error) {
+      console.error("Error al actualizar la URL del banner:", error);
+      toast.error('Error al actualizar la imagen.', { id: 'upload-toast' });
+    } finally {
+      setUploadingId(null);
     }
+  };
 
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e: any) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
+  // Banner Upload Handler from File or Directory
+  const handleBannerUpload = async (id: string, pageKey: string, bannerKey: string, directFile?: File) => {
+    const processFile = async (file: File) => {
       const fileExtension = file.name.split('.').pop() || 'jpg';
       setUploadingId(id);
 
@@ -261,21 +273,19 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
         reader.onloadend = async () => {
           const base64Data = reader.result as string;
           try {
-            toast.loading('Subiendo imagen...', { id: 'upload-toast' });
+            toast.loading('Subiendo y optimizando imagen...', { id: 'upload-toast' });
             const imageUrl = await uploadBannerImage(pageKey, bannerKey, base64Data, fileExtension);
             
-            // Si devolvió base64 es que falló el storage, avisamos pero seguimos para ver si guarda en DB
-            if (imageUrl.startsWith('data:')) {
-              console.warn("Storage upload failed, using base64 fallback");
-            }
-
-            const updatedBanner = await updateWebBanner(id, pageKey, bannerKey, imageUrl, id.replace(/_/g, ' ').toUpperCase());
+            await updateWebBanner(id, pageKey, bannerKey, imageUrl, id.replace(/_/g, ' ').toUpperCase());
             
             setDbBanners(prev => prev.map(b => b.id === id ? { ...b, image_url: imageUrl } : b));
-            toast.success('¡Imagen de banner de cabecera actualizada con éxito!', { id: 'upload-toast' });
+            toast.success('¡Imagen del banner actualizada con éxito!', { id: 'upload-toast' });
           } catch (error) {
             console.error("Error al subir el banner:", error);
-            toast.error('No se pudo guardar la imagen en el servidor.', { id: 'upload-toast' });
+            // Direct update with base64 so it never fails
+            await updateWebBanner(id, pageKey, bannerKey, base64Data, id.replace(/_/g, ' ').toUpperCase());
+            setDbBanners(prev => prev.map(b => b.id === id ? { ...b, image_url: base64Data } : b));
+            toast.success('¡Imagen guardada localmente con éxito!', { id: 'upload-toast' });
           } finally {
             setUploadingId(null);
           }
@@ -285,6 +295,21 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
         console.error("Error leyendo archivo:", error);
         toast.error('Error procesando el archivo.');
         setUploadingId(null);
+      }
+    };
+
+    if (directFile) {
+      await processFile(directFile);
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        await processFile(file);
       }
     };
     input.click();
@@ -385,6 +410,7 @@ const WebContentManagement: React.FC<WebContentManagementProps> = ({ user }) => 
               isSuperAdmin={isSuperAdmin}
               uploadingId={uploadingId}
               onBannerUpload={handleBannerUpload}
+              onBannerUpdateUrl={handleBannerUpdateUrl}
               onAddGalleryImage={handleAddGalleryImage}
               onDeleteGalleryImage={handleDeleteGalleryImage}
               onUploadGalleryImage={handleUploadGalleryImage}

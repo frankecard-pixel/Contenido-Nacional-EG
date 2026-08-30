@@ -46,10 +46,13 @@ const PublicBanner: React.FC<PublicBannerProps> = ({
       {/* Background Image with strong overlay */}
       <div className="absolute inset-0 z-0">
         <img 
-          src={bannerImage} 
+          src={bannerImage || image} 
           className="w-full h-full object-cover opacity-50 scale-105" 
           alt="Banner Background" 
           referrerPolicy="no-referrer"
+          onError={(e: any) => {
+            e.target.src = image || "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/60 to-transparent"></div>
       </div>

@@ -60,6 +60,10 @@ const LandingHero: React.FC = () => {
               src={img} 
               alt="Industry Background" 
               className="w-full h-full object-cover opacity-40 mix-blend-multiply scale-105"
+              referrerPolicy="no-referrer"
+              onError={(e: any) => {
+                e.target.src = "https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop";
+              }}
             />
           </div>
         ))}

@@ -1,11 +1,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getUsers, getCompanies, updateUser, createUser } from '../services/supabaseApi';
+import { getUsers, getCompanies, updateUser, createUser, getLoginLogs, resetUserPassword } from '../services/supabaseApi';
 import { User, UserRole, UserStatus, Company } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import UserFilters from '../components/admin/UserFilters';
 import UserTable from '../components/admin/UserTable';
 import InviteUserModal from '../components/admin/InviteUserModal';
+import { toast } from 'sonner';
 
 const AdminUserManagementPage: React.FC = () => {
   const { t } = useTranslation();
@@ -19,6 +21,16 @@ const AdminUserManagementPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'admin' | 'local_companies' | 'petroleras' | 'personas'>('admin');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [userLogs, setUserLogs] = useState<any[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const { user: authUser, role: userRole } = useAuth();
+  const isSuperAdmin = userRole === UserRole.SUPER_ADMIN || userRole === UserRole.ADMIN;
 
   const fetchData = async () => {
     try {
@@ -42,6 +54,46 @@ const AdminUserManagementPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleUpdateUser = async (userData: Partial<User>) => {
+    if (!selectedUser) return;
+    try {
+      setIsLoading(true);
+      await updateUser(selectedUser.id, userData);
+      toast.success('Usuario actualizado correctamente');
+      setIsEditModalOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      toast.error('Error al actualizar usuario: ' + (err.message || 'Intentelo de nuevo'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (user: User) => {
+    setSelectedUser(user);
+    setIsPasswordModalOpen(true);
+    setNewPassword('');
+  };
+
+  const onUpdatePassword = async () => {
+    if (!selectedUser || !newPassword) return;
+    try {
+      setIsUpdatingPassword(true);
+      
+      // Intentamos enviar correo de recuperación (es lo más seguro desde el cliente)
+      await resetUserPassword(selectedUser.email);
+      
+      toast.success(`Se ha enviado un correo de recuperación a ${selectedUser.email}`);
+      setIsPasswordModalOpen(false);
+    } catch (err) {
+      console.error('Error in password reset:', err);
+      toast.error('Error al solicitar el cambio de contraseña');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   const handleInviteUser = async (
     email: string, 
@@ -70,7 +122,9 @@ const AdminUserManagementPage: React.FC = () => {
         position: extraData?.position || undefined,
       };
       
-      await createUser(newUser);
+      await createUser(newUser, extraData?.password);
+      
+      toast.success(isDirect ? 'Usuario creado correctamente' : 'Invitación enviada correctamente');
 
       // Trigger WhatsApp/n8n notification
       if (extraData?.phone) {
@@ -238,6 +292,21 @@ const AdminUserManagementPage: React.FC = () => {
     setIsPermissionsModalOpen(true);
   };
 
+  const handleViewLogs = async (user: User) => {
+    try {
+      setSelectedUser(user);
+      setIsLogsModalOpen(true);
+      setIsLoadingLogs(true);
+      const logs = await getLoginLogs(user.id);
+      setUserLogs(logs);
+    } catch (err) {
+      console.error('Error loading logs:', err);
+      toast.error('Error al cargar logs de acceso');
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
   return (
     <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-700">
       {/* Invite User Modal */}
@@ -247,6 +316,245 @@ const AdminUserManagementPage: React.FC = () => {
           onClose={() => setIsInviteModalOpen(false)} 
           onInvite={handleInviteUser}
         />
+      )}
+
+      {/* Login Logs Modal */}
+      {isLogsModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]">
+            <div className="p-10 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-3xl">history</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Logs de Acceso</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Usuario: {selectedUser.name} • {selectedUser.email}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsLogsModalOpen(false)} className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+              {isLoadingLogs ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                   <div className="size-12 border-4 border-slate-100 border-t-primary rounded-full animate-spin"></div>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cargando historial...</p>
+                </div>
+              ) : userLogs.length > 0 ? (
+                <div className="space-y-4">
+                  <table className="w-full text-left">
+                    <thead className="text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50 dark:border-slate-700 pb-4">
+                      <tr>
+                        <th className="pb-4">Fecha y Hora</th>
+                        <th className="pb-4">IP</th>
+                        <th className="pb-4">Ubicación</th>
+                        <th className="pb-4">Dispositivo / Navegador</th>
+                        <th className="pb-4 text-right">Duración</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+                      {userLogs.map((log) => (
+                        <tr key={log.id} className="group">
+                          <td className="py-4">
+                            <div className="flex flex-col">
+                              <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                {new Date(log.login_at).toLocaleDateString()}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                {new Date(log.login_at).toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-800">
+                              {log.ip_address}
+                            </span>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-sm text-slate-400">location_on</span>
+                              <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
+                                {log.city}, {log.country}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            <span className="text-[10px] font-bold text-slate-500 truncate max-w-[200px] block" title={log.user_agent}>
+                              {log.user_agent}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            {log.logout_at ? (
+                              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-100 dark:border-emerald-800">
+                                {log.session_duration_minutes} min
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full uppercase tracking-widest border border-blue-100 dark:border-blue-800 animate-pulse">
+                                Sesión Activa
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 grayscale opacity-30">
+                   <span className="material-symbols-outlined text-7xl mb-4">history_toggle_off</span>
+                   <p className="text-[10px] font-black uppercase tracking-widest">No hay logs de acceso registrados para este usuario</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-10 bg-slate-50 dark:bg-slate-900/50 flex justify-end shrink-0">
+              <button onClick={() => setIsLogsModalOpen(false)} className="px-12 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all">
+                Cerrar Historial
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {isEditModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-300 flex flex-col">
+            <div className="p-10 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="size-14 rounded-2xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600">
+                  <span className="material-symbols-outlined text-3xl">edit_square</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Editar Usuario</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {selectedUser.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsEditModalOpen(false)} className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleUpdateUser({
+                name: formData.get('name') as string,
+                email: formData.get('email') as string,
+                position: formData.get('position') as string,
+                department: formData.get('department') as string,
+                status: formData.get('status') as UserStatus,
+                role: formData.get('role') as UserRole,
+              });
+            }} className="p-10 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nombre Completo</label>
+                  <input name="name" defaultValue={selectedUser.name} required className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email (Sólo lectura)</label>
+                  <input name="email" type="email" value={selectedUser.email} readOnly className="w-full h-14 px-6 bg-slate-100 dark:bg-slate-950 border-none rounded-2xl text-[11px] font-bold text-slate-400 cursor-not-allowed" />
+                  <p className="text-[9px] text-slate-400 mt-1 ml-1">El email no puede cambiarse por seguridad de la cuenta.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cargo / Puesto</label>
+                  <input name="position" defaultValue={selectedUser.position} className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Departamento</label>
+                  <input name="department" defaultValue={selectedUser.department} className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Estado</label>
+                  <select name="status" defaultValue={selectedUser.status} className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all">
+                    <option value="active">Activo</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="inactive">Inactivo</option>
+                    <option value="suspended">Suspendido</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Rol de Usuario</label>
+                  <select name="role" defaultValue={selectedUser.role} className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all">
+                    {Object.entries(UserRole).map(([key, value]) => (
+                      <option key={value} value={value}>{key.replace('_', ' ')}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-6 flex justify-end gap-4">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-10 py-4 bg-slate-100 dark:bg-slate-900 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-10 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all">
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {isPasswordModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-300 flex flex-col">
+            <div className="p-10 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="size-14 rounded-2xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-600">
+                  <span className="material-symbols-outlined text-3xl">lock_reset</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Password</h2>
+                </div>
+              </div>
+              <button onClick={() => setIsPasswordModalOpen(false)} className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="p-10 space-y-6">
+              <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
+                Vas a cambiar la contraseña para <b>{selectedUser.email}</b>. Esta acción es crítica y solo permitida para Super Admins.
+              </p>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nueva Contraseña</label>
+                <input 
+                  type="password" 
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="********"
+                  className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all" 
+                />
+              </div>
+
+              <div className="pt-4 flex flex-col gap-3">
+                <button 
+                  onClick={onUpdatePassword}
+                  disabled={!newPassword || isUpdatingPassword}
+                  className="w-full py-5 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 shadow-xl shadow-red-500/20 transition-all disabled:opacity-50 disabled:grayscale"
+                >
+                  {isUpdatingPassword ? 'Procesando...' : 'Confirmar Cambio de Contraseña'}
+                </button>
+                <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-tight">
+                  Nota: Se enviará notificación al usuario.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {error && (
@@ -331,13 +639,15 @@ const AdminUserManagementPage: React.FC = () => {
             Administra los accesos y niveles de permiso de todos los usuarios del ecosistema. Configura derechos para funcionarios y representantes de empresas.
           </p>
         </div>
-        <button 
-          onClick={() => setIsInviteModalOpen(true)}
-          className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-xl">person_add</span>
-          Nuevo Usuario
-        </button>
+        {isSuperAdmin && (
+          <button 
+            onClick={() => setIsInviteModalOpen(true)}
+            className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-xl">person_add</span>
+            Nuevo Usuario
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -389,6 +699,13 @@ const AdminUserManagementPage: React.FC = () => {
           onEditPermissions={openPermissionsModal}
           onActivateUser={handleActivateUser}
           onToggleBlockUser={handleToggleBlockUser}
+          onViewLogs={handleViewLogs}
+          onEdit={(user) => {
+            setSelectedUser(user);
+            setIsEditModalOpen(true);
+          }}
+          onResetPassword={handleResetPassword}
+          canManage={isSuperAdmin}
         />
 
         {/* Pagination */}

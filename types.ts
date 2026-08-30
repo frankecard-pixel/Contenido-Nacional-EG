@@ -35,6 +35,7 @@ export interface User {
   position?: string;
   companyId?: string;
   companyRole?: CompanyUserRole;
+  verification_status?: 'pending' | 'verified' | 'rejected';
   bio?: string;
   phone?: string;
   cv_url?: string;
@@ -243,7 +244,16 @@ export interface CandidateProfile {
   userId: string;
   skills: string[];
   experience: WorkExperience[];
+  education?: any[];
   cvUrl?: string;
+  cv_url?: string;
+  bio?: string;
+  phone?: string;
+  verification_status?: 'pending' | 'verified' | 'rejected';
+  admin_comment?: string;
+  certification_number?: string;
+  verified_at?: string;
+  verified_by?: string;
   savedJobs: string[];
 }
 
@@ -403,13 +413,15 @@ export interface Contract {
 
 export interface Certification {
   id: string;
-  userId: string;
+  user_id: string;
   title: string;
-  issuer: string;
-  date: string;
-  expiry: string;
-  status: 'valid' | 'expired' | 'pending';
-  fileUrl?: string;
+  institution: string;
+  issue_date: string;
+  expiry_date?: string;
+  verification_status: 'pending' | 'verified' | 'rejected';
+  file_url?: string;
+  category?: string;
+  progress?: number;
 }
 
 export interface Inspection {

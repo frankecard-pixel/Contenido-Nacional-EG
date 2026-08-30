@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User as UserIcon, Briefcase, GraduationCap, Award, FileText, Plus, Edit2, Share2, Upload, X, Loader2, Phone, Mail, MapPin, Trash2 } from 'lucide-react';
 import { User } from '../../types';
+import { Link } from 'react-router-dom';
 import { uploadFile, updateUser, getStoragePublicUrl, getCandidateProfile, updateCandidateProfile } from '../../services/supabaseApi';
 import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
 
@@ -23,6 +24,7 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
   const [showExpModal, setShowExpModal] = useState(false);
   const [showEduModal, setShowEduModal] = useState(false);
   const [showSkillModal, setShowSkillModal] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [expData, setExpData] = useState({ role: '', company: '', period: '', desc: '' });
   const [eduData, setEduData] = useState({ degree: '', school: '', year: '' });
   const [skillData, setSkillData] = useState('');
@@ -76,6 +78,11 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
         await updateUser(user.id, { cv_url: finalCvUrl });
         alert("CV subido y guardado con éxito");
         if (onUpdate) onUpdate();
+        
+        // Auto-extract after upload if it's a new upload with base64
+        if (data.base64 && confirm("¿Desea extraer automáticamente la información de su CV para completar su perfil virtual?")) {
+          handleExtractCv(data.base64);
+        }
       }
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -83,6 +90,61 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
     } finally {
       setIsUploading(false);
       setShowCvUploader(false);
+    }
+  };
+
+  const handleExtractCv = async (base64OrUrl?: string) => {
+    if (!user) return;
+    setIsExtracting(true);
+    try {
+      // If we have a URL but no base64, we'd need the backend to fetch it.
+      // For now, we assume we have the base64 from the uploader or we can fetch the blob if needed.
+      // If base64OrUrl is not provided, we try to fetch the current cv_url if it exists.
+      
+      let fileToUpload: File | Blob;
+      
+      if (base64OrUrl?.startsWith('data:')) {
+        const res = await fetch(base64OrUrl);
+        fileToUpload = await res.blob();
+      } else if (user.cv_url) {
+        const res = await fetch(user.cv_url);
+        fileToUpload = await res.blob();
+      } else {
+        alert("Primero debe subir su CV.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('cv', fileToUpload, 'cv.pdf');
+
+      const response = await fetch('/api/parse-cv', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Error en la extracción');
+      
+      const data = await response.json();
+      
+      // Update profile with extracted data
+      const currentExp = profile?.experience || [];
+      const currentEdu = profile?.education || [];
+      const currentSkills = profile?.skills || [];
+
+      const updatedProfile = await updateCandidateProfile(user.id, {
+        experience: [...currentExp, ...(data.experience || [])],
+        education: [...currentEdu, ...(data.education || [])],
+        skills: Array.from(new Set([...currentSkills, ...(data.skills || [])]))
+      });
+
+      setProfile(updatedProfile);
+      alert("Información extraída y añadida a su perfil con éxito.");
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error("Error extracting CV:", error);
+      alert("Hubo un problema al leer el CV. Asegúrese de que sea un PDF legible.");
+    } finally {
+      setIsExtracting(false);
     }
   };
 
@@ -209,6 +271,36 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
       console.error("Error deleting skill:", error);
     }
   };
+
+  const completeness = useMemo(() => {
+    let score = 20; // Base score
+    if (user?.avatar_url) score += 10;
+    if (user?.bio) score += 10;
+    if (user?.phone) score += 10;
+    if (user?.cv_url) score += 10;
+    if (profile?.experience?.length > 0) score += 15;
+    if (profile?.education?.length > 0) score += 15;
+    if (profile?.skills?.length > 0) score += 10;
+    return Math.min(score, 100);
+  }, [user, profile]);
+
+  const sortedExperience = useMemo(() => {
+    if (!profile?.experience) return [];
+    return [...profile.experience].sort((a, b) => {
+      const yearA = parseInt(a.period?.match(/\d{4}/)?.[0] || '0');
+      const yearB = parseInt(b.period?.match(/\d{4}/)?.[0] || '0');
+      return yearB - yearA;
+    });
+  }, [profile?.experience]);
+
+  const sortedEducation = useMemo(() => {
+    if (!profile?.education) return [];
+    return [...profile.education].sort((a, b) => {
+      const yearA = parseInt(a.year?.match(/\d{4}/)?.[0] || '0');
+      const yearB = parseInt(b.year?.match(/\d{4}/)?.[0] || '0');
+      return yearB - yearA;
+    });
+  }, [profile?.education]);
 
   return (
     <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500">
@@ -343,10 +435,10 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
             <div className="mt-8 pt-8 border-t border-slate-50 dark:border-slate-700 space-y-4">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                 <span>Completitud del Perfil</span>
-                <span>85%</span>
+                <span>{completeness}%</span>
               </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                <div className="bg-blue-600 h-full" style={{ width: '85%' }}></div>
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden shadow-inner">
+                <div className="bg-blue-600 h-full transition-all duration-1000" style={{ width: `${completeness}%` }}></div>
               </div>
             </div>
           </div>
@@ -356,29 +448,59 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
               <FileText className="w-6 h-6 text-emerald-600" />
               CV Digital
             </h3>
-            <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700">
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest truncate max-w-[150px]">
-                {user?.cv_url ? (user.cv_url.startsWith('http') && !user.cv_url.includes('/storage/') ? 'CV Vinculado via URL' : 'cv_actualizado.pdf') : 'No hay CV subido'}
-              </span>
-              <button 
-                onClick={() => setShowCvUploader(true)}
-                disabled={isUploading}
-                className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline disabled:opacity-50"
-              >
-                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                {user?.cv_url ? 'Actualizar' : 'Subir'}
-              </button>
+            <div className="flex flex-col items-center gap-6">
+              {user?.cv_url ? (
+                <div className="w-full space-y-4">
+                  <div className="p-8 bg-blue-50/30 dark:bg-blue-900/10 rounded-[2rem] border-2 border-dashed border-blue-100 dark:border-blue-800/30 flex flex-col items-center gap-4 group">
+                    <div className="size-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">CV ACTUALIZADO</p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Archivo PDF registrado</p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-3 w-full mt-2">
+                      <button 
+                        onClick={() => window.open(user.cv_url, '_blank')}
+                        className="flex-1 py-3 px-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Share2 className="w-3 h-3" /> Visualizar
+                      </button>
+                      <button 
+                        onClick={() => handleExtractCv()}
+                        disabled={isExtracting}
+                        className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Award className="w-3 h-3" />} 
+                        {isExtracting ? 'Procesando...' : 'Extraer Datos'}
+                      </button>
+                      <button 
+                        onClick={() => setShowCvUploader(true)}
+                        className="w-full py-3 px-4 border border-slate-200 dark:border-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
+                      >
+                        Reemplazar Archivo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full p-10 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-700 flex flex-col items-center gap-6 text-center">
+                  <div className="size-20 rounded-3xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center">
+                    <FileText className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">NO HAY CV SUBIDO</h4>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-2 max-w-[200px] leading-relaxed">Sube tu CV en formato PDF para completar tu perfil profesional</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowCvUploader(true)}
+                    className="py-4 px-8 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-3"
+                  >
+                    <Upload className="w-4 h-4" /> SUBIR CV (PDF)
+                  </button>
+                </div>
+              )}
             </div>
-            {user?.cv_url && (
-              <a 
-                href={user.cv_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="mt-4 block text-center py-3 bg-slate-100 dark:bg-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"
-              >
-                Ver CV Actual
-              </a>
-            )}
           </div>
         </div>
 
@@ -392,20 +514,20 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
               <button onClick={() => setShowExpModal(true)} className="text-blue-600 hover:text-blue-700"><Plus className="w-5 h-5" /></button>
             </div>
             <div className="space-y-8">
-              {profile?.experience && profile.experience.length > 0 ? profile.experience.map((exp: any, i: number) => (
+              {sortedExperience.length > 0 ? sortedExperience.map((exp: any, i: number) => (
                 <div key={i} className="relative pl-8 border-l-2 border-slate-100 dark:border-slate-700 pb-8 last:pb-0">
-                  <div className="absolute -left-[9px] top-0 size-4 rounded-full bg-blue-600 border-4 border-white dark:border-slate-800"></div>
+                  <div className="absolute -left-[9px] top-0 size-4 rounded-full bg-blue-600 border-4 border-white dark:border-slate-800 shadow-sm"></div>
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{exp.role}</h4>
                       <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{exp.company} • {exp.period}</p>
                     </div>
-                    <button onClick={() => handleDeleteExperience(i)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => handleDeleteExperience(i)} className="text-slate-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-3">{exp.desc}</p>
                 </div>
               )) : (
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No hay experiencia registrada</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic text-center py-4">No hay experiencia registrada</p>
               )}
             </div>
           </div>
@@ -419,19 +541,19 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
               <button onClick={() => setShowEduModal(true)} className="text-purple-600 hover:text-purple-700"><Plus className="w-5 h-5" /></button>
             </div>
             <div className="space-y-6">
-              {profile?.education && profile.education.length > 0 ? profile.education.map((edu: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700">
+              {sortedEducation.length > 0 ? sortedEducation.map((edu: any, i: number) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-purple-200 transition-colors group">
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{edu.degree}</h4>
                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{edu.school}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{edu.year}</span>
-                    <button onClick={() => handleDeleteEducation(i)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => handleDeleteEducation(i)} className="text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               )) : (
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No hay educación registrada</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic text-center py-4">No hay educación registrada</p>
               )}
             </div>
           </div>

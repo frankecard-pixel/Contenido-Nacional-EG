@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../../services/supabaseClient';
+import { logLogin } from '../../../services/supabaseApi';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { MOCK_USERS } from '../../../services/mockService';
 
@@ -72,6 +73,10 @@ const LoginForm: React.FC = () => {
         localStorage.setItem('user_session', 'active');
         localStorage.setItem('user_role', role);
         localStorage.setItem('user_id', data.user.id);
+
+        // Log login asynchronously
+        logLogin(data.user.id, email).catch(console.error);
+
         navigate(`/dashboard/${normalizedRole}/overview`);
       }
     } catch (err: any) {

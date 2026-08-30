@@ -137,7 +137,7 @@ export const MOCK_COMPANIES: CompanyExt[] = [
     taxId: '8990-1203-GQ',
     rugeId: 'RG-2023-0891',
     type: 'international',
-    sector: ['Gas & Energía'],
+    sector: ['Gas & Energía', 'Ingeniería'],
     status: 'certified',
     rating: 4.8,
     badges: [BadgeType.NATIONAL_CONTENT, BadgeType.COMPLIANT],
@@ -157,11 +157,185 @@ export const MOCK_COMPANIES: CompanyExt[] = [
     registrationDate: '12 Oct 2023',
     lat: 3.75,
     lng: 8.75
+  },
+  {
+    id: 'c-2',
+    name: 'Guinea Logistics S.A.',
+    taxId: '4550-9821-GQ',
+    rugeId: 'RG-2023-1102',
+    type: 'local',
+    sector: ['Logística', 'Mantenimiento'],
+    status: 'certified',
+    rating: 4.5,
+    badges: [BadgeType.NATIONAL_CONTENT],
+    certificationLevel: 'basic',
+    complianceScore: 82,
+    nationalEmployeeCount: 120,
+    totalEmployeeCount: 150,
+    localSpendPercentage: 90,
+    auditHistory: [],
+    address: 'Bata, Litoral',
+    phone: '+240 222 333 444',
+    email: 'contacto@guinealogistics.gq',
+    legalRepresentative: {
+      name: 'Maria Abeso',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop'
+    },
+    registrationDate: '05 Ene 2024',
+    lat: 1.86,
+    lng: 9.76
+  },
+  {
+    id: 'c-3',
+    name: 'Constructora Litoral',
+    taxId: '2210-5541-GQ',
+    rugeId: 'RG-2024-0045',
+    type: 'local',
+    sector: ['Construcción', 'Ingeniería'],
+    status: 'certified',
+    rating: 4.2,
+    badges: [BadgeType.COMPLIANT],
+    certificationLevel: 'standard',
+    complianceScore: 88,
+    nationalEmployeeCount: 300,
+    totalEmployeeCount: 350,
+    localSpendPercentage: 85,
+    auditHistory: [],
+    address: 'Malabo, Bioko Norte',
+    phone: '+240 555 666 777',
+    email: 'info@constructoralitoral.gq',
+    legalRepresentative: {
+      name: 'Teodoro Obiang',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200&auto=format&fit=crop'
+    },
+    registrationDate: '15 Mar 2024',
+    lat: 3.74,
+    lng: 8.77
   }
 ];
 
 export const MOCK_OPPORTUNITIES: OpportunityExt[] = [
-  { id: 'opp-1', title: { es: 'Mantenimiento Plataforma Alba', en: 'Alba Platform Maintenance', fr: '' }, description: { es: 'Servicios integrales de mantenimiento preventivo y correctivo en la plataforma Alba. Se requiere certificación MMH nivel Elite.', en: '', fr: '' }, category: 'Mantenimiento', budget: 500000, deadline: '2024-12-20', status: 'published', petroleraId: 'u-4', location: 'Offshore Bioko', requirements: ['Certificación Elite', 'Personal 80% Nacional'], image: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop', ref: '2023-MMH-045', tag: 'urgente' },
+  { 
+    id: 'opp-1', 
+    title: { 
+      es: 'Mantenimiento Integral de Válvulas y Turbomaquinaria - Complejo Alba', 
+      en: 'Comprehensive Valve & Turbomachinery Maintenance - Alba Complex', 
+      fr: 'Maintenance Intégrale des Vannes et Turbomachines - Complexe Alba' 
+    }, 
+    description: { 
+      es: 'Prestación de servicios especializados de mantenimiento preventivo, predictivo y correctivo en las instalaciones de compresión de gas y generación eléctrica del Complejo Alba y Punta Europa. Exige homologación técnica MMIE.', 
+      en: 'Provision of specialized preventive, predictive, and corrective maintenance services in gas compression and power generation facilities at Alba Complex.', 
+      fr: 'Prestation de services spécialisés de maintenance préventive et corrective au Complexe Alba.' 
+    }, 
+    category: 'Mantenimiento', 
+    budget: 850000000, 
+    deadline: '2026-10-15', 
+    status: 'published', 
+    petroleraId: 'u-4', 
+    location: 'Punta Europa / Offshore Bioko', 
+    requirements: [
+      'Certificado de Registro en el Portal de Contenido Nacional (MMIE)',
+      'Mínimo 80% de Personal Ecuatoguineano en Cuadrilla Técnica',
+      'Certificación de Calidad ISO 9001:2015 e ISO 45001 (HSE)',
+      'Experiencia mínima de 3 años en Plantas de Gas LNG/LPG',
+      'Póliza de Responsabilidad Civil vigente emitida por Aseguradora Local'
+    ], 
+    image: 'https://images.unsplash.com/photo-1516937941344-00b4e0337589?q=80&w=2070&auto=format&fit=crop', 
+    ref: 'LIC-MMIE-ALBA-2026-045', 
+    tag: 'urgente',
+    scopeOfWork: '1. Desmontaje, inspección dimensional, rectificado y calibración de válvulas de seguridad (PSV/ESD).\n2. Alineación láser y balanceo dinámico de compresores centrífugos y turbinas Solar Taurus 60.\n3. Implementación de plan de lubricación y análisis de vibraciones mensuales conforme a norma ISO 10816.\n4. Suministro de repuestos críticos y kits de empaquetaduras homologados OEM.\n5. Programa de formación y transferencia tecnológica con certificación OPITO para 6 técnicos nacionales.',
+    awardedAmount: undefined
+  },
+  { 
+    id: 'opp-2', 
+    title: { 
+      es: 'Suministro de Buques de Apoyo Offshore (PSV / AHTS) - Bloque I Aseng', 
+      en: 'Offshore Supply Vessels (PSV / AHTS) Chartering - Block I Aseng', 
+      fr: 'Fourniture de Navires de Soutien Offshore (PSV / AHTS) - Bloc I Aseng' 
+    }, 
+    description: { 
+      es: 'Contrato marco para el fletamento de 2 buques de suministro de plataforma (PSV) con capacidad DP-2 para operaciones continuas de logística marítima entre el Puerto de Malabo/Luba y el campo de producción Aseng.', 
+      en: 'Framework contract for chartering 2 DP-2 platform supply vessels for continuous marine logistics operations between Malabo/Luba Port and Aseng field.', 
+      fr: 'Contrat cadre pour l\'affrètement de navires de ravitaillement de plateformes DP-2.' 
+    }, 
+    category: 'Logística', 
+    budget: 1450000000, 
+    deadline: '2026-11-30', 
+    status: 'published', 
+    petroleraId: 'u-4', 
+    location: 'Bloque I / Terminal Luba', 
+    requirements: [
+      'Empresa Naviera o Consorcio con Participación Ecuatoguineana > 51%',
+      'Tripulación y Marinos Nacionales mínimo 75% homologados por Capitanía Marítima',
+      'Clasificación IACS (DNV / ABS / Lloyd\'s Register) vigente',
+      'Cumplimiento del Código ISM y Código ISPS'
+    ], 
+    image: 'https://images.unsplash.com/photo-1544333346-645472894670?q=80&w=2070&auto=format&fit=crop', 
+    ref: 'LIC-MMIE-ASENG-2026-088', 
+    tag: 'nuevo',
+    scopeOfWork: '1. Transporte regular de fluidos de perforación (lodos base agua y base aceite), salmueras y agua dulce.\n2. Transporte seguro de tuberías casing, contenedores offshore certificados DNV 2.7-1 y cargas pesadas.\n3. Servicios de guardia y respuesta a emergencias de derrames de hidrocarburos (Tier 1 Response).\n4. Acompañamiento en maniobras de posicionamiento dinámico junto a la FPSO Aseng.',
+    awardedAmount: undefined
+  },
+  { 
+    id: 'opp-3', 
+    title: { 
+      es: 'Inspección Submarina NDT y Batimetría Multihaz - Campo Zafiro', 
+      en: 'Underwater NDT Inspection & Multibeam Bathymetry - Zafiro Field', 
+      fr: 'Inspection Sous-Marine END et Bathymétrie - Champ Zafiro' 
+    }, 
+    description: { 
+      es: 'Servicios de inspección no destructiva de integridad estructural de risers, líneas de flujo submarinas y plataformas tipo jacket en el Campo Zafiro mediante ROV de clase de trabajo y buceo saturado.', 
+      en: 'Non-destructive testing inspection of risers, subsea flowlines and jacket structural integrity at Zafiro Field.', 
+      fr: 'Services d\'inspection non destructive de l\'intégrité structurelle des colonnes montantes et conduites sous-marines.' 
+    }, 
+    category: 'Ingeniería', 
+    budget: 620000000, 
+    deadline: '2026-10-28', 
+    status: 'published', 
+    petroleraId: 'u-4', 
+    location: 'Offshore Zafiro / Bioko Norte', 
+    requirements: [
+      'Inscripción aprobada en el Registro Nacional de Proveedores Petroleros',
+      'Buzos y Pilotos de ROV certificados IMCA / CSWIP 3.1U / 3.2U',
+      'Plan de Contenido Nacional con inclusión de ingenieros navales graduados en la UNGE',
+      'Auditoría HSE aprobada sin incidentes LTI en los últimos 24 meses'
+    ], 
+    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2069&auto=format&fit=crop', 
+    ref: 'LIC-MMIE-ZAF-2026-102', 
+    tag: 'destacado',
+    scopeOfWork: '1. Inspección visual y por corrientes inducidas (Eddy Current) en uniones soldadas submarinas.\n2. Medición de potencial catódico en ánodos de sacrificio y espesores ultrasónicos (UTG).\n3. Levantamiento batimétrico de alta resolución en zonas de amarre del Buque Almacén.\n4. Emisión de informe técnico digital 3D y evaluación de aptitud para el servicio (Fitness For Service API 579).',
+    awardedAmount: undefined
+  },
+  { 
+    id: 'opp-4', 
+    title: { 
+      es: 'Servicio de Catering y Hotelería en Base Operativa Luba Freeport', 
+      en: 'Industrial Catering & Hospitality Services at Luba Freeport Base', 
+      fr: 'Service de Restauration et Hôtellerie à la Base Luba Freeport' 
+    }, 
+    description: { 
+      es: 'Contrato de suministro de alimentación balanceada, compras agrícolas locales, lavandería industrial y mantenimiento higiénico-sanitario para 350 operarios en la base logística portuaria.', 
+      en: 'Contract for balanced food supply, local agricultural procurement, industrial laundry and sanitary maintenance for 350 personnel.', 
+      fr: 'Fourniture de services de restauration et d\'hôtellerie pour 350 techniciens.' 
+    }, 
+    category: 'Catering', 
+    budget: 320000000, 
+    deadline: '2026-09-30', 
+    status: 'published', 
+    petroleraId: 'u-4', 
+    location: 'Luba, Bioko Sur', 
+    requirements: [
+      'Empresa 100% de Capital Ecuatoguineano (PYME Nacional)',
+      '100% de Personal de Servicio y Cocina Nacional',
+      'Abastecimiento mínimo del 60% de productos frescos en cooperativas agrícolas locales',
+      'Certificación HACCP / Manipulación de Alimentos validada por el Ministerio de Sanidad'
+    ], 
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=2074&auto=format&fit=crop', 
+    ref: 'LIC-MMIE-CAT-2026-015', 
+    tag: 'urgente',
+    scopeOfWork: '1. Elaboración de menú diario de 4 tiempos (Desayuno, Almuerzo, Cena y Refrigerios nocturnos) con opciones dietéticas.\n2. Gestión de cadena de frío y trazabilidad bromatológica según norma ISO 22000.\n3. Lavandería diaria de ropa ignífuga (FRC) y uniformes de protección personal.\n4. Reciclaje y gestión ecológica de desechos orgánicos mediante compostaje local.',
+    awardedAmount: undefined
+  }
 ];
 
 export const MOCK_JOBS: JobOffer[] = [

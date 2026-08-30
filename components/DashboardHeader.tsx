@@ -245,8 +245,12 @@ const DashboardHeader: React.FC<HeaderProps> = ({ user, onToggleSidebar }) => {
                 <p className="text-xs font-bold text-slate-900 dark:text-white leading-none mb-0.5">{user.name}</p>
                 <p className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t(`roles.${user.role}`)}</p>
              </div>
-             <div className="size-9 rounded-md bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white font-black text-sm shadow-sm">
-                {user.name?.charAt(0) || '?'}
+             <div className="size-9 rounded-md bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white font-black text-sm shadow-sm overflow-hidden">
+                {user.avatar_url || user.avatar ? (
+                  <img src={user.avatar_url || user.avatar} className="w-full h-full object-cover" alt="Avatar" referrerPolicy="no-referrer" />
+                ) : (
+                  user.name?.charAt(0) || '?'
+                )}
              </div>
            </button>
 

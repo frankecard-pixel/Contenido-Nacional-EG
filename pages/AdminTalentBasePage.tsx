@@ -1,29 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { 
-  HelpCircle, MessageSquare, AlertTriangle, CheckCircle, Search, Filter, 
-  MoreVertical, X, Loader2, User, Mail, Clock, Shield, Award, MapPin, 
-  Maximize, Eye, Briefcase, GraduationCap, CheckSquare, Square, Upload, XCircle,
-  FileText
-} from 'lucide-react';
-import { getHelpRequests, updateHelpRequest, getTalents, getCandidateProfile, verifyTalent } from '../../services/supabaseApi';
-import { HelpRequest, User as UserType } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
-import { PDFViewer } from '../PDFViewer';
-import { toast } from 'sonner';
 
-const HelpRequestManagement: React.FC = () => {
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getTalents, updateTalentStatus, verifyTalent, getCandidateProfile } from '../services/supabaseApi';
+import { toast } from 'sonner';
+import { 
+  FileText, CheckCircle, XCircle, Clock, Award, Shield, User as UserIcon, 
+  Mail, Phone, Calendar, MapPin, Search, Eye, Download, ExternalLink, 
+  Maximize, Briefcase, GraduationCap, CheckSquare, Square, Upload 
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { PDFViewer } from '../components/PDFViewer';
+
+const AdminTalentBasePage: React.FC = () => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
-  const [requests, setRequests] = useState<HelpRequest[]>([]);
   const [talents, setTalents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState<'help_requests' | 'pending_talents'>('help_requests');
-  const [isUpdating, setIsUpdating] = useState<string | null>(null);
-
-  // Certification Modal States
   const [selectedTalent, setSelectedTalent] = useState<any>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewData, setReviewData] = useState<{
@@ -42,54 +36,33 @@ const HelpRequestManagement: React.FC = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
-    setLoading(true);
     try {
-      const [helpData, talentsData] = await Promise.all([
-        getHelpRequests(),
-        getTalents()
-      ]);
-      setRequests((helpData as any[]) || []);
-      setTalents((talentsData as any[]) || []);
+      setLoading(true);
+      const data = await getTalents({ 
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        search: searchTerm || undefined
+      });
+      setTalents(data || []);
     } catch (error) {
-      console.error("Error fetching admin alerts data:", error);
+      toast.error('Error al cargar la base de talentos');
     } finally {
       setLoading(false);
     }
   };
 
-  // Auto-switch to pending talents tab if help requests is empty and talents has pending alerts
   useEffect(() => {
-    if (!loading) {
-      const pendingReqsCount = requests.filter(r => r.status === 'pending').length;
-      const pendingTalsCount = talents.filter(t => t.verification_status === 'pending').length;
-      if (pendingReqsCount === 0 && pendingTalsCount > 0) {
-        setActiveTab('pending_talents');
-      }
-    }
-  }, [loading, requests, talents]);
+    fetchData();
+  }, [statusFilter]);
 
-  const handleStatusChange = async (id: string, newStatus: any) => {
-    setIsUpdating(id);
-    try {
-      await updateHelpRequest(id, { status: newStatus });
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
-      toast.success("Estado de consulta actualizado");
-    } catch (error) {
-      console.error("Error updating help request status:", error);
-      toast.error("Error al actualizar el estado");
-    } finally {
-      setIsUpdating(null);
-    }
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchData();
   };
 
   const handleOpenReview = async (talent: any) => {
     try {
-      setLoading(true);
+      // Fetch full profile data
       const fullProfile = await getCandidateProfile(talent.id);
       setSelectedTalent({ ...talent, profile: fullProfile });
       
@@ -108,9 +81,7 @@ const HelpRequestManagement: React.FC = () => {
       });
       setShowReviewModal(true);
     } catch (error) {
-      toast.error('Error al cargar el perfil detallado del talento');
-    } finally {
-      setLoading(false);
+      toast.error('Error al cargar el perfil detallado');
     }
   };
 
@@ -137,296 +108,164 @@ const HelpRequestManagement: React.FC = () => {
     }
   };
 
-  const filteredRequests = useMemo(() => {
-    return requests.filter(r => {
-      const matchesSearch = (r.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (r.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (r.user_email || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [requests, searchQuery, statusFilter]);
-
-  const filteredTalents = useMemo(() => {
-    return talents.filter(t => {
-      const matchesSearch = (t.user?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (t.user?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (t.specialty || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || t.verification_status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [talents, searchQuery, statusFilter]);
-
-  const stats = useMemo(() => {
-    return {
-      helpTotal: requests.length,
-      helpPending: requests.filter(r => r.status === 'pending').length,
-      talentsPending: talents.filter(t => t.verification_status === 'pending').length,
-      talentsVerified: talents.filter(t => t.verification_status === 'verified').length,
-    };
-  }, [requests, talents]);
-
-  if (loading && requests.length === 0 && talents.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 className="animate-spin text-primary size-12" />
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-            Bandeja de Alertas e Incidencias
+    <div className="p-8 space-y-8 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Base de Talentos
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Atienda consultas ciudadanas y certifique expedientes de talento nacional en espera de validación ministerial.
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+            Gestión y verificación de capital humano cualificado.
           </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex bg-white dark:bg-slate-900 rounded-2xl p-1 shadow-sm border border-slate-100 dark:border-slate-800">
+            <button 
+              onClick={() => setStatusFilter('all')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'all' ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Todos
+            </button>
+            <button 
+              onClick={() => setStatusFilter('pending')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Pendientes
+            </button>
+            <button 
+              onClick={() => setStatusFilter('verified')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'verified' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Verificados
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Tabs Control */}
-      <div className="flex border-b border-slate-100 dark:border-slate-800 gap-6">
-        <button
-          onClick={() => {
-            setActiveTab('help_requests');
-            setStatusFilter('all');
-          }}
-          className={`pb-4 text-xs font-black uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all ${
-            activeTab === 'help_requests'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Consultas y Soporte
-          {stats.helpPending > 0 && (
-            <span className="px-2 py-0.5 bg-amber-500 text-white rounded-full text-[9px] font-black">
-              {stats.helpPending}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab('pending_talents');
-            setStatusFilter('pending'); // default to pending for talents since that is the priority alert!
-          }}
-          className={`pb-4 text-xs font-black uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all ${
-            activeTab === 'pending_talents'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <Shield className="w-4 h-4" />
-          Certificaciones de Talento
-          {stats.talentsPending > 0 && (
-            <span className="px-2 py-0.5 bg-blue-600 text-white rounded-full text-[9px] font-black">
-              {stats.talentsPending}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Stats Summary Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {[
-          { label: "Consultas Totales", val: stats.helpTotal, icon: <MessageSquare />, color: "blue" },
-          { label: "Consultas Pendientes", val: stats.helpPending, icon: <AlertTriangle />, color: "amber" },
-          { label: "Talentos por Certificar", val: stats.talentsPending, icon: <Clock />, color: "indigo" },
-          { label: "Talentos Certificados", val: stats.talentsVerified, icon: <CheckCircle />, color: "emerald" }
+          { label: 'Total Talentos', value: talents.length, icon: 'groups', color: 'blue' },
+          { label: 'Verificados', value: talents.filter(t => t.verification_status === 'verified').length, icon: 'verified', color: 'emerald' },
+          { label: 'Pendientes', value: talents.filter(t => t.verification_status === 'pending').length, icon: 'pending_actions', color: 'amber' },
+          { label: 'Disponibles', value: talents.filter(t => t.availability_status === 'available').length, icon: 'event_available', color: 'purple' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20 text-${stat.color}-600`}>
-                {stat.icon}
+          <div key={i} className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                <h3 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-none sm:leading-tight">{stat.value}</h3>
+              </div>
+              <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20 text-${stat.color}-500 flex items-center justify-center`}>
+                <span className="material-symbols-outlined text-lg sm:text-2xl">{stat.icon}</span>
               </div>
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stat.val}</p>
           </div>
         ))}
       </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-slate-50 dark:border-slate-700 flex flex-col md:flex-row justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* Table Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+          <form onSubmit={handleSearch} className="relative w-full md:w-96">
             <input 
               type="text"
-              placeholder={activeTab === 'help_requests' ? "Buscar por título, descripción o email..." : "Buscar por nombre, especialidad o email..."}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por especialidad o biografía..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-12 pl-12 pr-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all"
             />
-          </div>
-          <div className="flex gap-2">
-            {(activeTab === 'help_requests' 
-              ? ['all', 'pending', 'open', 'resolved']
-              : ['all', 'pending', 'verified', 'rejected']
-            ).map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  statusFilter === status 
-                    ? 'bg-primary text-white shadow-lg shadow-blue-500/20' 
-                    : 'bg-slate-50 dark:bg-slate-900 text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                {status === 'all' ? 'Todos' : status === 'pending' ? 'Pendiente' : status === 'resolved' || status === 'verified' ? 'Resuelto/Verificado' : status}
-              </button>
-            ))}
-          </div>
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+          </form>
         </div>
 
-        {activeTab === 'help_requests' ? (
-          /* Tab 1: Help Requests */
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-700/30 text-slate-400 text-[10px] uppercase font-black tracking-widest">
-                  <th className="px-8 py-5">Usuario / Fecha</th>
-                  <th className="px-8 py-5">Asunto / Categoría</th>
-                  <th className="px-8 py-5">Estado</th>
-                  <th className="px-8 py-5 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm divide-y divide-slate-50 dark:divide-slate-700">
-                {filteredRequests.length > 0 ? (
-                  filteredRequests.map((req) => (
-                    <tr key={req.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all">
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                            <User className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{req.user_email || 'Anónimo'}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{new Date(req.created_at).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{req.title}</p>
-                        <p className="text-[10px] font-bold text-primary uppercase mt-1">{req.category || 'General'}</p>
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                          req.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' :
-                          req.status === 'open' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400' :
-                          'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
-                        }`}>
-                          {req.status === 'pending' ? 'Pendiente' : req.status === 'open' ? 'Abierto' : 'Resuelto'}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <div className="flex justify-end gap-2">
-                          {req.status !== 'resolved' && (
-                            <button 
-                              onClick={() => handleStatusChange(req.id, 'resolved')}
-                              disabled={isUpdating === req.id}
-                              className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all"
-                              title="Marcar como resuelto"
-                            >
-                              {isUpdating === req.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-                            </button>
-                          )}
-                          {req.status === 'pending' && (
-                            <button 
-                              onClick={() => handleStatusChange(req.id, 'open')}
-                              disabled={isUpdating === req.id}
-                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
-                              title="Abrir ticket"
-                            >
-                              {isUpdating === req.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Clock className="w-5 h-5" />}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-8 py-20 text-center opacity-50">
-                      <p className="text-sm font-black uppercase tracking-widest">No se encontraron solicitudes</p>
-                    </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Talento</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Especialidad</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Experiencia</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ubicación</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={6} className="px-6 py-8 h-20 bg-slate-50/20"></td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          /* Tab 2: Pending/All Talents to Certify */
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-700/30 text-slate-400 text-[10px] uppercase font-black tracking-widest">
-                  <th className="px-8 py-5">Talento Profesional</th>
-                  <th className="px-8 py-5">Especialidad / Rama</th>
-                  <th className="px-8 py-5">Experiencia</th>
-                  <th className="px-8 py-5">Estado</th>
-                  <th className="px-8 py-5 text-right">Acciones</th>
+                ))
+              ) : talents.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center">
+                    <span className="material-symbols-outlined text-5xl text-slate-200 mb-4">person_search</span>
+                    <p className="text-slate-400 font-bold text-sm">No se encontraron talentos con los filtros actuales</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="text-sm divide-y divide-slate-50 dark:divide-slate-700">
-                {filteredTalents.length > 0 ? (
-                  filteredTalents.map((talent) => (
-                    <tr key={talent.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all">
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-200/40">
-                            {talent.user?.photo_url ? (
-                              <img src={talent.user.photo_url} alt="" className="w-full h-full object-cover rounded-xl" />
-                            ) : (
-                              <User className="w-5 h-5" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{talent.user?.name || 'Talento Nacional'}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{talent.user?.email}</p>
-                          </div>
+              ) : (
+                talents.map((talent) => (
+                  <tr key={talent.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {talent.user?.photo_url ? (
+                            <img src={talent.user.photo_url} alt={talent.user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-400">person</span>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <p className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{talent.specialty || 'Ingeniería / Operaciones'}</p>
-                        <p className="text-[10px] font-bold text-primary uppercase mt-1">{talent.location_city || 'Malabo'}</p>
-                      </td>
-                      <td className="px-8 py-6">
-                        <p className="font-bold text-slate-600 dark:text-slate-400 text-xs uppercase">{talent.experience_years} Años</p>
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                          talent.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400' :
-                          talent.verification_status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' :
-                          'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400'
-                        }`}>
-                          {talent.verification_status === 'verified' ? 'Verificado' : talent.verification_status === 'pending' ? 'Pendiente' : 'Rechazado'}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button
+                        <div>
+                          <p className="text-xs font-black text-slate-900 dark:text-white">{talent.user?.name || 'Usuario'}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{talent.user?.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
+                        {talent.specialty || 'No definida'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{talent.experience_years} años</p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                        {talent.location_city ? `${talent.location_city}, ` : ''}{talent.location_province || 'N/A'}
+                      </p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        talent.verification_status === 'verified' 
+                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' 
+                          : talent.verification_status === 'pending'
+                          ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20'
+                          : 'bg-rose-50 text-rose-600 dark:bg-rose-900/20'
+                      }`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        {talent.verification_status === 'verified' ? 'Verificado' : talent.verification_status === 'pending' ? 'Pendiente' : 'Rechazado'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
                           onClick={() => handleOpenReview(talent)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm"
+                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm text-[10px] font-black uppercase tracking-widest"
                         >
-                          <Shield className="w-3.5 h-3.5" /> Auditar y Certificar
+                          <Eye className="w-3 h-3" /> Revisar
                         </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="px-8 py-20 text-center opacity-50">
-                      <p className="text-sm font-black uppercase tracking-widest">No se encontraron talentos en este estado</p>
+                      </div>
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Review Modal */}
@@ -440,7 +279,7 @@ const HelpRequestManagement: React.FC = () => {
                   <Shield className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Certificación de Perfil (Auditoría)</h2>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Certificación de Perfil</h2>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Validación de contenido nacional y fe de datos ministerial</p>
                 </div>
               </div>
@@ -463,7 +302,7 @@ const HelpRequestManagement: React.FC = () => {
                       {selectedTalent.user?.photo_url ? (
                         <img src={selectedTalent.user.photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-10 h-10 text-slate-300" />
+                        <UserIcon className="w-10 h-10 text-slate-300" />
                       )}
                     </div>
                     <div>
@@ -733,4 +572,4 @@ const HelpRequestManagement: React.FC = () => {
   );
 };
 
-export default HelpRequestManagement;
+export default AdminTalentBasePage;

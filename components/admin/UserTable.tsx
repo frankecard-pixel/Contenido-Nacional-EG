@@ -10,9 +10,25 @@ interface UserTableProps {
   onEditPermissions?: (user: User) => void;
   onActivateUser?: (user: User) => void;
   onToggleBlockUser?: (user: User) => void;
+  onViewLogs?: (user: User) => void;
+  onEdit?: (user: User) => void;
+  onResetPassword?: (user: User) => void;
+  canManage?: boolean;
 }
 
-const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getStatusBadge, companies = [], onEditPermissions, onActivateUser, onToggleBlockUser }) => {
+const UserTable: React.FC<UserTableProps> = ({ 
+  filteredUsers, 
+  getRoleBadge, 
+  getStatusBadge, 
+  companies = [], 
+  onEditPermissions, 
+  onActivateUser, 
+  onToggleBlockUser,
+  onViewLogs,
+  onEdit,
+  onResetPassword,
+  canManage = false
+}) => {
   const getCompanyName = (companyId?: string) => {
     if (!companyId) return null;
     const company = companies.find(c => c.id === companyId);
@@ -103,6 +119,33 @@ const UserTable: React.FC<UserTableProps> = ({ filteredUsers, getRoleBadge, getS
                       <span className="material-symbols-outlined font-black">
                         {user.status === 'suspended' ? 'lock_open' : 'lock'}
                       </span>
+                    </button>
+                  )}
+                  {onViewLogs && (
+                    <button 
+                      onClick={() => onViewLogs(user)}
+                      className="p-3 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all" 
+                      title="Ver Logs de Acceso"
+                    >
+                      <span className="material-symbols-outlined">history</span>
+                    </button>
+                  )}
+                  {canManage && onEdit && (
+                    <button 
+                      onClick={() => onEdit(user)}
+                      className="p-3 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-all" 
+                      title="Editar Usuario"
+                    >
+                      <span className="material-symbols-outlined">edit_square</span>
+                    </button>
+                  )}
+                  {canManage && onResetPassword && (
+                    <button 
+                      onClick={() => onResetPassword(user)}
+                      className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all" 
+                      title="Cambiar Contraseña"
+                    >
+                      <span className="material-symbols-outlined">lock_reset</span>
                     </button>
                   )}
                   <button className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all" title="Opciones">

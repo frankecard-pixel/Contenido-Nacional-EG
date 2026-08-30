@@ -33,31 +33,66 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
 
   if (!currentUser) return null;
 
+  const isAdmin = currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.ADMIN;
+
+  const adminMenuGroups = [
+    {
+      title: 'General',
+      items: [
+        { path: '/dashboard/super_admin/overview', label: 'dashboard.overview', icon: '📊' },
+        { path: '/dashboard/super_admin/notifications', label: 'dashboard.notifications', icon: '🔔' },
+        { path: '/dashboard/super_admin/messages', label: 'dashboard.message_center', icon: '💬' },
+      ]
+    },
+    {
+      title: 'Contenido y Comunicación',
+      items: [
+        { path: '/dashboard/super_admin/news', label: 'dashboard.news_management', icon: '📰' },
+        { path: '/dashboard/super_admin/web', label: 'dashboard.public_portal', icon: '🌐' },
+        { path: '/dashboard/super_admin/newsletter', label: 'Newsletter', icon: '📧' },
+        { path: '/dashboard/super_admin/denuncias', label: 'Denuncias por Abuso', icon: '🚩' },
+      ]
+    },
+    {
+      title: 'Usuarios y Entidades',
+      items: [
+        { path: '/dashboard/super_admin/users', label: 'Gestión de Usuarios', icon: '👤' },
+        { path: '/dashboard/super_admin/talents', label: 'Base de Talentos', icon: '🎓' },
+        { path: '/dashboard/super_admin/companies', label: 'dashboard.local_companies', icon: '🏢' },
+        { path: '/dashboard/super_admin/registrations', label: 'Registros', icon: '📝' },
+        { path: '/dashboard/super_admin/certifications', label: 'Verificaciones', icon: '✅' },
+      ]
+    },
+    {
+      title: 'Operaciones',
+      items: [
+        { path: '/dashboard/super_admin/opportunities', label: 'dashboard.tenders', icon: '📜' },
+        { path: '/dashboard/super_admin/jobs', label: 'Gestión de Vacantes', icon: '💼' },
+        { path: '/dashboard/super_admin/contracts', label: 'dashboard.contracts', icon: '📑' },
+        { path: '/dashboard/super_admin/contract-templates', label: 'Templates', icon: '📄' },
+        { path: '/dashboard/super_admin/community', label: 'dashboard.community_works', icon: '🏗️' },
+      ]
+    },
+    {
+      title: 'Legal y Soporte',
+      items: [
+        { path: '/dashboard/super_admin/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+        { path: '/dashboard/super_admin/help-requests', label: 'Atención y Feedback', icon: '🙋' },
+      ]
+    },
+    {
+      title: 'Marketing y Analítica',
+      items: [
+        { path: '/dashboard/super_admin/campaigns', label: 'Gestión de Anuncios', icon: '📢' },
+        { path: '/dashboard/super_admin/billing', label: 'Contabilidad Publicitaria', icon: '💳' },
+        { path: '/dashboard/super_admin/analytics', label: 'Analíticas Globales', icon: '📈' },
+        { path: '/dashboard/super_admin/reports', label: 'dashboard.reports', icon: '📈' },
+      ]
+    }
+  ];
+
   const menuGroups = {
-    [UserRole.SUPER_ADMIN]: [
-      { path: '/dashboard/super_admin/overview', label: 'dashboard.overview', icon: '📊' },
-      { path: '/dashboard/super_admin/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/super_admin/messages', label: 'dashboard.message_center', icon: '💬' },
-      { path: '/dashboard/super_admin/news', label: 'dashboard.news_management', icon: '📰' },
-      { path: '/dashboard/super_admin/web', label: 'dashboard.public_portal', icon: '🌐' },
-      { path: '/dashboard/super_admin/newsletter', label: 'Newsletter', icon: '📧' },
-      { path: '/dashboard/super_admin/denuncias', label: 'Denuncias por Abuso', icon: '🚩' },
-      { path: '/dashboard/super_admin/certifications', label: 'Verificaciones', icon: '✅' },
-      { path: '/dashboard/super_admin/registrations', label: 'Registros', icon: '🏢' },
-      { path: '/dashboard/super_admin/contract-templates', label: 'Templates', icon: '📄' },
-      { path: '/dashboard/super_admin/community', label: 'dashboard.community_works', icon: '🏗️' },
-      { path: '/dashboard/super_admin/users', label: 'Talentos / Usuarios', icon: '👥' },
-      { path: '/dashboard/super_admin/companies', label: 'dashboard.local_companies', icon: '🏢' },
-      { path: '/dashboard/super_admin/opportunities', label: 'dashboard.tenders', icon: '📜' },
-      { path: '/dashboard/super_admin/jobs', label: 'Gestión de Vacantes', icon: '💼' },
-      { path: '/dashboard/super_admin/contracts', label: 'dashboard.contracts', icon: '📑' },
-      { path: '/dashboard/super_admin/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
-      { path: '/dashboard/super_admin/help-requests', label: 'Atención y Feedback', icon: '🙋' },
-      { path: '/dashboard/super_admin/campaigns', label: 'Gestión de Anuncios', icon: '📢' },
-      { path: '/dashboard/super_admin/billing', label: 'Contabilidad Publicitaria', icon: '💳' },
-      { path: '/dashboard/super_admin/analytics', label: 'Analíticas Globales', icon: '📈' },
-      { path: '/dashboard/super_admin/reports', label: 'dashboard.reports', icon: '📈' },
-    ],
+    [UserRole.SUPER_ADMIN]: [], // Handled separately by adminMenuGroups
     [UserRole.FUNCIONARIO]: [
       { path: '/dashboard/funcionario/overview', label: 'dashboard.overview', icon: '📊' },
       { path: '/dashboard/funcionario/news', label: 'dashboard.portal_news', icon: '📰' },
@@ -203,24 +238,55 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
           <div className="mb-2 px-3">
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Menú Principal</p>
           </div>
-          {currentMenu.map((item: any) => {
-            const active = location.pathname.includes(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => { if(window.innerWidth < 1280) onClose(); }}
-                className={`flex items-center space-x-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all ${
-                  active 
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' 
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white border-l-4 border-transparent'
-                }`}
-              >
-                <span className="text-lg opacity-80">{item.icon}</span>
-                <span>{t(item.label)}</span>
-              </Link>
-            );
-          })}
+          
+          {isAdmin ? (
+            adminMenuGroups.map((group) => (
+              <div key={group.title} className="mb-6">
+                <div className="px-3 mb-2">
+                  <p className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.2em]">{group.title}</p>
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = location.pathname.includes(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => { if(window.innerWidth < 1280) onClose(); }}
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-semibold transition-all ${
+                          active 
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600 shadow-sm' 
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white border-l-4 border-transparent'
+                        }`}
+                      >
+                        <span className="text-base opacity-80">{item.icon}</span>
+                        <span className="text-[11px] uppercase tracking-tight">{t(item.label)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          ) : (
+            currentMenu.map((item: any) => {
+              const active = location.pathname.includes(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => { if(window.innerWidth < 1280) onClose(); }}
+                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all ${
+                    active 
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' 
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white border-l-4 border-transparent'
+                  }`}
+                >
+                  <span className="text-lg opacity-80">{item.icon}</span>
+                  <span>{t(item.label)}</span>
+                </Link>
+              );
+            })
+          )}
           
           {/* Ad Banner in Sidebar */}
           <div className="px-2 mt-8">
@@ -230,7 +296,13 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
           <div className="mb-4 flex items-center gap-3 p-3 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-             <div className="size-9 rounded-md bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white font-black text-sm">{currentUser.name?.charAt(0) || '?'}</div>
+             <div className="size-9 rounded-md bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white font-black text-sm overflow-hidden">
+                {currentUser.avatar_url || currentUser.avatar ? (
+                  <img src={currentUser.avatar_url || currentUser.avatar} className="w-full h-full object-cover" alt="Avatar" referrerPolicy="no-referrer" />
+                ) : (
+                  currentUser.name?.charAt(0) || '?'
+                )}
+             </div>
              <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{currentUser.name}</span>
                 <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">{t(`roles.${currentUser.role}`)}</span>

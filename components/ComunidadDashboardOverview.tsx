@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { getSocialProjects } from '../services/supabaseApi';
 import { SocialProject, User } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -54,20 +55,25 @@ const ComunidadDashboardOverview: React.FC<ComunidadDashboardOverviewProps> = ({
          <span className="material-symbols-outlined absolute right-[-20px] md:right-[-20px] top-[-20px] md:top-[-20px] text-[150px] md:text-[200px] opacity-10">diversity_3</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {[
-          { label: "Proyectos Activos", val: socialProjects.length.toString(), icon: "potted_plant", color: "text-emerald-600" },
-          { label: "Población Impactada", val: "15.4k", icon: "groups", color: "text-blue-600" },
-          { label: "Inversión Validada", val: "$2.4M", icon: "payments", color: "text-amber-600" },
-          { label: "Alertas Comunitarias", val: "3", icon: "campaign", color: "text-rose-600" }
+          { label: "Proyectos Activos", val: socialProjects.length.toString(), icon: "potted_plant", color: "text-emerald-600", to: "/dashboard/comunidad/community" },
+          { label: "Población Impactada", val: "15.4k", icon: "groups", color: "text-blue-600", to: "/dashboard/comunidad/community" },
+          { label: "Inversión Validada", val: "$2.4M", icon: "payments", color: "text-amber-600", to: "/dashboard/comunidad/community" },
+          { label: "Alertas Comunitarias", val: "3", icon: "campaign", color: "text-rose-600", to: "/dashboard/comunidad/feedback" }
         ].map((kpi, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-             <div className={`p-3 w-fit rounded-xl bg-slate-50 dark:bg-slate-900 ${kpi.color} mb-4 md:mb-6`}>
-               <span className="material-symbols-outlined">{kpi.icon}</span>
+          <Link key={i} to={kpi.to} className="bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-[1.25rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-500/40 transition-all group flex flex-col justify-between cursor-pointer active:scale-[0.98]">
+             <div className="flex items-center justify-between mb-3 sm:mb-6">
+               <div className={`p-2 sm:p-3 w-fit rounded-xl bg-slate-50 dark:bg-slate-900 ${kpi.color} group-hover:scale-110 transition-transform`}>
+                 <span className="material-symbols-outlined text-lg sm:text-2xl">{kpi.icon}</span>
+               </div>
+               <span className="material-symbols-outlined text-xs text-emerald-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
              </div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-             <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{kpi.val}</p>
-          </div>
+             <div>
+               <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-tight">{kpi.label}</p>
+               <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{kpi.val}</p>
+             </div>
+          </Link>
         ))}
       </div>
 
@@ -75,18 +81,18 @@ const ComunidadDashboardOverview: React.FC<ComunidadDashboardOverviewProps> = ({
         <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
            <div className="p-6 md:p-8 border-b border-slate-50 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">Obras en curso por sector</h3>
-              <button className="text-primary text-[10px] font-black uppercase hover:underline">Ver mapa de proyectos</button>
+              <Link to="/dashboard/comunidad/community" className="text-primary text-[10px] font-black uppercase hover:underline">Ver mapa de proyectos</Link>
            </div>
            <div className="p-6 md:p-10 space-y-6 md:space-y-8">
               {socialProjects.length > 0 ? (
                 socialProjects.map(p => (
-                  <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 dark:border-slate-700 group hover:border-emerald-500 transition-all gap-4">
+                  <Link key={p.id} to="/dashboard/comunidad/community" className="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 dark:border-slate-700 group hover:border-emerald-500 transition-all gap-4 block">
                      <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
                         <div className="size-12 md:size-14 shrink-0 rounded-2xl overflow-hidden shadow-inner bg-slate-100 flex items-center justify-center">
                            {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <span className="material-symbols-outlined text-slate-400">image</span>}
                         </div>
                         <div className="min-w-0">
-                           <h4 className="text-xs md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 truncate">{p.title.es}</h4>
+                           <h4 className="text-xs md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 truncate group-hover:text-emerald-600 transition-colors">{p.title.es}</h4>
                            <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">{p.location} • {p.investor}</p>
                         </div>
                      </div>
@@ -97,9 +103,9 @@ const ComunidadDashboardOverview: React.FC<ComunidadDashboardOverviewProps> = ({
                               <div className="h-full bg-emerald-500" style={{ width: `${p.progress}%` }}></div>
                            </div>
                         </div>
-                        <button className="p-2 text-slate-400 hover:text-primary transition-colors"><span className="material-symbols-outlined">visibility</span></button>
+                        <span className="p-2 text-slate-400 group-hover:text-emerald-600 transition-colors"><span className="material-symbols-outlined">visibility</span></span>
                      </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <div className="p-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest border border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem]">No hay proyectos sociales registrados</div>
@@ -142,7 +148,7 @@ const ComunidadDashboardOverview: React.FC<ComunidadDashboardOverviewProps> = ({
                     <p className="text-[10px] font-black text-amber-500 uppercase mb-2">Urgente • San Antonio de Pale</p>
                     <p className="text-xs font-medium leading-relaxed italic">"Solicitamos revisión de la potabilizadora instalada el mes pasado."</p>
                  </div>
-                 <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/40">Atender Solicitudes</button>
+                 <Link to="/dashboard/comunidad/feedback" className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/40 block text-center">Atender Solicitudes</Link>
               </div>
            </div>
         </div>

@@ -3,11 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LanguageSelector from './LanguageSelector';
+import { useAuth } from '../contexts/AuthContext';
+import { LayoutDashboard, UserCheck } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAuthUser = Boolean(user) || (localStorage.getItem('user_session') === 'active');
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -145,9 +149,22 @@ const Navbar: React.FC = () => {
 
           <div className="flex items-center space-x-2 sm:space-x-4">
             <LanguageSelector />
-            <Link to="/login" className="hidden lg:block bg-blue-600 text-white px-6 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-blue-700 transition-all">
-              {t('common.login')}
-            </Link>
+            {isAuthUser ? (
+              <Link 
+                to="/dashboard" 
+                className="hidden lg:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all active:scale-95"
+              >
+                <LayoutDashboard className="size-3.5" />
+                <span>Mi Panel RUGE</span>
+              </Link>
+            ) : (
+              <Link 
+                to="/login" 
+                className="hidden lg:block bg-blue-600 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-all active:scale-95"
+              >
+                {t('common.login')}
+              </Link>
+            )}
             {/* Botón Hamburgesa Móvil */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
@@ -211,12 +228,22 @@ const Navbar: React.FC = () => {
                 </div>
               ))}
               <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
-                <Link 
-                  to="/login" 
-                  className="w-full bg-blue-600 text-white py-4 rounded-md flex items-center justify-center font-black uppercase text-xs tracking-widest shadow-sm"
-                >
-                  {t('common.login')}
-                </Link>
+                {isAuthUser ? (
+                  <Link 
+                    to="/dashboard" 
+                    className="w-full bg-blue-600 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-black uppercase text-xs tracking-wider shadow-sm active:scale-95"
+                  >
+                    <LayoutDashboard className="size-4" />
+                    <span>Acceder a Mi Panel RUGE</span>
+                  </Link>
+                ) : (
+                  <Link 
+                    to="/login" 
+                    className="w-full bg-blue-600 text-white py-4 rounded-xl flex items-center justify-center font-black uppercase text-xs tracking-wider shadow-sm active:scale-95"
+                  >
+                    {t('common.login')}
+                  </Link>
+                )}
               </div>
            </div>
         </div>

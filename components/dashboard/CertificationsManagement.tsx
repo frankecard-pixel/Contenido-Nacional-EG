@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Award, CheckCircle, Clock, FileText, Plus, Download, ExternalLink, X } from 'lucide-react';
-import { getCertifications, addCertification } from '../../services/supabaseApi';
+import { Award, CheckCircle, Clock, FileText, Plus, Download, ExternalLink, X, Upload, Trash2, Shield, AlertCircle, Maximize } from 'lucide-react';
+import { getCertifications, addCertification, deleteCertification } from '../../services/supabaseApi';
 import { Certification, User } from '../../types';
 import { toast } from 'sonner';
+import { FileUploaderWithPreview } from '../FileUploaderWithPreview';
+import { PDFViewer } from '../PDFViewer';
 
 interface CertificationsManagementProps {
   user?: User | null;
@@ -22,6 +24,8 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
   const [newExpiry, setNewExpiry] = useState('');
   const [newCategory, setNewCategory] = useState('Capacitación Técnica');
   const [newFileUrl, setNewFileUrl] = useState('');
+  const [showUploader, setShowUploader] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchUserCerts = async () => {
@@ -51,6 +55,31 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
       pending: certifications.filter(c => c.verification_status === 'pending').length,
     };
   }, [certifications]);
+
+  const handleDelete = async (cert: any) => {
+    if (cert.verification_status === 'verified') {
+      toast.error("Los documentos certificados no pueden ser eliminados sin autorización de los administradores.");
+      return;
+    }
+    if (!confirm("¿Está seguro de eliminar esta certificación?")) return;
+    try {
+      await deleteCertification(cert.id);
+      toast.success("Certificación eliminada");
+      fetchUserCerts();
+    } catch (error) {
+      toast.error("Error al eliminar la certificación");
+    }
+  };
+
+  const handleFileConfirm = (data: { base64?: string; url?: string; fileName?: string }) => {
+    if (data.base64) {
+      setNewFileUrl(data.base64);
+    } else if (data.url) {
+      setNewFileUrl(data.url);
+    }
+    setShowUploader(false);
+    toast.success("Archivo adjuntado correctamente");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,56 +123,58 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
   };
 
   return (
-    <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
             Mis Certificaciones
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
             Repositorio oficial de diplomas, cursos y acreditaciones del sector.
           </p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 sm:px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Subir Certificado
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 p-3 rounded-2xl">
-              <CheckCircle className="w-6 h-6" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vigentes / Validados</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.valid}</p>
+              <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Vigentes / Validados</p>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.valid}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="bg-rose-50 dark:bg-rose-900/20 text-rose-600 p-3 rounded-2xl">
-              <Clock className="w-6 h-6" />
+
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
+            <div className="bg-rose-50 dark:bg-rose-900/20 text-rose-600 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expirados</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.expired}</p>
+              <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Expirados</p>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.expired}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 p-3 rounded-2xl">
-              <Award className="w-6 h-6" />
+
+        <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xs">
+          <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0">
+              <Award className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">En Verificación</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.pending}</p>
+              <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">En Verificación</p>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.pending}</p>
             </div>
           </div>
         </div>
@@ -151,61 +182,74 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
           {certifications.length === 0 ? (
-            <div className="col-span-full p-12 text-center opacity-50 bg-white dark:bg-slate-800 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-700">
-              <p className="text-sm font-black uppercase tracking-widest">No hay certificaciones registradas</p>
+            <div className="col-span-full p-8 sm:p-12 text-center opacity-50 bg-white dark:bg-slate-800 rounded-2xl sm:rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-700">
+              <p className="text-xs sm:text-sm font-black uppercase tracking-widest">No hay certificaciones registradas</p>
             </div>
           ) : (
             certifications.map((cert) => (
-              <div key={cert.id} className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all group">
-                <div className="flex justify-between items-start mb-6">
-                  <div className={`size-14 rounded-2xl flex items-center justify-center ${
+              <div key={cert.id} className="bg-white dark:bg-slate-800 p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xs hover:shadow-xl transition-all group">
+                <div className="flex justify-between items-start mb-4 sm:mb-6">
+                  <div className={`size-11 sm:size-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${
                     cert.verification_status === 'verified' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' : cert.verification_status === 'rejected' ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20'
                   }`}>
-                    <Award className="w-7 h-7" />
+                    <Award className="w-5 h-5 sm:w-7 sm:h-7" />
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                  <span className={`px-2.5 py-1 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${
                     cert.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700' : cert.verification_status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'
                   }`}>
                     {cert.verification_status === 'verified' ? 'Vigente / Validado' : cert.verification_status === 'rejected' ? 'Rechazado' : 'Pendiente de Validación'}
                   </span>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-2 tracking-tight">{cert.title}</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">{cert.institution}</p>
+                <h3 className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase mb-1 sm:mb-2 tracking-tight">{cert.title}</h3>
+                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 sm:mb-6">{cert.institution}</p>
                 
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-8 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400" />
+                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                     <div>
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Emisión</p>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">{cert.issue_date}</p>
+                      <p className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white">{cert.issue_date}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400" />
+                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                     <div>
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Expiración</p>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">{cert.expiry_date || 'No expira'}</p>
+                      <p className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white">{cert.expiry_date || 'No expira'}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-50 dark:border-slate-700 flex justify-between items-center">
+                <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-100 dark:border-slate-700 flex flex-wrap justify-between items-center gap-2">
                   {cert.file_url && (
-                    <a 
-                      href={cert.file_url} 
-                      target="_blank" 
-                      rel="noreferrer"
+                    <button 
+                      onClick={() => setPreviewUrl(cert.file_url!)}
                       className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
                     >
-                      <Download className="w-4 h-4" /> Ver Documento PDF
-                    </a>
+                      <Maximize className="w-4 h-4" /> Visualizar en App
+                    </button>
                   )}
-                  <span className="text-[9px] text-slate-400 font-bold uppercase">{cert.category || 'Técnico'}</span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    {cert.verification_status === 'verified' && (
+                      <span className="flex items-center gap-1 text-[8px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-1 rounded-lg">
+                        <Shield className="w-2.5 h-2.5" /> Protegido
+                      </span>
+                    )}
+                    <span className="text-[9px] text-slate-400 font-bold uppercase">{cert.category || 'Técnico'}</span>
+                    <button 
+                      onClick={() => handleDelete(cert)}
+                      disabled={cert.verification_status === 'verified'}
+                      className={`p-2 transition-colors ${cert.verification_status === 'verified' ? 'text-slate-200 cursor-not-allowed' : 'text-slate-300 hover:text-rose-500'}`}
+                      title={cert.verification_status === 'verified' ? "No se puede eliminar un certificado validado" : "Eliminar"}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -293,14 +337,31 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">URL de Documento PDF (Adjunto)</label>
-                <input 
-                  type="url" 
-                  placeholder="https://ejemplo.com/certificado.pdf"
-                  value={newFileUrl}
-                  onChange={(e) => setNewFileUrl(e.target.value)}
-                  className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                />
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Documento de la Certificación (PDF) *</label>
+                {!newFileUrl ? (
+                  <button 
+                    type="button"
+                    onClick={() => setShowUploader(true)}
+                    className="w-full py-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center gap-2 text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all"
+                  >
+                    <Upload className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Subir o Vincular Archivo</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      <span className="text-[10px] font-bold text-blue-800 dark:text-blue-300 uppercase truncate max-w-[200px]">Archivo adjunto listo</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setNewFileUrl('')}
+                      className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-lg text-blue-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-50 dark:border-slate-700">
@@ -322,6 +383,22 @@ const CertificationsManagement: React.FC<CertificationsManagementProps> = ({ use
             </form>
           </div>
         </div>
+      )}
+
+      {showUploader && (
+        <FileUploaderWithPreview 
+          title="Adjuntar Certificado"
+          allowedTypes=".pdf"
+          onConfirm={handleFileConfirm}
+          onCancel={() => setShowUploader(false)}
+        />
+      )}
+
+      {previewUrl && (
+        <PDFViewer 
+          url={previewUrl} 
+          onClose={() => setPreviewUrl(null)} 
+        />
       )}
     </div>
   );

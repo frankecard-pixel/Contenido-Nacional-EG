@@ -99,18 +99,18 @@ const CommunityManagement: React.FC = () => {
       </header>
 
       {/* Stats Overview */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((s, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col group relative overflow-hidden transition-all hover:shadow-md">
-            <div className={`p-4 ${s.bg} dark:bg-opacity-10 rounded-2xl ${s.color} w-fit mb-6`}>
-              <span className="material-symbols-outlined text-3xl">{s.icon}</span>
+          <div key={i} className="bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col group relative overflow-hidden transition-all hover:shadow-md">
+            <div className={`p-2 sm:p-4 ${s.bg} dark:bg-opacity-10 rounded-xl sm:rounded-2xl ${s.color} w-fit mb-3 sm:mb-6`}>
+              <span className="material-symbols-outlined text-xl sm:text-3xl">{s.icon}</span>
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s.label}</span>
-            <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{s.val}</span>
-              <span className={`text-[9px] font-black uppercase tracking-widest ${s.color} bg-opacity-10 px-2 py-1 rounded-lg`}>{s.trend}</span>
+            <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none sm:leading-tight">{s.label}</span>
+            <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-3 mt-auto">
+              <span className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none sm:leading-tight">{s.val}</span>
+              <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${s.color} bg-opacity-10 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg`}>{s.trend}</span>
             </div>
-            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity hidden sm:block">
               <span className="material-symbols-outlined text-7xl">{s.icon}</span>
             </div>
           </div>

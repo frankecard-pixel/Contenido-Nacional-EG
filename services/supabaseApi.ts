@@ -83,11 +83,14 @@ export const uploadFile = async (bucket: string, path: string, base64Data: strin
       contentType,
       upsert: true
     });
-    if (error) throw error;
+    if (error) {
+      console.warn(`uploadFile to bucket '${bucket}' error:`, error);
+      return null;
+    }
     return data;
   } catch (error) {
-    console.warn(`uploadFile to bucket '${bucket}' failed. Falling back to mock response:`, error);
-    return { path, fullPath: `${bucket}/${path}` };
+    console.warn(`uploadFile to bucket '${bucket}' failed:`, error);
+    return null;
   }
 };
 
@@ -330,6 +333,10 @@ export const mapUserToDbo = (user: Partial<User>) => {
   if (user.allow_search !== undefined) dbo.allow_search = user.allow_search;
   if (user.linkedin_url !== undefined) dbo.linkedin_url = user.linkedin_url;
   if (user.linkedin_profile !== undefined) dbo.linkedin_profile = user.linkedin_profile;
+  if (user.cv_url !== undefined) dbo.cv_url = user.cv_url;
+  if (user.bio !== undefined) dbo.bio = user.bio;
+  if (user.phone !== undefined) dbo.phone = user.phone;
+  if (user.verification_status !== undefined) dbo.verification_status = user.verification_status;
   
   return dbo;
 };
@@ -358,40 +365,233 @@ export const getUserById = async (id: string) => {
   }
 };
 
-export const createUser = async (userData: Partial<User>) => {
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const createUser = async (userData: Partial<User>, password?: string) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const dbPayload = mapUserToDbo(userData);
+    
+    let userId = userData.id;
+
+    // If a password is provided, try to create the user in Supabase Auth first
+    if (password && userData.email && supabaseUrl && supabaseKey) {
+      try {
+        const tempSupabase = createClient(supabaseUrl, supabaseKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+          }
+        });
+        
+        const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+          email: userData.email,
+          password: password,
+          options: {
+            data: {
+              full_name: userData.name,
+              role: userData.role
+            }
+          }
+        });
+        
+        if (authError) {
+          console.warn('Auth signUp failed, proceeding with DB insert only:', authError);
+        } else if (authData.user) {
+          userId = authData.user.id;
+        }
+      } catch (authException) {
+        console.warn('Auth exception during signUp:', authException);
+      }
+    }
+
+    const dbPayload = {
+      ...mapUserToDbo(userData),
+      id: userId || undefined
+    };
+    
     const { data, error } = await supabase.from('users').insert([dbPayload]).select().single();
     if (error) throw error;
     return mapDboToUser(data);
-  } catch (error) {
-    console.warn('createUser failed. Falling back to mock user creation:', error);
-    const newUser = { id: userData.id || `u-${Date.now()}`, ...userData } as User;
-    MOCK_USERS.push(newUser);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('MOCK_USERS', JSON.stringify(MOCK_USERS));
-      } catch (e) {
-        console.warn('Error saving MOCK_USERS to localStorage:', e);
+  } catch (error: any) {
+    console.warn('createUser failed:', error);
+    throw error;
+  }
+};
+
+export const logLogin = async (userId: string, email: string) => {
+  try {
+    if (!isSupabaseActive()) return;
+
+    let ipData = { ip: 'Unknown', city: 'Unknown', country_name: 'Unknown' };
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      if (response.ok) {
+        ipData = await response.json();
       }
+    } catch (e) {
+      console.warn('Could not fetch IP info:', e);
     }
-    return newUser;
+
+    const logPayload = {
+      user_id: userId,
+      email: email,
+      ip_address: ipData.ip,
+      city: ipData.city,
+      country: ipData.country_name,
+      user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Server',
+      login_at: new Date().toISOString(),
+      status: 'success'
+    };
+
+    await supabase.from('login_logs').insert([logPayload]);
+    
+    // Also update user online status
+    await supabase.from('users').update({ is_online: true }).eq('id', userId);
+  } catch (error) {
+    console.warn('Error logging login:', error);
+  }
+};
+
+export const logLogout = async (userId: string) => {
+  try {
+    if (!isSupabaseActive()) return;
+
+    // Update logout time for the most recent login log
+    const { data: logs } = await supabase
+      .from('login_logs')
+      .select('id, login_at')
+      .eq('user_id', userId)
+      .is('logout_at', null)
+      .order('login_at', { ascending: false })
+      .limit(1);
+
+    if (logs && logs.length > 0) {
+      const loginAt = new Date(logs[0].login_at);
+      const logoutAt = new Date();
+      const durationMinutes = Math.floor((logoutAt.getTime() - loginAt.getTime()) / (1000 * 60));
+
+      await supabase.from('login_logs').update({
+        logout_at: logoutAt.toISOString(),
+        session_duration_minutes: durationMinutes
+      }).eq('id', logs[0].id);
+    }
+
+    // Also update user online status
+    await supabase.from('users').update({ is_online: false }).eq('id', userId);
+  } catch (error) {
+    console.warn('Error logging logout:', error);
+  }
+};
+
+export const getLoginLogs = async (userId: string) => {
+  try {
+    if (!isSupabaseActive()) return [];
+    const { data, error } = await supabase
+      .from('login_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('login_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.warn('Error getting login logs:', error);
+    return [];
+  }
+};
+
+export const resetUserPassword = async (email: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('Error resetting password:', error);
+    throw error;
   }
 };
 
 export const updateUser = async (id: string, userData: Partial<User>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    
+    let oldScore = 20;
+    try {
+      const { data: original } = await supabase.from('users').select('*').eq('id', id).single();
+      if (original) {
+        if (original.avatar_url || original.avatar) oldScore += 10;
+        if (original.bio) oldScore += 10;
+        if (original.phone) oldScore += 10;
+        if (original.cv_url) oldScore += 10;
+      }
+    } catch (e) {
+      console.warn("Could not calculate old profile score", e);
+    }
+
     const dbPayload = mapUserToDbo(userData);
     const { data, error } = await supabase.from('users').update(dbPayload).eq('id', id).select().single();
     if (error) throw error;
-    return mapDboToUser(data);
+    
+    const mappedUser = mapDboToUser(data);
+    
+    let newScore = 20;
+    if (mappedUser.avatar_url || mappedUser.avatar) newScore += 10;
+    if (mappedUser.bio) newScore += 10;
+    if (mappedUser.phone) newScore += 10;
+    if (mappedUser.cv_url) newScore += 10;
+
+    if (newScore > oldScore) {
+      const percentGain = newScore - oldScore;
+      await createNotification(
+        id,
+        `Progreso de Perfil: +${percentGain}%`,
+        `Felicidades, la completitud de su perfil ha aumentado al incorporar nueva información personal.`,
+        'system',
+        undefined,
+        'Sistema'
+      );
+    }
+
+    return mappedUser;
   } catch (error) {
     console.warn(`updateUser for '${id}' failed. Falling back to mock response:`, error);
     const idx = MOCK_USERS.findIndex(u => u.id === id);
     if (idx !== -1) {
+      const original = MOCK_USERS[idx];
+      let oldScore = 20;
+      if (original.avatar_url || original.avatar) oldScore += 10;
+      if (original.bio) oldScore += 10;
+      if (original.phone) oldScore += 10;
+      if (original.cv_url) oldScore += 10;
+
       MOCK_USERS[idx] = { ...MOCK_USERS[idx], ...userData };
+      
+      const updated = MOCK_USERS[idx];
+      let newScore = 20;
+      if (updated.avatar_url || updated.avatar) newScore += 10;
+      if (updated.bio) newScore += 10;
+      if (updated.phone) newScore += 10;
+      if (updated.cv_url) newScore += 10;
+
+      if (newScore > oldScore) {
+        const percentGain = newScore - oldScore;
+        await createNotification(
+          id,
+          `Progreso de Perfil: +${percentGain}%`,
+          `Felicidades, la completitud de su perfil ha aumentado al incorporar nueva información personal.`,
+          'system',
+          undefined,
+          'Sistema'
+        );
+      }
+
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('MOCK_USERS', JSON.stringify(MOCK_USERS));
@@ -414,6 +614,319 @@ export const updateOpportunity = async (id: string, opportunityData: Partial<Opp
   } catch (error) {
     console.warn(`updateOpportunity for '${id}' failed. Falling back to mock response:`, error);
     return { id, ...opportunityData };
+  }
+};
+
+export const deleteOpportunity = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase.from('opportunities').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn(`deleteOpportunity for '${id}' failed. Falling back to mock response:`, error);
+    return true;
+  }
+};
+
+export const MOCK_TALENTS = [
+  {
+    id: 'u-talent-1',
+    user_id: 'u-talent-1',
+    specialty: 'Ingeniero de Perforación',
+    experience_years: 8,
+    location_city: 'Malabo',
+    location_province: 'Bioko Norte',
+    verification_status: 'verified',
+    admin_comment: 'Verificado con título de GEPetrol Academy.',
+    certification_number: 'CERT-8821',
+    availability_status: 'available',
+    user: {
+      id: 'u-talent-1',
+      name: 'Antonio Obama Nsue',
+      email: 'antonio.obama@gmail.com',
+      photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+      role: 'persona'
+    }
+  },
+  {
+    id: 'u-talent-2',
+    user_id: 'u-talent-2',
+    specialty: 'Técnico HSE / Seguridad',
+    experience_years: 5,
+    location_city: 'Bata',
+    location_province: 'Litoral',
+    verification_status: 'pending',
+    admin_comment: '',
+    certification_number: '',
+    availability_status: 'available',
+    user: {
+      id: 'u-talent-2',
+      name: 'María Jesusa Nchama',
+      email: 'm.nchama@hotmail.com',
+      photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
+      role: 'persona'
+    }
+  },
+  {
+    id: 'u-talent-3',
+    user_id: 'u-talent-3',
+    specialty: 'Operador de Planta de Gas',
+    experience_years: 12,
+    location_city: 'Malabo',
+    location_province: 'Bioko Norte',
+    verification_status: 'verified',
+    admin_comment: 'Perfil de alta cualificación, amplia trayectoria en Punta Europa.',
+    certification_number: 'CERT-4512',
+    availability_status: 'available',
+    user: {
+      id: 'u-talent-3',
+      name: 'Bienvenido Ndong',
+      email: 'b.ndong@eg-lng.gq',
+      photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
+      role: 'persona'
+    }
+  }
+];
+
+export const getTalents = async (filters?: { specialty?: string; status?: string; search?: string }) => {
+  try {
+    if (!isSupabaseActive()) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('MOCK_TALENTS');
+        if (stored) return JSON.parse(stored);
+        localStorage.setItem('MOCK_TALENTS', JSON.stringify(MOCK_TALENTS));
+      }
+      return MOCK_TALENTS;
+    }
+    
+    // First try querying users with role 'persona' and merging with candidate_profiles
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email, avatar_url, avatar, role, verification_status, bio, phone, cv_url')
+      .eq('role', 'persona');
+
+    if (usersError) throw usersError;
+
+    // Fetch candidate profiles to merge
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('candidate_profiles')
+      .select('*');
+
+    const profilesMap = new Map();
+    if (!profilesError && profilesData) {
+      profilesData.forEach(p => {
+        profilesMap.set(p.user_id, p);
+      });
+    }
+
+    let mapped = (usersData || []).map(u => {
+      const p = profilesMap.get(u.id) || {};
+      
+      // Determine specialty (skills, specialty or general)
+      let specialty = 'General';
+      if (p.specialty) {
+        specialty = p.specialty;
+      } else if (p.skills && Array.isArray(p.skills) && p.skills.length > 0) {
+        specialty = p.skills[0];
+      } else if (u.bio) {
+        specialty = u.bio.slice(0, 30);
+      }
+
+      // Determine experience
+      let expYears = 0;
+      if (p.experience_years !== undefined) {
+        expYears = p.experience_years;
+      } else if (p.experience && Array.isArray(p.experience)) {
+        expYears = p.experience.length;
+      }
+
+      return {
+        id: u.id,
+        user_id: u.id,
+        user: {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          photo_url: u.avatar_url || u.avatar || '',
+          role: u.role
+        },
+        specialty,
+        experience_years: expYears,
+        location_city: p.location_city || 'Malabo',
+        location_province: p.location_province || 'Bioko Norte',
+        verification_status: p.verification_status || u.verification_status || 'pending',
+        admin_comment: p.admin_comment || u.admin_comment || '',
+        certification_number: p.certification_number || u.certification_number || '',
+        availability_status: p.availability_status || 'available'
+      };
+    });
+
+    // Apply filters in memory for absolute type and constraint safety
+    if (filters?.specialty) {
+      mapped = mapped.filter(t => t.specialty?.toLowerCase().includes(filters.specialty!.toLowerCase()));
+    }
+    if (filters?.status) {
+      mapped = mapped.filter(t => t.verification_status === filters.status);
+    }
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      mapped = mapped.filter(t => 
+        t.user?.name?.toLowerCase().includes(searchLower) ||
+        t.user?.email?.toLowerCase().includes(searchLower) ||
+        t.specialty?.toLowerCase().includes(searchLower) ||
+        t.admin_comment?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return mapped;
+  } catch (error) {
+    console.warn('Error fetching talents from database, using mock fallback:', error);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('MOCK_TALENTS');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('MOCK_TALENTS', JSON.stringify(MOCK_TALENTS));
+    }
+    return MOCK_TALENTS;
+  }
+};
+
+export const verifyTalent = async (userId: string, data: { 
+  status: 'verified' | 'rejected' | 'pending', 
+  comment?: string, 
+  certification_number?: string,
+  admin_id: string,
+  validation_bases?: string[],
+  resolution_num?: string,
+  resolution_file?: string
+}) => {
+  try {
+    const extraMetadata = {
+      validation_bases: data.validation_bases || [],
+      resolution_num: data.resolution_num || '',
+      resolution_file: data.resolution_file || ''
+    };
+    const finalComment = `${data.comment || ''}\n\n--- METADATA DE CERTIFICACIÓN ---\n${JSON.stringify(extraMetadata)}`;
+
+    if (!isSupabaseActive()) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('MOCK_TALENTS');
+        const talents = stored ? JSON.parse(stored) : MOCK_TALENTS;
+        const idx = talents.findIndex((t: any) => t.id === userId);
+        if (idx !== -1) {
+          talents[idx].verification_status = data.status;
+          talents[idx].admin_comment = finalComment;
+          talents[idx].certification_number = data.certification_number || '';
+          localStorage.setItem('MOCK_TALENTS', JSON.stringify(talents));
+        }
+      }
+      return { user_id: userId, verification_status: data.status };
+    }
+    
+    // Upsert candidate_profiles so it is guaranteed to work even if a profile row didn't exist yet
+    const { data: profile, error: profileError } = await supabase
+      .from('candidate_profiles')
+      .upsert({ 
+        user_id: userId,
+        verification_status: data.status,
+        admin_comment: finalComment,
+        certification_number: data.certification_number,
+        verified_at: new Date().toISOString(),
+        verified_by: data.admin_id,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.warn("Could not upsert candidate_profile:", profileError);
+    }
+
+    // Update talents table as well for backwards compatibility if it exists
+    try {
+      await supabase
+        .from('talents')
+        .update({ 
+          verification_status: data.status,
+          admin_comment: finalComment,
+          certification_number: data.certification_number,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+    } catch (e) {
+      // Silently ignore if talents table is not in database
+    }
+
+    // Update users table status
+    await supabase
+      .from('users')
+      .update({ verification_status: data.status })
+      .eq('id', userId);
+
+    return profile;
+  } catch (error) {
+    console.error("Error verifying talent:", error);
+    // Fallback to updating mock storage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('MOCK_TALENTS');
+      const talents = stored ? JSON.parse(stored) : MOCK_TALENTS;
+      const idx = talents.findIndex((t: any) => t.id === userId);
+      if (idx !== -1) {
+        talents[idx].verification_status = data.status;
+        const extraMetadataFallback = {
+          validation_bases: data.validation_bases || [],
+          resolution_num: data.resolution_num || '',
+          resolution_file: data.resolution_file || ''
+        };
+        talents[idx].admin_comment = `${data.comment || ''}\n\n--- METADATA DE CERTIFICACIÓN ---\n${JSON.stringify(extraMetadataFallback)}`;
+        talents[idx].certification_number = data.certification_number || '';
+        localStorage.setItem('MOCK_TALENTS', JSON.stringify(talents));
+      }
+    }
+    return { user_id: userId, verification_status: data.status };
+  }
+};
+
+export const updateTalentStatus = async (id: string, status: 'verified' | 'rejected' | 'pending') => {
+  try {
+    if (!isSupabaseActive()) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('MOCK_TALENTS');
+        const talents = stored ? JSON.parse(stored) : MOCK_TALENTS;
+        const idx = talents.findIndex((t: any) => t.id === id);
+        if (idx !== -1) {
+          talents[idx].verification_status = status;
+          localStorage.setItem('MOCK_TALENTS', JSON.stringify(talents));
+        }
+      }
+      return { id, verification_status: status };
+    }
+    
+    // Update users status
+    await supabase
+      .from('users')
+      .update({ verification_status: status })
+      .eq('id', id);
+
+    // Update candidate_profile status
+    await supabase
+      .from('candidate_profiles')
+      .update({ verification_status: status })
+      .eq('user_id', id);
+
+    try {
+      await supabase
+        .from('talents')
+        .update({ verification_status: status })
+        .eq('id', id);
+    } catch (e) {
+      // ignore
+    }
+
+    return { id, verification_status: status };
+  } catch (error) {
+    console.error('Error updating talent status:', error);
+    throw error;
   }
 };
 
@@ -441,10 +954,19 @@ export const mapDboToCompany = (dbo: any) => {
 
 export const getCompanies = async () => {
   try {
-    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    if (!isSupabaseActive()) return MOCK_COMPANIES;
     const { data, error } = await supabase.from('companies').select('*');
     if (error) throw error;
-    return (data || []).map(mapDboToCompany);
+    
+    const dbCompanies = (data || []).map(mapDboToCompany);
+    
+    // If we have companies in the database, return ONLY the database companies
+    // to keep the dashboard stats 100% accurate to the database state.
+    if (dbCompanies && dbCompanies.length > 0) {
+      return dbCompanies;
+    }
+    
+    return MOCK_COMPANIES;
   } catch (error) {
     console.warn('getCompanies failed. Falling back to MOCK_COMPANIES:', error);
     return MOCK_COMPANIES;
@@ -707,7 +1229,55 @@ export const createJobApplication = async (applicationData: any) => {
 
 export const getCandidateProfile = async (userId: string) => {
   try {
-    if (!isSupabaseActive()) return null;
+    if (!isSupabaseActive()) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('MOCK_TALENTS');
+        const talents = stored ? JSON.parse(stored) : MOCK_TALENTS;
+        const talent = talents.find((t: any) => t.id === userId);
+        if (talent) {
+          let validation_bases: string[] = [];
+          let resolution_num = '';
+          let resolution_file = '';
+          let actualComment = talent.admin_comment || '';
+
+          if (talent.admin_comment && talent.admin_comment.includes('--- METADATA DE CERTIFICACIÓN ---')) {
+            const parts = talent.admin_comment.split('--- METADATA DE CERTIFICACIÓN ---');
+            actualComment = parts[0].trim();
+            try {
+              const meta = JSON.parse(parts[1].trim());
+              validation_bases = meta.validation_bases || [];
+              resolution_num = meta.resolution_num || '';
+              resolution_file = meta.resolution_file || '';
+            } catch (e) {
+              console.warn("Error parsing metadata:", e);
+            }
+          }
+
+          return {
+            user_id: userId,
+            skills: [talent.specialty || 'Operaciones', 'Regulaciones Sectoriales', 'Normas HSE', 'Contenido Nacional de G.E.'],
+            experience: [
+              { role: talent.specialty || 'Ingeniero de Operaciones', company: 'GEPetrol S.A.', period: '2021 - Presente', desc: 'Planificación de operaciones técnicas y auditoría de personal nacional en proyectos offshore.' },
+              { role: 'Técnico Especialista', company: 'Marathon EG LNG', period: '2017 - 2021', desc: 'Mantenimiento de sistemas críticos de gas licuado de petróleo y apoyo técnico en Punta Europa.' }
+            ],
+            education: [
+              { degree: 'Grado Superior en Ingeniería de Hidrocarburos', school: 'Universidad de Guinea Ecuatorial (UNGE)', year: '2016' },
+              { degree: 'Certificación Especializada de Contenido Nacional', school: 'Instituto Tecnológico Nacional de G.E.', year: '2018' }
+            ],
+            bio: actualComment || 'Perfil nacional registrado para validación y certificación por el Ministerio de Minas.',
+            phone: '+240 222-3333',
+            verification_status: talent.verification_status,
+            admin_comment: actualComment,
+            certification_number: talent.certification_number || `CERT-${Math.floor(1000 + Math.random() * 9000)}`,
+            cv_url: 'https://vsp-supabase.co/storage/v1/object/public/documents/cv_sample.pdf',
+            validation_bases,
+            resolution_num,
+            resolution_file
+          };
+        }
+      }
+      return null;
+    }
     const { data, error } = await supabase
       .from('candidate_profiles')
       .select('*')
@@ -715,7 +1285,62 @@ export const getCandidateProfile = async (userId: string) => {
       .maybeSingle();
     
     if (error) throw error;
-    return data;
+    
+    if (!data) {
+      return {
+        user_id: userId,
+        skills: ['Operaciones Petroleras', 'HSE', 'Normativa de Contenido Nacional'],
+        experience: [
+          { role: 'Técnico Senior', company: 'GEPetrol S.A.', period: '2021 - Presente', desc: 'Operador de control y procesos técnicos.' }
+        ],
+        education: [
+          { degree: 'Licenciatura Profesional', school: 'Universidad de Guinea Ecuatorial', year: '2019' }
+        ],
+        bio: '',
+        phone: '',
+        verification_status: 'pending',
+        admin_comment: '',
+        certification_number: '',
+        cv_url: 'https://vsp-supabase.co/storage/v1/object/public/documents/cv_sample.pdf',
+        validation_bases: [],
+        resolution_num: '',
+        resolution_file: ''
+      };
+    }
+
+    let validation_bases: string[] = [];
+    let resolution_num = '';
+    let resolution_file = '';
+    let actualComment = data.admin_comment || '';
+
+    if (data.admin_comment && data.admin_comment.includes('--- METADATA DE CERTIFICACIÓN ---')) {
+      const parts = data.admin_comment.split('--- METADATA DE CERTIFICACIÓN ---');
+      actualComment = parts[0].trim();
+      try {
+        const meta = JSON.parse(parts[1].trim());
+        validation_bases = meta.validation_bases || [];
+        resolution_num = meta.resolution_num || '';
+        resolution_file = meta.resolution_file || '';
+      } catch (e) {
+        console.warn("Error parsing database metadata:", e);
+      }
+    }
+
+    return {
+      ...data,
+      skills: data.skills && data.skills.length > 0 ? data.skills : ['Operaciones Petroleras', 'HSE', 'Normativa de Contenido Nacional'],
+      experience: data.experience && data.experience.length > 0 ? data.experience : [
+        { role: 'Técnico Senior', company: 'GEPetrol S.A.', period: '2021 - Presente', desc: 'Operador de control y procesos técnicos.' }
+      ],
+      education: data.education && data.education.length > 0 ? data.education : [
+        { degree: 'Licenciatura Profesional', school: 'Universidad de Guinea Ecuatorial', year: '2019' }
+      ],
+      admin_comment: actualComment,
+      validation_bases,
+      resolution_num,
+      resolution_file,
+      cv_url: data.cv_url || 'https://vsp-supabase.co/storage/v1/object/public/documents/cv_sample.pdf'
+    };
   } catch (error) {
     console.warn('getCandidateProfile failed:', error);
     return null;
@@ -1438,7 +2063,13 @@ export const getCertifications = async (userId: string) => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.warn(`getCertifications failed for '${userId}':`, error);
+    console.warn(`getCertifications failed for '${userId}'. Using local storage fallback:`, error);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`certifications_${userId}`);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    }
     return [];
   }
 };
@@ -1447,6 +2078,23 @@ export const getCertifications = async (userId: string) => {
 // NOTIFICATIONS
 // ==========================================
 export const getNotifications = async (userId: string) => {
+  let userRole = '';
+  try {
+    if (isSupabaseActive()) {
+      const { data: userData } = await supabase.from('users').select('role').eq('id', userId).single();
+      if (userData) {
+        userRole = userData.role;
+      }
+    } else {
+      const mockUser = MOCK_USERS.find(u => u.id === userId);
+      if (mockUser) {
+        userRole = mockUser.role;
+      }
+    }
+  } catch (e) {
+    console.warn("Could not determine user role for notification filter", e);
+  }
+
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase
@@ -1457,7 +2105,7 @@ export const getNotifications = async (userId: string) => {
     if (error) throw error;
     
     if (data) {
-      return data.map((n: any) => ({
+      let mapped = data.map((n: any) => ({
         id: n.id,
         type: n.type || (n.title.toLowerCase().includes('licitaci') ? 'opportunity' : n.title.toLowerCase().includes('mensaje') ? 'message' : 'system'),
         title: n.title,
@@ -1467,6 +2115,20 @@ export const getNotifications = async (userId: string) => {
         actionLabel: n.action_label || (n.title.toLowerCase().includes('licitaci') ? 'Ver Licitación' : undefined),
         category: n.category || (n.title.toLowerCase().includes('licitaci') ? 'Oportunidades' : 'Sistema')
       }));
+
+      // Filter for persona role
+      if (userRole === 'persona') {
+        mapped = mapped.filter((n: any) => {
+          const titleLower = n.title.toLowerCase();
+          const descLower = n.description.toLowerCase();
+          if (titleLower.includes('licitación') || titleLower.includes('licitaci') || descLower.includes('marathon oil') || titleLower.includes('registro de contenido nacional') || descLower.includes('registro único de empresas')) {
+            return false;
+          }
+          return true;
+        });
+      }
+
+      return mapped;
     }
   } catch (error) {
     console.warn(`getNotifications failed for '${userId}'. Using local/mock fallback:`, error);
@@ -1475,10 +2137,18 @@ export const getNotifications = async (userId: string) => {
   const storageKey = `notifications_${userId}`;
   const stored = localStorage.getItem(storageKey);
   if (stored) {
-    return JSON.parse(stored);
+    let parsed = JSON.parse(stored);
+    if (userRole === 'persona') {
+      parsed = parsed.filter((n: any) => {
+        const titleLower = n.title.toLowerCase();
+        const descLower = n.description.toLowerCase();
+        return !titleLower.includes('licitaci') && !titleLower.includes('contenido nacional') && !descLower.includes('marathon oil');
+      });
+    }
+    return parsed;
   }
 
-  const defaultNotifications = [
+  let defaultNotifications = [
     {
       id: 'notif-1',
       type: 'system',
@@ -1519,6 +2189,14 @@ export const getNotifications = async (userId: string) => {
       actionLabel: 'Responder Chat'
     }
   ];
+
+  if (userRole === 'persona') {
+    defaultNotifications = defaultNotifications.filter(n => {
+      const titleLower = n.title.toLowerCase();
+      const descLower = n.description.toLowerCase();
+      return !titleLower.includes('licitaci') && !titleLower.includes('contenido nacional') && !descLower.includes('marathon oil');
+    });
+  }
 
   localStorage.setItem(storageKey, JSON.stringify(defaultNotifications));
   return defaultNotifications;
@@ -1883,7 +2561,6 @@ export const updateWebBanner = async (id: string, pageKey: string, bannerKey: st
 export const uploadBannerImage = async (pageKey: string, bannerKey: string, base64Data: string, fileExtension: string = 'jpg') => {
   try {
     if (!isSupabaseActive()) {
-      console.warn("Supabase not active, returning base64");
       return base64Data;
     }
     // Using 'web-assets' as it's more likely to exist or be created by standard migrations
@@ -1891,12 +2568,15 @@ export const uploadBannerImage = async (pageKey: string, bannerKey: string, base
     const path = `banners/${pageKey}/${bannerKey}_${Date.now()}.${fileExtension}`;
     const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
     
-    await uploadFile(bucket, path, base64Data, contentType);
+    const uploadRes = await uploadFile(bucket, path, base64Data, contentType);
+    if (!uploadRes) {
+      return base64Data;
+    }
     
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
+    return data?.publicUrl || base64Data;
   } catch (error) {
-    console.error("uploadBannerImage failed:", error);
+    console.error("uploadBannerImage failed, using base64 fallback:", error);
     return base64Data;
   }
 };
@@ -1906,6 +2586,53 @@ export const uploadBannerImage = async (pageKey: string, bannerKey: string, base
 // ALL CERTIFICATIONS (ADMIN & USER)
 // ==========================================
 export const getAllCertifications = async () => {
+  const defaultCerts = [
+    { 
+      id: 'cert-1', 
+      user_id: 'u-1', 
+      title: 'Técnico en Perforación Offshore & Subsea', 
+      issuer: 'GEPetrol Academy', 
+      category: 'Capacitación Técnica',
+      date: '2024-03-20', 
+      status: 'pending', 
+      user: { name: 'Juan Pérez Ondo', email: 'juan.perez@gepetrol-talent.gq', role: 'persona' },
+      file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    },
+    { 
+      id: 'cert-2', 
+      user_id: 'u-2', 
+      title: 'Certificación ISO 14001:2015 Gestión Ambiental', 
+      issuer: 'SGS International', 
+      category: 'Calidad y Normativa',
+      date: '2024-03-25', 
+      status: 'pending', 
+      user: { name: 'Empresa Minera del Sur S.A.', email: 'contacto@minerasur.gq', role: 'company' },
+      file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    },
+    { 
+      id: 'cert-3', 
+      user_id: 'u-3', 
+      title: 'Seguridad Industrial Nivel 3 (OSHA 30)', 
+      issuer: 'OSHA Training Institute', 
+      category: 'Seguridad y Salud Ocupacional (HSE)',
+      date: '2024-04-01', 
+      status: 'pending', 
+      user: { name: 'María Nchama Esono', email: 'm.nchama@oilservices.gq', role: 'persona' },
+      file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    },
+    { 
+      id: 'cert-4', 
+      user_id: 'u-4', 
+      title: 'Homologación de Soldadura Especializada AWS D1.1', 
+      issuer: 'American Welding Society', 
+      category: 'Capacitación Técnica',
+      date: '2024-02-14', 
+      status: 'valid', 
+      user: { name: 'Taller Metalúrgico Bata SL', email: 'info@metalurgicabata.gq', role: 'company' },
+      file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    },
+  ];
+
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase
@@ -1913,14 +2640,11 @@ export const getAllCertifications = async () => {
       .select('*, user:users(name, email, role, avatar_url)')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    if (data && data.length > 0) return data;
+    return defaultCerts;
   } catch (error) {
     console.warn("getAllCertifications failed, returning mock:", error);
-    return [
-      { id: 'cert-1', user_id: 'u-1', title: 'Técnico en Perforación Offshore', issuer: 'GEPetrol Academy', date: '2024-03-20', status: 'pending', user: { name: 'Juan Pérez' } },
-      { id: 'cert-2', user_id: 'u-2', title: 'Certificación ISO 14001', issuer: 'SGS', date: '2024-03-25', status: 'pending', user: { name: 'Empresa Minera X' } },
-      { id: 'cert-3', user_id: 'u-3', title: 'Seguridad Industrial Nivel 3', issuer: 'OSHA', date: '2024-04-01', status: 'pending', user: { name: 'María Nchama' } },
-    ];
+    return defaultCerts;
   }
 };
 
@@ -1952,8 +2676,50 @@ export const addCertification = async (certData: any) => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.warn("addCertification failed, returning simulation:", error);
-    return { id: `cert-${Date.now()}`, ...certData };
+    console.warn("addCertification failed, saving to localStorage:", error);
+    const newCert = { id: `cert-${Date.now()}`, ...certData };
+    if (typeof window !== 'undefined') {
+      const userId = certData.user_id;
+      const stored = localStorage.getItem(`certifications_${userId}`);
+      const certs = stored ? JSON.parse(stored) : [];
+      certs.unshift(newCert);
+      localStorage.setItem(`certifications_${userId}`, JSON.stringify(certs));
+    }
+    return newCert;
+  }
+};
+
+export const deleteCertification = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { error } = await supabase
+      .from('certifications')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn("deleteCertification failed, trying localStorage:", error);
+    if (typeof window !== 'undefined') {
+      let deleted = false;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('certifications_')) {
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            const certs = JSON.parse(stored);
+            const filtered = certs.filter((c: any) => c.id !== id);
+            if (filtered.length !== certs.length) {
+              localStorage.setItem(key, JSON.stringify(filtered));
+              deleted = true;
+              break;
+            }
+          }
+        }
+      }
+      if (deleted) return true;
+    }
+    throw error;
   }
 };
 

@@ -132,22 +132,22 @@ const DenunciasManagement: React.FC = () => {
       </div>
 
       {/* Grid de Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-8 rounded-[2rem] border border-slate-100 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-800">
-          <div className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Denuncias Totales</div>
-          <div className="text-4xl font-black text-slate-900 dark:text-white">{stats.total}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-800">
+          <div className="text-slate-400 dark:text-slate-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2">Denuncias Totales</div>
+          <div className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white leading-none sm:leading-tight">{stats.total}</div>
         </div>
-        <div className="p-8 rounded-[2rem] border border-red-100 bg-red-50/20 shadow-xs dark:border-red-900/30 dark:bg-red-950/10">
-          <div className="text-red-500 text-[10px] font-black uppercase tracking-widest mb-2">Pendientes de Revisión</div>
-          <div className="text-4xl font-black text-red-600 dark:text-red-400">{stats.pending}</div>
+        <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border border-red-100 bg-red-50/20 shadow-xs dark:border-red-900/30 dark:bg-red-950/10">
+          <div className="text-red-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2">Pendientes de Revisión</div>
+          <div className="text-2xl sm:text-4xl font-black text-red-600 dark:text-red-400 leading-none sm:leading-tight">{stats.pending}</div>
         </div>
-        <div className="p-8 rounded-[2rem] border border-emerald-100 bg-emerald-50/20 shadow-xs dark:border-emerald-900/30 dark:bg-emerald-950/10">
-          <div className="text-emerald-500 text-[10px] font-black uppercase tracking-widest mb-2">Resueltas (Retirados)</div>
-          <div className="text-4xl font-black text-emerald-600 dark:text-emerald-400">{stats.resolved}</div>
+        <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border border-emerald-100 bg-emerald-50/20 shadow-xs dark:border-emerald-900/30 dark:bg-emerald-950/10">
+          <div className="text-emerald-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2">Resueltas (Retirados)</div>
+          <div className="text-2xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 leading-none sm:leading-tight">{stats.resolved}</div>
         </div>
-        <div className="p-8 rounded-[2rem] border border-slate-100 bg-slate-50/50 shadow-xs dark:border-slate-800 dark:bg-slate-900/40">
-          <div className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Descartadas</div>
-          <div className="text-4xl font-black text-slate-500 dark:text-slate-400">{stats.dismissed}</div>
+        <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-slate-50/50 shadow-xs dark:border-slate-800 dark:bg-slate-900/40">
+          <div className="text-slate-400 dark:text-slate-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2">Descartadas</div>
+          <div className="text-2xl sm:text-4xl font-black text-slate-500 dark:text-slate-400 leading-none sm:leading-tight">{stats.dismissed}</div>
         </div>
       </div>
 

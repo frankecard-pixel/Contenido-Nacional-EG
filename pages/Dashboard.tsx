@@ -35,6 +35,7 @@ import CompanyRegistry from './CompanyRegistry';
 import NewsManagement from './NewsManagement';
 import CompanyProfileManagement from './CompanyProfileManagement';
 import AdminUserManagementPage from './AdminUserManagementPage';
+import AdminTalentBasePage from './AdminTalentBasePage';
 import CompanyUserManagementPage from './CompanyUserManagementPage';
 import SectorNetworkPage from './SectorNetworkPage';
 import Jobs from './Jobs';
@@ -73,7 +74,10 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!authUserId) return;
+      if (!authUserId) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -100,13 +104,43 @@ const Dashboard: React.FC = () => {
 
   // Use authenticated user or fallback to mock for demo
   const currentUser = useMemo(() => {
-    if (dbUser) return dbUser;
-    const foundUser = users.find(u => u.id === localStorage.getItem('user_id'));
-    if (foundUser) return foundUser;
-    if (users.length > 0) return users[0];
-    // Fallback to mock users if database is empty (for demo purposes)
-    return MOCK_USERS.find((u: any) => u.id === localStorage.getItem('user_id')) || MOCK_USERS[0];
-  }, [dbUser, users]);
+    let baseUser: User | null = null;
+    
+    if (dbUser) {
+      baseUser = dbUser as unknown as User;
+    } else if (authUser) {
+      const metadata = authUser.user_metadata;
+      const derivedName = metadata?.full_name || metadata?.name || authUser.email?.split('@')[0].replace(/[._]/g, ' ') || 'Usuario';
+      
+      baseUser = {
+        id: authUser.id,
+        email: authUser.email || '',
+        name: derivedName,
+        role: (authUser as any).role || UserRole.SUPER_ADMIN,
+        photo_url: metadata?.avatar_url || metadata?.picture,
+        isOnline: true,
+        permissions: ['*']
+      } as User;
+    } else {
+      const foundUser = users.find(u => u.id === localStorage.getItem('user_id'));
+      if (foundUser) baseUser = foundUser;
+      else if (users.length > 0) baseUser = users[0];
+      else baseUser = MOCK_USERS.find((u: any) => u.id === localStorage.getItem('user_id')) || MOCK_USERS[0];
+    }
+
+    // If we have a user but the name is generic, try to use auth info to improve it
+    if (baseUser && (baseUser.name === 'Usuario Administrador' || baseUser.name === 'Usuario' || !baseUser.name) && authUser) {
+      const metadata = authUser.user_metadata;
+      const derivedName = metadata?.full_name || metadata?.name || authUser.email?.split('@')[0].replace(/[._]/g, ' ');
+      if (derivedName) {
+        // Capitalize words
+        const formattedName = derivedName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        baseUser = { ...baseUser, name: formattedName };
+      }
+    }
+
+    return baseUser;
+  }, [dbUser, users, authUser]);
 
   const currentUserId = useMemo(() => currentUser?.id || 'u-1', [currentUser]);
 
@@ -164,17 +198,18 @@ const Dashboard: React.FC = () => {
         />
       )}
 
-      <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark">
+      <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark overflow-x-hidden">
         {/* Pasamos el usuario dinámico aquí */}
         <DashboardHeader user={currentUser} onToggleSidebar={toggleSidebar} />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
-          <div key={location.pathname} className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col transition-all duration-300 animate-in fade-in duration-700">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col items-center w-full min-w-0">
+          <div key={location.pathname} className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col min-w-0 transition-all duration-300 animate-in fade-in duration-700">
             <Routes>
             {/* 1. SUPER ADMIN */}
             <Route path="super_admin/overview" element={<AdminDashboardOverview user={currentUser} />} />
             <Route path="admin/overview" element={<Navigate to="/dashboard/super_admin/overview" replace />} />
             <Route path="super_admin/users" element={<AdminUserManagementPage />} />
+            <Route path="super_admin/talents" element={<AdminTalentBasePage />} />
             <Route path="admin/users" element={<Navigate to="/dashboard/super_admin/users" replace />} />
             <Route path="super_admin/companies" element={<CompanyRegistry />} />
             <Route path="admin/companies" element={<Navigate to="/dashboard/super_admin/companies" replace />} />
@@ -297,7 +332,11 @@ const Dashboard: React.FC = () => {
             {/* RUTAS GENÉRICAS COMPARTIDAS - FIXED ROUTING */}
             <Route path=":role/notifications" element={<Notifications user={currentUser} />} />
             <Route path=":role/messages" element={<Messages user={currentUser} />} />
-            <Route path=":role/settings" element={<Settings user={currentUser} />} />
+            <Route path=":role/settings" element={<Settings user={currentUser} onUpdate={() => {
+              if (authUserId) {
+                getUserById(authUserId).then(userData => setDbUser(userData as any));
+              }
+            }} />} />
             <Route path=":role/lex" element={<div className="p-12 h-full max-w-5xl mx-auto"><LexAssistant /></div>} />
             <Route path=":role/news" element={<PortalNewsViewer user={currentUser} />} />
             

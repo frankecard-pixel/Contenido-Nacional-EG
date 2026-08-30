@@ -57,20 +57,25 @@ const ComunicacionDashboardOverview: React.FC<ComunicacionDashboardOverviewProps
          <span className="material-symbols-outlined absolute right-[-20px] md:right-[-40px] top-[-20px] md:top-[-40px] text-[150px] md:text-[250px] opacity-10">newspaper</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {[
-          { label: "Artículos Publicados", val: published.length.toString(), icon: "check_circle", color: "text-indigo-600" },
-          { label: "Lectores (Este mes)", val: "42.5k", icon: "visibility", color: "text-blue-600" },
-          { label: "Borradores Pendientes", val: drafts.length.toString(), icon: "history_edu", color: "text-amber-600" },
-          { label: "Documentos Gaceta", val: "312", icon: "gavel", color: "text-slate-600" }
+          { label: "Artículos Publicados", val: published.length.toString(), icon: "check_circle", color: "text-indigo-600", to: "../news" },
+          { label: "Lectores (Este mes)", val: "42.5k", icon: "visibility", color: "text-blue-600", to: "../news" },
+          { label: "Borradores Pendientes", val: drafts.length.toString(), icon: "history_edu", color: "text-amber-600", to: "../news" },
+          { label: "Documentos Gaceta", val: "312", icon: "gavel", color: "text-slate-600", to: "../news" }
         ].map((kpi, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-             <div className={`p-3 w-fit rounded-xl bg-slate-50 dark:bg-slate-900 ${kpi.color} mb-4 md:mb-6`}>
-               <span className="material-symbols-outlined">{kpi.icon}</span>
+          <Link key={i} to={kpi.to} className="bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-[1.25rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all group flex flex-col justify-between cursor-pointer active:scale-[0.98]">
+             <div className="flex items-center justify-between mb-3 sm:mb-6">
+               <div className={`p-2 sm:p-3 w-fit rounded-xl bg-slate-50 dark:bg-slate-900 ${kpi.color} group-hover:scale-110 transition-transform`}>
+                 <span className="material-symbols-outlined text-lg sm:text-2xl">{kpi.icon}</span>
+               </div>
+               <span className="material-symbols-outlined text-xs text-indigo-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
              </div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-             <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{kpi.val}</p>
-          </div>
+             <div>
+               <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-tight">{kpi.label}</p>
+               <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{kpi.val}</p>
+             </div>
+          </Link>
         ))}
       </div>
 
@@ -79,7 +84,7 @@ const ComunicacionDashboardOverview: React.FC<ComunicacionDashboardOverviewProps
          <div className="lg:col-span-7 bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="p-6 md:p-8 border-b border-slate-50 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">Borradores Recientes</h3>
-               <button className="text-primary text-[10px] font-black uppercase hover:underline">Ver toda la cola</button>
+               <Link to="../news" className="text-primary text-[10px] font-black uppercase hover:underline">Ver toda la cola</Link>
             </div>
             <div className="divide-y divide-slate-50 dark:divide-slate-700">
                {drafts.length > 0 ? (
@@ -90,8 +95,8 @@ const ComunicacionDashboardOverview: React.FC<ComunicacionDashboardOverviewProps
                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Última edición: {new Date(draft.publish_date).toLocaleDateString()} • Por: {draft.author || 'Redacción'}</p>
                       </div>
                       <div className="flex w-full sm:w-auto gap-2 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700 justify-end">
-                         <button className="flex-1 sm:flex-none bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-3 sm:py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-center">Editar</button>
-                         <button className="flex-1 sm:flex-none bg-primary text-white px-4 py-3 sm:py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 text-center">Aprobar</button>
+                         <Link to="../news" className="flex-1 sm:flex-none bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-3 sm:py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-center hover:bg-slate-200">Editar</Link>
+                         <Link to="../news" className="flex-1 sm:flex-none bg-primary text-white px-4 py-3 sm:py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 text-center hover:bg-blue-700">Aprobar</Link>
                       </div>
                    </div>
                  ))

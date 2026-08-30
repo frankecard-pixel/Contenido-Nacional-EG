@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getOpportunities, getSocialProjects } from '../services/supabaseApi';
 import { OpportunityExt, SocialProject, User } from '../types';
@@ -62,27 +63,35 @@ const PetroleraDashboardOverview: React.FC<PetroleraDashboardOverviewProps> = ({
       </div>
 
       {/* Main KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {[
-          { label: "Licitaciones Abiertas", val: opportunities.filter(o => o.status === 'published').length.toString(), icon: "campaign", color: "text-blue-600" },
-          { label: "Propuestas Recibidas", val: "124", icon: "group", color: "text-indigo-600" },
-          { label: "Cumplimiento Local", val: "92%", icon: "verified", color: "text-emerald-600" },
-          { label: "Proyectos RSC", val: socialProjects.length.toString(), icon: "volunteer_activism", color: "text-rose-600" }
+          { label: "Licitaciones Abiertas", val: opportunities.filter(o => o.status === 'published').length.toString(), icon: "campaign", color: "text-blue-600", to: "/dashboard/petrolera/opportunities" },
+          { label: "Propuestas Recibidas", val: "124", icon: "group", color: "text-indigo-600", to: "/dashboard/petrolera/network" },
+          { label: "Cumplimiento Local", val: "92%", icon: "verified", color: "text-emerald-600", to: "/dashboard/petrolera/opportunities" },
+          { label: "Proyectos RSC", val: socialProjects.length.toString(), icon: "volunteer_activism", color: "text-rose-600", to: "/dashboard/petrolera/csr" }
         ].map((kpi, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
-             <div className={`p-3 w-fit rounded-xl bg-slate-50 dark:bg-slate-900 ${kpi.color} mb-4 md:mb-6`}>
-               <span className="material-symbols-outlined">{kpi.icon}</span>
+          <Link key={i} to={kpi.to} className="bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-[1.25rem] sm:rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-primary/40 transition-all group flex flex-col justify-between cursor-pointer active:scale-[0.98]">
+             <div className="flex items-center justify-between mb-3 sm:mb-6">
+               <div className={`p-2 sm:p-3 w-fit rounded-xl bg-slate-50 dark:bg-slate-900 ${kpi.color} group-hover:scale-110 transition-transform`}>
+                 <span className="material-symbols-outlined text-lg sm:text-2xl">{kpi.icon}</span>
+               </div>
+               <span className="material-symbols-outlined text-xs text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">arrow_forward</span>
              </div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-             <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{kpi.val}</p>
-          </div>
+             <div>
+               <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-tight">{kpi.label}</p>
+               <p className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{kpi.val}</p>
+             </div>
+          </Link>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
         {/* Social Investment Chart */}
         <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] p-6 lg:p-10 shadow-sm border border-slate-100 dark:border-slate-700">
-           <h3 className="text-lg md:text-xl font-black uppercase tracking-tight mb-6 md:mb-10">Inversión Social Obligatoria (RSC)</h3>
+           <div className="flex justify-between items-center mb-6 md:mb-10">
+             <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">Inversión Social Obligatoria (RSC)</h3>
+             <Link to="/dashboard/petrolera/csr" className="text-primary text-[10px] font-black uppercase hover:underline">Ver Proyectos</Link>
+           </div>
            <div className="h-[250px] md:h-[300px]">
              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                <BarChart data={socialInvestmentData}>
@@ -100,21 +109,21 @@ const PetroleraDashboardOverview: React.FC<PetroleraDashboardOverviewProps> = ({
         <div className="bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[3rem] p-6 lg:p-10 shadow-sm border border-slate-100 dark:border-slate-700">
            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
               <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">Últimas Licitaciones</h3>
-              <button className="text-primary text-[10px] font-black uppercase hover:underline w-full sm:w-auto text-left sm:text-right">Gestionar todas</button>
+              <Link to="/dashboard/petrolera/opportunities" className="text-primary text-[10px] font-black uppercase hover:underline w-full sm:w-auto text-left sm:text-right">Gestionar todas</Link>
            </div>
            <div className="space-y-4 md:space-y-6">
               {opportunities.length > 0 ? (
                 opportunities.slice(0, 3).map(opp => (
-                  <div key={opp.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 md:p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700 group hover:border-primary transition-all gap-4">
+                  <Link key={opp.id} to="/dashboard/petrolera/opportunities" className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 md:p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700 group hover:border-primary transition-all gap-4 block">
                      <div className="w-full sm:w-auto">
                         <p className="text-[10px] font-black text-primary uppercase mb-1">{opp.category}</p>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-2">{opp.title.es}</h4>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-2 group-hover:text-primary transition-colors">{opp.title.es}</h4>
                      </div>
                      <div className="text-left sm:text-right w-full sm:w-auto mt-2 sm:mt-0 flex flex-col sm:items-end">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cierre: {new Date(opp.deadline).toLocaleDateString()}</p>
                         <span className="text-[9px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase tracking-widest mt-2 inline-block">12 Aplicaciones</span>
                      </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <div className="p-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">No hay licitaciones registradas</div>

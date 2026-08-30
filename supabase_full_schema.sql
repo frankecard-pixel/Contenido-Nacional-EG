@@ -278,6 +278,21 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- LOGIN LOGS
+CREATE TABLE IF NOT EXISTS public.login_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    email TEXT,
+    ip_address TEXT,
+    city TEXT,
+    country TEXT,
+    user_agent TEXT,
+    login_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    logout_at TIMESTAMP WITH TIME ZONE,
+    session_duration_minutes INTEGER,
+    status TEXT DEFAULT 'success'
+);
+
 -- INSPECTIONS
 CREATE TABLE IF NOT EXISTS public.inspections (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -416,6 +431,7 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.help_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.login_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create basic permissive policies for development (Replace with strict policies in production)
 CREATE POLICY "Allow all for authenticated users" ON public.users FOR ALL USING (true);
@@ -441,6 +457,7 @@ CREATE POLICY "Allow all for authenticated users" ON public.messages FOR ALL USI
 CREATE POLICY "Allow all for authenticated users" ON public.help_requests FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.categories FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.system_settings FOR ALL USING (true);
+CREATE POLICY "Allow all for authenticated users" ON public.login_logs FOR ALL USING (true);
 
 -- ==========================================
 -- INITIAL DATA SEEDING

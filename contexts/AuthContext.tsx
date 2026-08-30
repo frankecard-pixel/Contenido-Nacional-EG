@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { logLogout } from '../services/supabaseApi';
 import { User, Session } from '@supabase/supabase-js';
 import { UserRole } from '../types';
 
@@ -72,7 +73,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = React.useCallback(async () => {
     if (supabase) {
+      const currentUserId = user?.id;
       await supabase.auth.signOut();
+      if (currentUserId) {
+        logLogout(currentUserId).catch(console.error);
+      }
       localStorage.removeItem('user_session');
       localStorage.removeItem('user_role');
     }

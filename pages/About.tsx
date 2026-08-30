@@ -4,6 +4,7 @@ import PublicBanner from '../components/public/PublicBanner';
 import MinisterialCertification from '../components/public/MinisterialCertification';
 import AboutMinisterProfile from '../components/public/about/AboutMinisterProfile';
 import AboutFramework from '../components/public/about/AboutFramework';
+import AboutDelegateMinisterProfile from '../components/public/about/AboutDelegateMinisterProfile';
 import AboutDirectorProfile from '../components/public/about/AboutDirectorProfile';
 import AboutMinistryCommitment from '../components/public/about/AboutMinistryCommitment';
 
@@ -23,6 +24,7 @@ const About: React.FC = () => {
       <div className="mx-auto px-4 md:px-6 mt-12 md:mt-20" style={{ maxWidth: 'var(--layout-max-width)' }}>
         <AboutMinisterProfile />
         <AboutFramework />
+        <AboutDelegateMinisterProfile />
         <AboutDirectorProfile />
         <AboutMinistryCommitment />
       </div>
