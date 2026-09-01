@@ -566,11 +566,13 @@ const TalentProfileManagement: React.FC<TalentProfileManagementProps> = ({ user,
               </h3>
               <button onClick={() => setShowSkillModal(true)} className="text-emerald-600 hover:text-emerald-700"><Plus className="w-5 h-5" /></button>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {profile?.skills && profile.skills.length > 0 ? profile.skills.map((skill: string, i: number) => (
-                <span key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700">
-                  {skill}
-                  <button onClick={() => handleDeleteSkill(skill)} className="text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                <span key={i} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50/80 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-200/60 dark:border-blue-800/60 shadow-2xs">
+                  <span>{skill}</span>
+                  <button type="button" onClick={() => handleDeleteSkill(skill)} className="text-blue-400 hover:text-rose-500 transition-colors p-0.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950">
+                    <X className="w-3 h-3" />
+                  </button>
                 </span>
               )) : (
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No hay habilidades registradas</p>

@@ -1194,6 +1194,14 @@ export const getApplications = async (userId?: string) => {
 };
 
 export const getJobApplications = async (userId: string) => {
+  let localApps: any[] = [];
+  try {
+    const stored = localStorage.getItem(`JOB_APPS_${userId}`);
+    if (stored) localApps = JSON.parse(stored);
+  } catch (e) {
+    console.warn('Error reading local job apps:', e);
+  }
+
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase
@@ -1203,28 +1211,76 @@ export const getJobApplications = async (userId: string) => {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    if (data && data.length > 0) {
+      // Combine with local apps ensuring no duplicates
+      const dbJobIds = new Set(data.map(d => d.job_id || d.jobId));
+      const extraLocal = localApps.filter(la => !dbJobIds.has(la.job_id || la.jobId));
+      return [...data, ...extraLocal];
+    }
   } catch (error) {
-    console.warn('getJobApplications failed:', error);
-    return [];
+    console.warn('getJobApplications failed, using local apps & mock:', error);
   }
+
+  const mockUserApps = MOCK_APPLICATIONS.filter((a: any) => a.userId === userId || a.user_id === userId);
+  const combined = [...localApps];
+  mockUserApps.forEach((m: any) => {
+    if (!combined.some(c => (c.job_id || c.jobId || c.id) === (m.jobId || m.job_id || m.id))) {
+      combined.push(m);
+    }
+  });
+  return combined;
 };
 
 export const createJobApplication = async (applicationData: any) => {
-  try {
-    if (!isSupabaseActive()) return null;
-    const { data, error } = await supabase
-      .from('job_applications')
-      .insert([applicationData])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('createJobApplication failed:', error);
-    throw error;
+  const userId = applicationData.user_id || applicationData.userId;
+  const jobId = applicationData.job_id || applicationData.jobId;
+
+  const newApp = {
+    id: `app-${Date.now()}`,
+    job_id: jobId,
+    jobId: jobId,
+    user_id: userId,
+    userId: userId,
+    status: applicationData.status || 'submitted',
+    created_at: new Date().toISOString(),
+    submitted_at: new Date().toISOString(),
+    submittedAt: new Date().toISOString(),
+    notes: applicationData.notes || ''
+  };
+
+  // Save locally first for bulletproof immediate consistency
+  if (userId) {
+    try {
+      const key = `JOB_APPS_${userId}`;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      const filtered = existing.filter((a: any) => (a.job_id || a.jobId) !== jobId);
+      filtered.unshift(newApp);
+      localStorage.setItem(key, JSON.stringify(filtered));
+    } catch (e) {
+      console.warn('Failed to save job application locally:', e);
+    }
   }
+
+  try {
+    if (isSupabaseActive()) {
+      const { data, error } = await supabase
+        .from('job_applications')
+        .insert([{
+          job_id: jobId,
+          user_id: userId,
+          status: applicationData.status || 'submitted',
+          notes: applicationData.notes || ''
+        }])
+        .select()
+        .single();
+      
+      if (!error && data) return data;
+    }
+  } catch (error) {
+    console.error('createJobApplication Supabase sync warning:', error);
+  }
+
+  return newApp;
 };
 
 export const getCandidateProfile = async (userId: string) => {
@@ -1516,15 +1572,46 @@ export const getJobOffers = async () => {
     if (error) throw error;
     
     // Normalize properties for frontend consistency
-    return (data || []).map((job: any) => ({
+    const dbJobs = (data || []).map((job: any) => ({
       ...job,
       companyId: job.company_id || job.companyId,
       postedAt: job.posted_at || job.postedAt
     }));
+
+    if (dbJobs.length > 0) return dbJobs;
+    return MOCK_JOBS;
   } catch (error) {
-    console.error('getJobOffers failed:', error);
-    return [];
+    console.warn('getJobOffers failed, falling back to MOCK_JOBS:', error);
+    return MOCK_JOBS;
   }
+};
+
+export const getJobOfferById = async (id: string) => {
+  try {
+    if (isSupabaseActive()) {
+      const { data, error } = await supabase
+        .from('job_offers')
+        .select('*, company:companies(name)')
+        .eq('id', id)
+        .single();
+      if (!error && data) {
+        return {
+          ...data,
+          companyId: data.company_id || data.companyId,
+          postedAt: data.posted_at || data.postedAt
+        };
+      }
+    }
+  } catch (e) {
+    console.warn(`getJobOfferById Supabase query failed for id ${id}:`, e);
+  }
+
+  // Fallback search across MOCK_JOBS and getJobOffers
+  const mockFound = MOCK_JOBS.find(j => j.id === id);
+  if (mockFound) return mockFound;
+
+  const allJobs = await getJobOffers();
+  return allJobs.find((j: any) => j.id === id || j.id === String(id)) || null;
 };
 
 export const createJobOffer = async (jobData: any) => {

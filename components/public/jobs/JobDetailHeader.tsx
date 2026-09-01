@@ -9,6 +9,10 @@ interface JobDetailHeaderProps {
 
 const JobDetailHeader: React.FC<JobDetailHeaderProps> = ({ job }) => {
   const { i18n } = useTranslation();
+  const titleText = typeof job.title === 'string' 
+    ? job.title 
+    : (job.title?.[i18n.language as any] || job.title?.es || job.title?.en || 'Oferta de Empleo');
+  const tags = Array.isArray(job.tags) ? job.tags : [];
   
   return (
     <>
@@ -17,13 +21,13 @@ const JobDetailHeader: React.FC<JobDetailHeaderProps> = ({ job }) => {
       </Link>
       
       <header className="mb-12 border-b border-slate-50 pb-12">
-        <div className="flex items-center space-x-3 mb-6">
-          {job.tags.map(tag => (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {tags.map(tag => (
             <span key={tag} className="bg-slate-100 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{tag}</span>
           ))}
         </div>
-        <h1 className="text-4xl font-black text-slate-900 mb-4">{job.title[i18n.language as any] || job.title.es}</h1>
-        <p className="text-xl text-blue-600 font-black uppercase tracking-widest">{job.location}</p>
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4 tracking-tight">{titleText}</h1>
+        <p className="text-lg sm:text-xl text-blue-600 font-black uppercase tracking-widest">{job.location}</p>
       </header>
     </>
   );

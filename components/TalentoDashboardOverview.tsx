@@ -107,14 +107,15 @@ const TalentoDashboardOverview: React.FC<TalentoDashboardOverviewProps> = ({
             {user.role === "persona" ? "Talento Nacional" : user.role} •{" "}
             {user.email}
           </p>
-          <div className="flex flex-wrap justify-center md:justify-start gap-3">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 mt-2">
             {profile?.skills?.length > 0 ? (
               profile.skills.map((skill: string) => (
                 <span
                   key={skill}
-                  className="px-4 py-2 bg-slate-50 dark:bg-slate-900 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700"
+                  className="px-3 py-1 bg-blue-50/80 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-200/60 dark:border-blue-800/60 shadow-2xs inline-flex items-center gap-1.5 shrink-0"
                 >
-                  {skill}
+                  <span className="size-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0"></span>
+                  <span>{skill}</span>
                 </span>
               ))
             ) : (
@@ -216,7 +217,9 @@ const TalentoDashboardOverview: React.FC<TalentoDashboardOverviewProps> = ({
                     </div>
                   </div>
                   <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full uppercase tracking-widest border border-emerald-100 self-start sm:self-auto shrink-0">
-                    {app.status}
+                    {app.status === 'submitted' || app.status === 'pending' ? 'En Revisión' : 
+                     app.status === 'under_review' ? 'En Evaluación' : 
+                     app.status === 'accepted' || app.status === 'hired' ? 'Aceptado' : 'Postulado'}
                   </span>
                 </Link>
               ))
