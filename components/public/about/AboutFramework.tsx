@@ -16,6 +16,7 @@ const AboutFramework: React.FC = () => {
           <div className="space-y-8 md:space-y-12">
             {[
               { title: "SOBERANÍA TECNOLÓGICA", desc: "Asegurar que el conocimiento técnico de la industria petrolera sea absorbido y replicado por expertos nacionales." },
+              { title: "REGISTRO ÚNICO (R.U.G.E.)", desc: "Acreditación oficial del Registro Único de Guinea Ecuatorial para certificar empresas y profesionales ante el MMH." },
               { title: "EMPODERAMIENTO LOCAL", desc: "Facilitar el acceso de las PYMES nacionales a contratos de alto valor mediante asistencia técnica y financiera." },
               { title: "GOBERNANZA TRANSPARENTE", desc: "Digitalizar todos los procesos de certificación y auditoría para eliminar barreras burocráticas." }
             ].map((item, i) => (

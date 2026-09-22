@@ -35,7 +35,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
 
   const isAdmin = currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.ADMIN;
 
-  const adminMenuGroups = [
+  const adminMenuGroups: { title: string; items: { path: string; label: string; icon: string }[] }[] = [
     {
       title: 'General',
       items: [
@@ -91,110 +91,272 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     }
   ];
 
-  const menuGroups = {
-    [UserRole.SUPER_ADMIN]: [], // Handled separately by adminMenuGroups
-    [UserRole.FUNCIONARIO]: [
-      { path: '/dashboard/funcionario/overview', label: 'dashboard.overview', icon: '📊' },
-      { path: '/dashboard/funcionario/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/funcionario/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/funcionario/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/funcionario/companies', label: 'dashboard.company_files', icon: '🏢' },
-      { path: '/dashboard/funcionario/opportunities', label: 'dashboard.tenders', icon: '📜' },
-      { path: '/dashboard/funcionario/contracts', label: 'dashboard.contracts', icon: '📑' },
-      { path: '/dashboard/funcionario/help-requests', label: 'Atención y Feedback', icon: '🙋' },
-      { path: '/dashboard/funcionario/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
-    ],
-    [UserRole.CUERPO_TECNICO]: [
-      { path: '/dashboard/cuerpo_tecnico/overview', label: 'dashboard.overview', icon: '⚓' },
-      { path: '/dashboard/cuerpo_tecnico/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/cuerpo_tecnico/notifications', label: 'dashboard.field_alerts', icon: '🔔' },
-      { path: '/dashboard/cuerpo_tecnico/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/cuerpo_tecnico/inspections', label: 'dashboard.inspections', icon: '🔎' },
-      { path: '/dashboard/cuerpo_tecnico/reports', label: 'dashboard.technical_reports', icon: '📋' },
-      { path: '/dashboard/cuerpo_tecnico/lex', label: 'dashboard.regulatory_support', icon: '⚖️' },
-    ],
-    [UserRole.COMUNICACION]: [
-      { path: '/dashboard/comunicacion/overview', label: 'dashboard.overview', icon: '📰' },
-      { path: '/dashboard/comunicacion/news', label: 'dashboard.news_editor', icon: '✍️' },
-      { path: '/dashboard/comunicacion/denuncias', label: 'Denuncias por Abuso', icon: '🚩' },
-      { path: '/dashboard/comunicacion/web', label: 'dashboard.web_portal', icon: '🌐' },
-      { path: '/dashboard/comunicacion/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/comunicacion/messages', label: 'dashboard.press_messages', icon: '💬' },
-      { path: '/dashboard/comunicacion/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
-    ],
-    [UserRole.COMUNIDAD]: [
-      { path: '/dashboard/comunidad/overview', label: 'dashboard.overview', icon: '🏗️' },
-      { path: '/dashboard/comunidad/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/comunidad/community', label: 'dashboard.social_impact', icon: '🌳' },
-      { path: '/dashboard/comunidad/feedback', label: 'dashboard.citizen_feedback', icon: '📢' },
-      { path: '/dashboard/comunidad/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/comunidad/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/comunidad/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
-    ],
-    [UserRole.PETROLERA]: [
-      { path: '/dashboard/petrolera/overview', label: 'dashboard.overview', icon: '⛽' },
-      { path: '/dashboard/petrolera/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/petrolera/network', label: 'Red Social Sector', icon: '🌐' },
-      { path: '/dashboard/petrolera/users', label: 'Usuarios y Accesos', icon: '👥' },
-      { path: '/dashboard/petrolera/opportunities', label: 'dashboard.my_tenders', icon: '📜' },
-      { path: '/dashboard/petrolera/csr', label: 'dashboard.csr_projects', icon: '🌱' },
-      { path: '/dashboard/petrolera/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/petrolera/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/petrolera/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
-    ],
-    [UserRole.COMPANY]: [
-      { path: '/dashboard/company/overview', label: 'dashboard.overview', icon: '🏭' },
-      { path: '/dashboard/company/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/company/network', label: 'Red Social Sector', icon: '🌐' },
-      { path: '/dashboard/company/users', label: 'Usuarios y Accesos', icon: '👥' },
-      { path: '/dashboard/company/profile', label: 'dashboard.my_company_profile', icon: '🏢' },
-      { path: '/dashboard/company/documents', label: 'dashboard.document_management', icon: '📁' },
-      { path: '/dashboard/company/applications', label: 'dashboard.my_applications', icon: '📄' },
-      { path: '/dashboard/company/opportunities', label: 'dashboard.tenders', icon: '🔍' },
-      { path: '/dashboard/company/jobs', label: 'Gestión de Vacantes', icon: '💼' },
-      { path: '/dashboard/company/contracts', label: 'dashboard.my_contracts', icon: '📑' },
-      { path: '/dashboard/company/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/company/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/company/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
-    ],
+  type MenuGroup = {
+    title: string;
+    items: { path: string; label: string; icon: string }[];
+  };
+
+  const categorizedRoleMenus: Record<string, MenuGroup[]> = {
+    // PYMES NACIONALES / EMPRESA LOCAL
     [UserRole.EMPRESA_LOCAL]: [
-      { path: '/dashboard/empresa_local/overview', label: 'dashboard.overview', icon: '💡' },
-      { path: '/dashboard/empresa_local/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/empresa_local/network', label: 'Red Social Sector', icon: '🌐' },
-      { path: '/dashboard/empresa_local/users', label: 'Usuarios y Accesos', icon: '👥' },
-      { path: '/dashboard/empresa_local/profile', label: 'dashboard.my_sme_profile', icon: '🏢' },
-      { path: '/dashboard/empresa_local/documents', label: 'dashboard.document_management', icon: '📁' },
-      { path: '/dashboard/empresa_local/applications', label: 'dashboard.my_applications', icon: '📄' },
-      { path: '/dashboard/empresa_local/jobs', label: 'Gestión de Vacantes', icon: '💼' },
-      { path: '/dashboard/empresa_local/contracts', label: 'dashboard.my_contracts', icon: '📑' },
-      { path: '/dashboard/empresa_local/support', label: 'dashboard.local_support', icon: '🤝' },
-      { path: '/dashboard/empresa_local/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/empresa_local/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/empresa_local/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/empresa_local/overview', label: 'dashboard.overview', icon: '💡' },
+          { path: '/dashboard/empresa_local/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/empresa_local/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/empresa_local/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Perfil y Equipo',
+        items: [
+          { path: '/dashboard/empresa_local/profile', label: 'dashboard.my_sme_profile', icon: '🏢' },
+          { path: '/dashboard/empresa_local/users', label: 'Equipo y Accesos', icon: '👥' },
+          { path: '/dashboard/empresa_local/network', label: 'Red Social del Sector', icon: '🌐' },
+        ]
+      },
+      {
+        title: 'Operaciones Comerciales',
+        items: [
+          { path: '/dashboard/empresa_local/opportunities', label: 'Licitaciones Disponibles', icon: '🔍' },
+          { path: '/dashboard/empresa_local/applications', label: 'dashboard.my_applications', icon: '📄' },
+          { path: '/dashboard/empresa_local/contracts', label: 'dashboard.my_contracts', icon: '📑' },
+          { path: '/dashboard/empresa_local/jobs', label: 'Gestión de Vacantes', icon: '💼' },
+        ]
+      },
+      {
+        title: 'Cumplimiento y Soporte',
+        items: [
+          { path: '/dashboard/empresa_local/documents', label: 'dashboard.document_management', icon: '📁' },
+          { path: '/dashboard/empresa_local/support', label: 'dashboard.local_support', icon: '🤝' },
+          { path: '/dashboard/empresa_local/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
+        ]
+      }
     ],
+
+    // OPERADORAS PETROLERAS (IOCs)
+    [UserRole.PETROLERA]: [
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/petrolera/overview', label: 'dashboard.overview', icon: '⛽' },
+          { path: '/dashboard/petrolera/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/petrolera/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/petrolera/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Organización y Red',
+        items: [
+          { path: '/dashboard/petrolera/users', label: 'Equipo y Delegaciones', icon: '👥' },
+          { path: '/dashboard/petrolera/network', label: 'Red Social del Sector', icon: '🌐' },
+        ]
+      },
+      {
+        title: 'Licitaciones y Contratación',
+        items: [
+          { path: '/dashboard/petrolera/opportunities', label: 'dashboard.my_tenders', icon: '📜' },
+          { path: '/dashboard/petrolera/contracts', label: 'dashboard.contracts', icon: '📑' },
+          { path: '/dashboard/petrolera/jobs', label: 'Gestión de Vacantes', icon: '💼' },
+        ]
+      },
+      {
+        title: 'Responsabilidad y Regulación',
+        items: [
+          { path: '/dashboard/petrolera/documents', label: 'dashboard.document_management', icon: '📁' },
+          { path: '/dashboard/petrolera/csr', label: 'dashboard.csr_projects', icon: '🌱' },
+          { path: '/dashboard/petrolera/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
+        ]
+      }
+    ],
+
+    // EMPRESAS DE SERVICIOS (CONTRATISTAS GENERALES)
+    [UserRole.COMPANY]: [
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/company/overview', label: 'dashboard.overview', icon: '🏭' },
+          { path: '/dashboard/company/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/company/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/company/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Identidad y Equipo',
+        items: [
+          { path: '/dashboard/company/profile', label: 'dashboard.my_company_profile', icon: '🏢' },
+          { path: '/dashboard/company/users', label: 'Equipo y Accesos', icon: '👥' },
+          { path: '/dashboard/company/network', label: 'Red Social del Sector', icon: '🌐' },
+        ]
+      },
+      {
+        title: 'Licitaciones y Proyectos',
+        items: [
+          { path: '/dashboard/company/opportunities', label: 'dashboard.tenders', icon: '🔍' },
+          { path: '/dashboard/company/applications', label: 'dashboard.my_applications', icon: '📄' },
+          { path: '/dashboard/company/contracts', label: 'dashboard.my_contracts', icon: '📑' },
+          { path: '/dashboard/company/jobs', label: 'Gestión de Vacantes', icon: '💼' },
+        ]
+      },
+      {
+        title: 'Documentación y Legal',
+        items: [
+          { path: '/dashboard/company/documents', label: 'dashboard.document_management', icon: '📁' },
+          { path: '/dashboard/company/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
+        ]
+      }
+    ],
+
+    // FUNCIONARIOS MINISTERIALES (ESTADO)
+    [UserRole.FUNCIONARIO]: [
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/funcionario/overview', label: 'dashboard.overview', icon: '📊' },
+          { path: '/dashboard/funcionario/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/funcionario/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/funcionario/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Supervisión y Control',
+        items: [
+          { path: '/dashboard/funcionario/companies', label: 'dashboard.company_files', icon: '🏢' },
+          { path: '/dashboard/funcionario/opportunities', label: 'dashboard.tenders', icon: '📜' },
+          { path: '/dashboard/funcionario/contracts', label: 'dashboard.contracts', icon: '📑' },
+        ]
+      },
+      {
+        title: 'Atención y Regulación',
+        items: [
+          { path: '/dashboard/funcionario/help-requests', label: 'Atención y Feedback', icon: '🙋' },
+          { path: '/dashboard/funcionario/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+        ]
+      }
+    ],
+
+    // CUERPO TÉCNICO (ESTADO)
+    [UserRole.CUERPO_TECNICO]: [
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/cuerpo_tecnico/overview', label: 'dashboard.overview', icon: '⚓' },
+          { path: '/dashboard/cuerpo_tecnico/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/cuerpo_tecnico/notifications', label: 'dashboard.field_alerts', icon: '🔔' },
+          { path: '/dashboard/cuerpo_tecnico/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Auditoría e Inspecciones',
+        items: [
+          { path: '/dashboard/cuerpo_tecnico/inspections', label: 'dashboard.inspections', icon: '🔎' },
+          { path: '/dashboard/cuerpo_tecnico/reports', label: 'dashboard.technical_reports', icon: '📋' },
+          { path: '/dashboard/cuerpo_tecnico/lex', label: 'dashboard.regulatory_support', icon: '⚖️' },
+        ]
+      }
+    ],
+
+    // COMUNICACIÓN Y PRENSA (ESTADO)
+    [UserRole.COMUNICACION]: [
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/comunicacion/overview', label: 'dashboard.overview', icon: '📰' },
+          { path: '/dashboard/comunicacion/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/comunicacion/messages', label: 'dashboard.press_messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Medios y Publicaciones',
+        items: [
+          { path: '/dashboard/comunicacion/news', label: 'dashboard.news_editor', icon: '✍️' },
+          { path: '/dashboard/comunicacion/web', label: 'dashboard.web_portal', icon: '🌐' },
+          { path: '/dashboard/comunicacion/denuncias', label: 'Denuncias por Abuso', icon: '🚩' },
+          { path: '/dashboard/comunicacion/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+        ]
+      }
+    ],
+
+    // COMUNIDAD Y DESARROLLO SOCIAL (ESTADO)
+    [UserRole.COMUNIDAD]: [
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/comunidad/overview', label: 'dashboard.overview', icon: '🏗️' },
+          { path: '/dashboard/comunidad/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/comunidad/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/comunidad/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Impacto Social y Ciudadanía',
+        items: [
+          { path: '/dashboard/comunidad/community', label: 'dashboard.social_impact', icon: '🌳' },
+          { path: '/dashboard/comunidad/feedback', label: 'dashboard.citizen_feedback', icon: '📢' },
+          { path: '/dashboard/comunidad/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+        ]
+      }
+    ],
+
+    // TALENTO NACIONAL (PERSONA)
     [UserRole.PERSONA]: [
-      { path: '/dashboard/persona/overview', label: 'dashboard.overview', icon: '👷' },
-      { path: '/dashboard/persona/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/persona/profile', label: 'dashboard.my_digital_cv', icon: '👤' },
-      { path: '/dashboard/persona/jobs', label: 'dashboard.job_board', icon: '🔍' },
-      { path: '/dashboard/persona/certificates', label: 'dashboard.certifications', icon: '🎓' },
-      { path: '/dashboard/persona/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/persona/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/persona/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/persona/overview', label: 'dashboard.overview', icon: '👷' },
+          { path: '/dashboard/persona/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/persona/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/persona/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Carrera Profesional',
+        items: [
+          { path: '/dashboard/persona/profile', label: 'dashboard.my_digital_cv', icon: '👤' },
+          { path: '/dashboard/persona/jobs', label: 'dashboard.job_board', icon: '🔍' },
+          { path: '/dashboard/persona/certificates', label: 'dashboard.certifications', icon: '🎓' },
+          { path: '/dashboard/persona/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+        ]
+      }
     ],
+
+    // ANUNCIANTES
     [UserRole.ADVERTISER]: [
-      { path: '/dashboard/advertiser/overview', label: 'dashboard.overview', icon: '📊' },
-      { path: '/dashboard/advertiser/news', label: 'dashboard.portal_news', icon: '📰' },
-      { path: '/dashboard/advertiser/campaigns', label: 'dashboard.campaigns', icon: '📢' },
-      { path: '/dashboard/advertiser/billing', label: 'dashboard.billing', icon: '💳' },
-      { path: '/dashboard/advertiser/analytics', label: 'dashboard.analytics', icon: '📈' },
-      { path: '/dashboard/advertiser/messages', label: 'dashboard.messages', icon: '💬' },
-      { path: '/dashboard/advertiser/notifications', label: 'dashboard.notifications', icon: '🔔' },
-      { path: '/dashboard/advertiser/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+      {
+        title: 'General',
+        items: [
+          { path: '/dashboard/advertiser/overview', label: 'dashboard.overview', icon: '📊' },
+          { path: '/dashboard/advertiser/news', label: 'dashboard.portal_news', icon: '📰' },
+          { path: '/dashboard/advertiser/notifications', label: 'dashboard.notifications', icon: '🔔' },
+          { path: '/dashboard/advertiser/messages', label: 'dashboard.messages', icon: '💬' },
+        ]
+      },
+      {
+        title: 'Publicidad y Métricas',
+        items: [
+          { path: '/dashboard/advertiser/campaigns', label: 'dashboard.campaigns', icon: '📢' },
+          { path: '/dashboard/advertiser/billing', label: 'dashboard.billing', icon: '💳' },
+          { path: '/dashboard/advertiser/analytics', label: 'dashboard.analytics', icon: '📈' },
+          { path: '/dashboard/advertiser/lex', label: 'dashboard.lex_advisor', icon: '⚖️' },
+        ]
+      }
     ],
   };
 
-  const currentMenu = (menuGroups as any)[getNormalizedRole(currentUser.role)] || menuGroups[UserRole.SUPER_ADMIN];
+  const normalizedRole = getNormalizedRole(currentUser.role);
+  const activeMenuGroups: MenuGroup[] = isAdmin 
+    ? adminMenuGroups 
+    : (categorizedRoleMenus[normalizedRole] || [
+        {
+          title: 'General',
+          items: [
+            { path: `/dashboard/${normalizedRole}/overview`, label: 'dashboard.overview', icon: '📊' },
+            { path: `/dashboard/${normalizedRole}/notifications`, label: 'dashboard.notifications', icon: '🔔' },
+            { path: `/dashboard/${normalizedRole}/messages`, label: 'dashboard.messages', icon: '💬' },
+          ]
+        }
+      ]);
 
   return (
     <>
@@ -239,54 +401,33 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Menú Principal</p>
           </div>
           
-          {isAdmin ? (
-            adminMenuGroups.map((group) => (
-              <div key={group.title} className="mb-6">
-                <div className="px-3 mb-2">
-                  <p className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.2em]">{group.title}</p>
-                </div>
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const active = location.pathname.includes(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => { if(window.innerWidth < 1280) onClose(); }}
-                        className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-semibold transition-all ${
-                          active 
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600 shadow-sm' 
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white border-l-4 border-transparent'
-                        }`}
-                      >
-                        <span className="text-base opacity-80">{item.icon}</span>
-                        <span className="text-[11px] uppercase tracking-tight">{t(item.label)}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
+          {activeMenuGroups.map((group) => (
+            <div key={group.title} className="mb-6">
+              <div className="px-3 mb-2">
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">{group.title}</p>
               </div>
-            ))
-          ) : (
-            currentMenu.map((item: any) => {
-              const active = location.pathname.includes(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => { if(window.innerWidth < 1280) onClose(); }}
-                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all ${
-                    active 
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' 
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white border-l-4 border-transparent'
-                  }`}
-                >
-                  <span className="text-lg opacity-80">{item.icon}</span>
-                  <span>{t(item.label)}</span>
-                </Link>
-              );
-            })
-          )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = location.pathname.includes(item.path);
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => { if(window.innerWidth < 1280) onClose(); }}
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-semibold transition-all ${
+                        active 
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600 shadow-sm' 
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white border-l-4 border-transparent'
+                      }`}
+                    >
+                      <span className="text-base opacity-80">{item.icon}</span>
+                      <span className="text-[11px] uppercase tracking-tight">{t(item.label)}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
           
           {/* Ad Banner in Sidebar */}
           <div className="px-2 mt-8">

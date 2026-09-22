@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, loading: authLoading, role } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -89,7 +89,11 @@ const Dashboard: React.FC = () => {
         setCompanies(companiesData as any);
 
         const userData = await getUserById(authUserId);
-        setDbUser(userData as any);
+        if (userData && userData.id === authUserId) {
+          setDbUser(userData as any);
+        } else {
+          setDbUser(null);
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -102,30 +106,36 @@ const Dashboard: React.FC = () => {
     }
   }, [authLoading, authUserId]);
 
-  // Use authenticated user or fallback to mock for demo
+  // Use authenticated user or fallback to explicit active session
   const currentUser = useMemo(() => {
     let baseUser: User | null = null;
     
-    if (dbUser) {
+    if (dbUser && dbUser.id === authUserId) {
       baseUser = dbUser as unknown as User;
     } else if (authUser) {
       const metadata = authUser.user_metadata;
       const derivedName = metadata?.full_name || metadata?.name || authUser.email?.split('@')[0].replace(/[._]/g, ' ') || 'Usuario';
       
+      const userRole = (role as UserRole) || (authUser as any).role || metadata?.role || UserRole.PERSONA;
+
       baseUser = {
         id: authUser.id,
         email: authUser.email || '',
         name: derivedName,
-        role: (authUser as any).role || UserRole.SUPER_ADMIN,
+        role: userRole,
         photo_url: metadata?.avatar_url || metadata?.picture,
         isOnline: true,
-        permissions: ['*']
+        permissions: userRole === UserRole.SUPER_ADMIN ? ['*'] : []
       } as User;
     } else {
-      const foundUser = users.find(u => u.id === localStorage.getItem('user_id'));
-      if (foundUser) baseUser = foundUser;
-      else if (users.length > 0) baseUser = users[0];
-      else baseUser = MOCK_USERS.find((u: any) => u.id === localStorage.getItem('user_id')) || MOCK_USERS[0];
+      const storedSession = localStorage.getItem('user_session');
+      const storedUserId = localStorage.getItem('user_id');
+      if (storedSession === 'active' && storedUserId && storedUserId !== 'u-1') {
+        const foundUser = users.find(u => u.id === storedUserId) || MOCK_USERS.find((u: any) => u.id === storedUserId);
+        if (foundUser) {
+          baseUser = foundUser;
+        }
+      }
     }
 
     // If we have a user but the name is generic, try to use auth info to improve it
@@ -140,14 +150,48 @@ const Dashboard: React.FC = () => {
     }
 
     return baseUser;
-  }, [dbUser, users, authUser]);
+  }, [dbUser, users, authUser, authUserId, role]);
 
-  const currentUserId = useMemo(() => currentUser?.id || 'u-1', [currentUser]);
+  const currentUserId = useMemo(() => currentUser?.id || '', [currentUser]);
 
   const currentCompany = useMemo(() => {
-    if (!currentUser || !companies.length) return null;
+    if (!currentUser) return null;
     const cid = (currentUser as any).company_id || currentUser.companyId;
-    return companies.find(c => c.id === cid) || companies[0];
+    if (cid && companies.length) {
+      const found = companies.find(c => c.id === cid);
+      if (found) return found;
+    }
+    // Match by email if company has same contact email
+    if (currentUser.email && companies.length) {
+      const byEmail = companies.find(c => c.email && c.email.toLowerCase() === currentUser.email.toLowerCase());
+      if (byEmail) return byEmail;
+    }
+    // For admin / super_admin: previewing the first company is acceptable
+    if (currentUser.role === 'super_admin' || currentUser.role === 'admin' || currentUser.role === 'funcionario') {
+      return companies[0] || null;
+    }
+    // For company / SME users without a company linked in DB yet, provide a dedicated company object matching their identity
+    if (currentUser.role === 'empresa_local' || currentUser.role === 'company' || currentUser.role === 'petrolera') {
+      return {
+        id: cid || currentUser.id,
+        name: currentUser.name ? `${currentUser.name}` : 'Mi Empresa PYME',
+        taxId: 'En trámite',
+        rugeId: `RG-${new Date().getFullYear()}-001`,
+        type: currentUser.role === 'empresa_local' ? 'local' : 'international',
+        status: 'pending',
+        complianceScore: 0,
+        address: 'Malabo, Guinea Ecuatorial',
+        email: currentUser.email || '',
+        sector: ['Servicios Petroleros'],
+        nationalEmployeeCount: 0,
+        totalEmployeeCount: 0,
+        localSpendPercentage: 0,
+        certificationLevel: 'basic',
+        badges: [],
+        auditHistory: []
+      } as unknown as Company;
+    }
+    return null;
   }, [currentUser, companies]);
 
   const getNormalizedRole = React.useCallback((role: string) => {
@@ -180,11 +224,14 @@ const Dashboard: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <div className="p-20 text-center">Usuario no encontrado.</div>;
+    localStorage.removeItem('user_session');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_role');
+    return <Navigate to="/login" replace />;
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-background-dark overflow-hidden relative md:border-4 md:border-white/10 md:m-2 md:rounded-[2.5rem] shadow-2xl">
+    <div className="flex h-[100dvh] bg-slate-50 dark:bg-background-dark overflow-hidden relative md:border-4 md:border-white/10 md:m-2 md:rounded-[2.5rem] shadow-2xl">
       <DashboardSidebar 
         forcedUser={currentUser} 
         isOpen={isSidebarOpen} 
@@ -198,12 +245,12 @@ const Dashboard: React.FC = () => {
         />
       )}
 
-      <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-background-light dark:bg-background-dark overflow-x-hidden">
         {/* Pasamos el usuario dinámico aquí */}
         <DashboardHeader user={currentUser} onToggleSidebar={toggleSidebar} />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col items-center w-full min-w-0">
-          <div key={location.pathname} className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col min-w-0 transition-all duration-300 animate-in fade-in duration-700">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col items-center w-full min-w-0 min-h-0">
+          <div key={location.pathname} className="w-full max-w-[var(--layout-max-width)] mx-auto flex-1 flex flex-col min-w-0 min-h-0 transition-all duration-300 animate-in fade-in duration-700">
             <Routes>
             {/* 1. SUPER ADMIN */}
             <Route path="super_admin/overview" element={<AdminDashboardOverview user={currentUser} />} />
@@ -269,6 +316,9 @@ const Dashboard: React.FC = () => {
             <Route path="petrolera/network" element={<SectorNetworkPage />} />
             <Route path="petrolera/users" element={<CompanyUserManagementPage />} />
             <Route path="petrolera/opportunities" element={<OpportunityManagement />} />
+            <Route path="petrolera/contracts" element={<ContractManagement />} />
+            <Route path="petrolera/documents" element={<DocumentManagement />} />
+            <Route path="petrolera/jobs" element={currentCompany ? <JobManagement company={currentCompany} /> : <div>Cargando empresa...</div>} />
             <Route path="petrolera/csr" element={<CSRProjectManagement />} />
             <Route path="petrolera/messages" element={<Messages user={currentUser} />} />
 
@@ -337,7 +387,7 @@ const Dashboard: React.FC = () => {
                 getUserById(authUserId).then(userData => setDbUser(userData as any));
               }
             }} />} />
-            <Route path=":role/lex" element={<div className="p-12 h-full max-w-5xl mx-auto"><LexAssistant /></div>} />
+            <Route path=":role/lex" element={<div className="p-1 sm:p-4 md:p-6 w-full h-[calc(100dvh-4.25rem)] md:h-[calc(100vh-5rem)] max-w-7xl mx-auto flex flex-col min-h-0 overflow-hidden"><LexAssistant user={currentUser} /></div>} />
             <Route path=":role/news" element={<PortalNewsViewer user={currentUser} />} />
             
             {/* REDIRECCIÓN POR DEFECTO */}

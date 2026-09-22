@@ -81,19 +81,35 @@ const StatCard: React.FC<StatCardProps> = ({
     return cardContent;
   }
 
-  const isDark = color === "bg-blue-700";
-  
+  const isFilledCard = color && color !== 'bg-white' && color !== 'bg-white/80';
+
+  const cardBgClass = color === 'bg-white' || !color
+    ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+    : `${color} border-transparent`;
+
+  const labelColorClass = isFilledCard 
+    ? 'text-blue-100' 
+    : 'text-slate-500 dark:text-slate-400';
+
+  const valueColorClass = isFilledCard 
+    ? (textColor || 'text-white') 
+    : 'text-slate-900 dark:text-white';
+
+  const plusColorClass = isFilledCard 
+    ? 'text-blue-200' 
+    : 'text-slate-400 dark:text-slate-500';
+
   // Simple version for backward compatibility
   const simpleCard = (
-    <div className={`${color} p-6 md:p-8 rounded-xl md:rounded-2xl shadow-lg border ${isDark ? 'border-blue-600' : 'border-slate-100'} flex flex-col justify-center transform hover:-translate-y-1 transition-all duration-300 ${to || onClick ? 'cursor-pointer' : ''}`}>
-      <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isDark ? 'text-blue-200' : 'text-slate-400'}`}>
+    <div className={`${cardBgClass} p-4 sm:p-5 md:p-6 rounded-2xl shadow-sm border flex flex-col justify-center transform hover:-translate-y-0.5 transition-all duration-300 ${to || onClick ? 'cursor-pointer' : ''}`}>
+      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1.5 ${labelColorClass}`}>
         {displayTitle}
       </p>
       <div className="flex items-baseline space-x-1">
-        <p className={`text-4xl font-black tracking-tighter ${textColor}`}>
+        <p className={`text-2xl sm:text-3xl md:text-4xl font-black tracking-tight ${valueColorClass}`}>
           {value}
         </p>
-        <span className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-slate-300'}`}>+</span>
+        <span className={`text-xs sm:text-sm font-bold ${plusColorClass}`}>+</span>
       </div>
     </div>
   );

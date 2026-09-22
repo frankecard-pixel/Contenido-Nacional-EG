@@ -13,7 +13,7 @@ const HomeHowItWorks: React.FC = () => {
         </div>
         <div className="grid gap-8 md:grid-cols-3">
           {[
-            { step: "1. Registro", icon: "edit_document", desc: "Cree el perfil de su empresa completando la información básica y subiendo la documentación legal requerida por el MMH." },
+            { step: "1. Registro R.U.G.E.", icon: "edit_document", desc: "Inscriba su empresa o perfil profesional en el Registro Único de Guinea Ecuatorial (R.U.G.E.) con la documentación exigida por el MMH." },
             { step: "2. Certificación", icon: "verified_user", desc: "Nuestro equipo validará su documentación. Una vez aprobada, recibirá su Certificado de Contenido Nacional digital." },
             { step: "3. Licitación", icon: "gavel", desc: "Acceda al panel de oportunidades, filtre por categoría y presente sus ofertas directamente a través de la plataforma." }
           ].map((item, i) => (

@@ -61,7 +61,7 @@ const CompanyUserManagementPage: React.FC = () => {
       setTeamMessages(JSON.parse(stored));
     } else {
       const initialMsgs = [
-        { id: 'm-1', userName: 'Carlos Mba', companyRole: 'admin', text: 'Hola equipo, bienvenidos al canal de coordinación interna de la empresa. Aquí podemos organizar nuestras tareas para las licitaciones.', timestamp: '10:30 AM' },
+        { id: 'm-1', userName: 'Coordinador de Equipo', companyRole: 'admin', text: 'Hola equipo, bienvenidos al canal de coordinación interna de la empresa. Aquí podemos organizar nuestras tareas para las licitaciones.', timestamp: '10:30 AM' },
         { id: 'm-2', userName: 'Sofia Obono', companyRole: 'editor', text: 'Estupendo. Ya he actualizado la solvencia fiscal y el Certificado de Registro de Empresas.', timestamp: '11:15 AM' }
       ];
       localStorage.setItem(storageKey, JSON.stringify(initialMsgs));

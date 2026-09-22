@@ -286,7 +286,7 @@ const CommunityManagement: React.FC = () => {
               {[
                 { name: "Sarah M. (Exxon)", text: "Hemos subido los informes de impacto ambiental para la fase 3 del proyecto Luba.", time: "10:30 AM", online: true },
                 { name: "John D. (Marathon)", text: "Solicitamos una reunión para revisar los nuevos requisitos de contenido nacional.", time: "Ayer", online: false },
-                { name: "Carlos E. (Admin)", text: "Nota interna: Revisar la documentación pendiente de Construcciones Malabo antes del viernes.", time: "2 días", online: true }
+                { name: "Coordinador MMH", text: "Nota interna: Revisar la documentación pendiente de Construcciones Malabo antes del viernes.", time: "2 días", online: true }
               ].map((msg, i) => (
                 <div key={i} className="flex gap-5 p-4 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-all cursor-pointer group">
                   <div className="relative shrink-0">

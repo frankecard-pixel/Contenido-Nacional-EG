@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getUsers, getCompanies, updateUser, createUser, getLoginLogs, resetUserPassword } from '../services/supabaseApi';
+import { getUsers, getCompanies, createCompany, updateUser, createUser, getLoginLogs, resetUserPassword } from '../services/supabaseApi';
 import { User, UserRole, UserStatus, Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import UserFilters from '../components/admin/UserFilters';
@@ -105,11 +105,43 @@ const AdminUserManagementPage: React.FC = () => {
       phone?: string; 
       department?: string; 
       position?: string;
+      companyId?: string;
+      newCompanyData?: {
+        name: string;
+        taxId?: string;
+        type?: 'local' | 'international';
+        sector?: string[];
+        address?: string;
+      };
     }
   ) => {
     try {
       setIsLoading(true);
       const isDirect = extraData?.isDirect || false;
+      let assignedCompanyId = extraData?.companyId;
+
+      // If user requested creating a new company for this user, create it in DB first
+      if (extraData?.newCompanyData && extraData.newCompanyData.name) {
+        try {
+          const compResult = await createCompany({
+            name: extraData.newCompanyData.name,
+            taxId: extraData.newCompanyData.taxId,
+            type: extraData.newCompanyData.type || (role === UserRole.EMPRESA_LOCAL ? 'local' : 'international'),
+            sector: extraData.newCompanyData.sector || ['Servicios'],
+            address: extraData.newCompanyData.address || 'Malabo, Guinea Ecuatorial',
+            email: email,
+            status: 'pending',
+          });
+          if (compResult && compResult.id) {
+            assignedCompanyId = compResult.id;
+            toast.success(`Empresa "${compResult.name}" creada exitosamente`);
+          }
+        } catch (compErr: any) {
+          console.error('Error creating company during user invite:', compErr);
+          toast.error('Error al crear la empresa: ' + (compErr.message || 'Error en base de datos'));
+        }
+      }
+
       const newUser: Partial<User> = {
         email,
         name,
@@ -120,6 +152,8 @@ const AdminUserManagementPage: React.FC = () => {
         phone: extraData?.phone || undefined,
         department: extraData?.department || undefined,
         position: extraData?.position || undefined,
+        companyId: assignedCompanyId || undefined,
+        companyRole: assignedCompanyId ? 'admin' : undefined
       };
       
       await createUser(newUser, extraData?.password);
@@ -315,6 +349,7 @@ const AdminUserManagementPage: React.FC = () => {
           isOpen={isInviteModalOpen}
           onClose={() => setIsInviteModalOpen(false)} 
           onInvite={handleInviteUser}
+          companies={companiesData}
         />
       )}
 
@@ -441,6 +476,7 @@ const AdminUserManagementPage: React.FC = () => {
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              const companyIdValue = (formData.get('companyId') as string) || undefined;
               handleUpdateUser({
                 name: formData.get('name') as string,
                 email: formData.get('email') as string,
@@ -448,6 +484,7 @@ const AdminUserManagementPage: React.FC = () => {
                 department: formData.get('department') as string,
                 status: formData.get('status') as UserStatus,
                 role: formData.get('role') as UserRole,
+                companyId: companyIdValue,
               });
             }} className="p-10 space-y-6">
               <div className="grid grid-cols-2 gap-6">
@@ -491,6 +528,22 @@ const AdminUserManagementPage: React.FC = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Empresa Asociada</label>
+                <select 
+                  name="companyId" 
+                  defaultValue={selectedUser.companyId || ''} 
+                  className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                >
+                  <option value="">-- Sin Empresa Asociada (Administrativo / Sin entidad) --</option>
+                  {companiesData.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.taxId ? `(${c.taxId})` : ''} {c.type ? `• ${c.type.toUpperCase()}` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="pt-6 flex justify-end gap-4">

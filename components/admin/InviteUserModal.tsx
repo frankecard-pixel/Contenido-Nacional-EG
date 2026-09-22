@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserRole } from '../../types';
+import { UserRole, Company } from '../../types';
+import { getCompanies } from '../../services/supabaseApi';
 
 interface InviteUserModalProps {
   isOpen: boolean;
   onClose: () => void;
+  companies?: Company[];
   onInvite: (
     email: string, 
     name: string, 
@@ -15,11 +17,19 @@ interface InviteUserModalProps {
       phone?: string; 
       department?: string; 
       position?: string;
+      companyId?: string;
+      newCompanyData?: {
+        name: string;
+        taxId?: string;
+        type?: 'local' | 'international';
+        sector?: string[];
+        address?: string;
+      };
     }
   ) => void;
 }
 
-const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onInvite }) => {
+const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onInvite, companies = [] }) => {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -33,16 +43,57 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
   const [department, setDepartment] = useState('');
   const [position, setPosition] = useState('');
 
+  // Company selection & creation additions
+  const [availableCompanies, setAvailableCompanies] = useState<Company[]>(companies);
+  const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyTaxId, setNewCompanyTaxId] = useState('');
+  const [newCompanySector, setNewCompanySector] = useState('Servicios');
+  const [newCompanyAddress, setNewCompanyAddress] = useState('Malabo, Guinea Ecuatorial');
+
+  useEffect(() => {
+    if (companies && companies.length > 0) {
+      setAvailableCompanies(companies);
+      if (!selectedCompanyId) setSelectedCompanyId(companies[0].id);
+    } else {
+      getCompanies().then(comps => {
+        if (comps && comps.length > 0) {
+          setAvailableCompanies(comps as unknown as Company[]);
+          if (!selectedCompanyId) setSelectedCompanyId(comps[0].id);
+        }
+      }).catch(err => console.error('Error fetching companies in InviteUserModal:', err));
+    }
+  }, [companies, isOpen]);
+
   if (!isOpen) return null;
+
+  const isCompanyRole = role === UserRole.EMPRESA_LOCAL || role === UserRole.COMPANY || role === UserRole.PETROLERA;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const companyPayload = isCompanyRole ? (
+      companyMode === 'existing' 
+        ? { companyId: selectedCompanyId || undefined }
+        : { 
+            newCompanyData: {
+              name: newCompanyName.trim() || `Empresa de ${name}`,
+              taxId: newCompanyTaxId.trim() || `NIF-${Date.now().toString().slice(-6)}`,
+              type: (role === UserRole.EMPRESA_LOCAL ? 'local' : 'international') as 'local' | 'international',
+              sector: [newCompanySector.trim() || 'Servicios'],
+              address: newCompanyAddress.trim() || 'Malabo, Guinea Ecuatorial'
+            }
+          }
+    ) : {};
+
     onInvite(email, name, role, {
       isDirect,
       password: isDirect ? password : undefined,
       phone: isDirect || phone ? phone : undefined,
       department: isDirect || department ? department : undefined,
       position: isDirect || position ? position : undefined,
+      ...companyPayload
     });
     
     // Reset fields
@@ -54,6 +105,8 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
     setDepartment('');
     setPosition('');
     setIsDirect(false);
+    setNewCompanyName('');
+    setNewCompanyTaxId('');
     onClose();
   };
 
@@ -387,6 +440,10 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
                       setDepartment("Gerencia General");
                       setPosition("Director de Empresa");
                       setPassword("ServiciosG2026*");
+                      setCompanyMode('new');
+                      setNewCompanyName("Servicios Guinea S.L.");
+                      setNewCompanyTaxId("NIF-991201");
+                      setNewCompanySector("Servicios Petroleros y Mantenimiento");
                     }}
                     className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
                   >
@@ -404,6 +461,10 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
                       setDepartment("Administración");
                       setPosition("Administrador de Empresa");
                       setPassword("LogisticaL2026*");
+                      setCompanyMode('new');
+                      setNewCompanyName("Logística Litoral S.A.");
+                      setNewCompanyTaxId("NIF-455098");
+                      setNewCompanySector("Logística y Transporte");
                     }}
                     className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase text-left tracking-tight flex flex-col justify-center"
                   >
@@ -643,6 +704,99 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose, onIn
               </optgroup>
             </select>
           </div>
+
+          {/* Company Assignment & Creation Section for Company-related roles */}
+          {isCompanyRole && (
+            <div className="p-5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-lg">corporate_fare</span>
+                  <span>Empresa de la PYME</span>
+                </div>
+                <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase">
+                  <button
+                    type="button"
+                    onClick={() => setCompanyMode('new')}
+                    className={`px-3 py-1 rounded-lg transition-all ${companyMode === 'new' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}
+                  >
+                    + Crear Nueva Empresa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompanyMode('existing')}
+                    className={`px-3 py-1 rounded-lg transition-all ${companyMode === 'existing' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}
+                  >
+                    Empresa Existente
+                  </button>
+                </div>
+              </div>
+
+              {companyMode === 'new' ? (
+                <div className="space-y-3 pt-1">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center justify-between">
+                      <span>Nombre de la Empresa / PYME</span>
+                      <span className="text-red-500">* Obligatorio</span>
+                    </label>
+                    <input
+                      type="text"
+                      required={isCompanyRole && companyMode === 'new'}
+                      value={newCompanyName}
+                      onChange={(e) => setNewCompanyName(e.target.value)}
+                      placeholder="Ej: Logística Ecuatorial S.L."
+                      className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        NIF / CIF Fiscal
+                      </label>
+                      <input
+                        type="text"
+                        value={newCompanyTaxId}
+                        onChange={(e) => setNewCompanyTaxId(e.target.value)}
+                        placeholder="Ej: NIF-883921"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        Sector
+                      </label>
+                      <input
+                        type="text"
+                        value={newCompanySector}
+                        onChange={(e) => setNewCompanySector(e.target.value)}
+                        placeholder="Ej: Logística, Gas, etc."
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center justify-between">
+                    <span>Seleccionar Empresa Existente</span>
+                    <span className="text-red-500">* Obligatorio</span>
+                  </label>
+                  <select
+                    value={selectedCompanyId}
+                    onChange={(e) => setSelectedCompanyId(e.target.value)}
+                    required={isCompanyRole && companyMode === 'existing'}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:text-white"
+                  >
+                    <option value="">-- Selecciona una Empresa Registrada --</option>
+                    {availableCompanies.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.taxId ? `(${c.taxId})` : ''} {c.type ? `• ${c.type.toUpperCase()}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Technical Data fields (Department and Position) */}
           {isDirect && (

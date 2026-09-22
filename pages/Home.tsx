@@ -4,6 +4,7 @@ import HomeHero from '../components/public/home/HomeHero';
 import HomeStats from '../components/public/home/HomeStats';
 import MinisterialCertification from '../components/public/MinisterialCertification';
 import HomeHowItWorks from '../components/public/home/HomeHowItWorks';
+import HomeSocialImpact from '../components/public/home/HomeSocialImpact';
 import HomeInteractive from '../components/public/home/HomeInteractive';
 import HomeNews from '../components/public/home/HomeNews';
 import HomeCategories from '../components/public/home/HomeCategories';
@@ -25,6 +26,7 @@ const Home: React.FC = () => {
       </div>
 
       <HomeHowItWorks />
+      <HomeSocialImpact />
       <HomeInteractive />
       <HomeNews />
       <HomeCategories />

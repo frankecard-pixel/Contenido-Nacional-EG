@@ -360,8 +360,8 @@ export const getUserById = async (id: string) => {
     if (error) throw error;
     return mapDboToUser(data);
   } catch (error) {
-    console.warn(`getUserById for '${id}' failed. Falling back to MOCK_USERS search:`, error);
-    return MOCK_USERS.find(u => u.id === id) || MOCK_USERS[0];
+    console.warn(`getUserById for '${id}' failed:`, error);
+    return MOCK_USERS.find(u => u.id === id) || null;
   }
 };
 
@@ -989,23 +989,23 @@ export const createCompany = async (companyData: Partial<Company>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     
-    const dbPayload = {
+    // Generate valid unique identifiers if not provided
+    const cleanTaxId = companyData.taxId || `NIF-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+    const cleanRugeId = companyData.rugeId || `RG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Strictly match public.companies columns: id, name, tax_id, ruge_id, type, sector, status, compliance_score, address, email, lat, lng
+    const dbPayload: any = {
       name: companyData.name,
-      tax_id: companyData.taxId || null,
-      ruge_id: companyData.rugeId || null,
+      tax_id: cleanTaxId,
+      ruge_id: cleanRugeId,
       type: companyData.type || 'local',
-      sector: companyData.sector || [],
+      sector: Array.isArray(companyData.sector) ? companyData.sector : (companyData.sector ? [companyData.sector] : []),
       status: companyData.status || 'pending',
-      certification_level: companyData.certificationLevel || 'basic',
-      compliance_score: companyData.complianceScore || 0,
-      national_employee_count: companyData.nationalEmployeeCount || 0,
-      total_employee_count: companyData.totalEmployeeCount || 0,
-      local_spend_percentage: companyData.localSpendPercentage || 0,
+      compliance_score: companyData.complianceScore !== undefined ? Number(companyData.complianceScore) : 0,
       address: companyData.address || '',
-      phone: companyData.phone || '',
       email: companyData.email || '',
-      lat: companyData.lat || null,
-      lng: companyData.lng || null
+      lat: companyData.lat !== undefined ? companyData.lat : null,
+      lng: companyData.lng !== undefined ? companyData.lng : null
     };
 
     const { data, error } = await supabase.from('companies').insert([dbPayload]).select().single();
@@ -1050,16 +1050,13 @@ export const createCompany = async (companyData: Partial<Company>) => {
      if (companyData.taxId !== undefined) dbPayload.tax_id = companyData.taxId;
      if (companyData.rugeId !== undefined) dbPayload.ruge_id = companyData.rugeId;
      if (companyData.type !== undefined) dbPayload.type = companyData.type;
-     if (companyData.sector !== undefined) dbPayload.sector = companyData.sector;
+     if (companyData.sector !== undefined) dbPayload.sector = Array.isArray(companyData.sector) ? companyData.sector : [companyData.sector];
      if (companyData.status !== undefined) dbPayload.status = companyData.status;
-     if (companyData.certificationLevel !== undefined) dbPayload.certification_level = companyData.certificationLevel;
      if (companyData.complianceScore !== undefined) dbPayload.compliance_score = companyData.complianceScore;
-     if (companyData.nationalEmployeeCount !== undefined) dbPayload.national_employee_count = companyData.nationalEmployeeCount;
-     if (companyData.totalEmployeeCount !== undefined) dbPayload.total_employee_count = companyData.totalEmployeeCount;
-     if (companyData.localSpendPercentage !== undefined) dbPayload.local_spend_percentage = companyData.localSpendPercentage;
      if (companyData.address !== undefined) dbPayload.address = companyData.address;
-     if (companyData.phone !== undefined) dbPayload.phone = companyData.phone;
      if (companyData.email !== undefined) dbPayload.email = companyData.email;
+     if (companyData.lat !== undefined) dbPayload.lat = companyData.lat;
+     if (companyData.lng !== undefined) dbPayload.lng = companyData.lng;
  
      const { data, error } = await supabase.from('companies').update(dbPayload).eq('id', id).select().single();
      if (error) throw error;
@@ -1229,6 +1226,23 @@ export const getJobApplications = async (userId: string) => {
     }
   });
   return combined;
+};
+
+export const getJobApplicationsByJobId = async (jobId: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('job_applications')
+      .select('*, candidate:users(*)')
+      .or(`job_id.eq.${jobId},job_id.eq.1`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (data && data.length > 0) return data;
+  } catch (error) {
+    console.warn(`getJobApplicationsByJobId query for job ${jobId} failed:`, error);
+  }
+  return [];
 };
 
 export const createJobApplication = async (applicationData: any) => {
@@ -1543,23 +1557,26 @@ export const getSocialProjects = async () => {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
     const { data, error } = await supabase.from('social_projects').select('*, petrolera:users(name)');
     if (error) throw error;
-    return data || [];
+    if (data && data.length > 0) return data;
   } catch (error) {
-    console.error('getSocialProjects failed:', error);
-    return [];
+    console.warn('getSocialProjects failed. Falling back to MOCK_SOCIAL_PROJECTS:', error);
   }
+  return MOCK_SOCIAL_PROJECTS;
 };
 
 export const getSocialProjectById = async (id: string) => {
   try {
-    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('social_projects').select('*, petrolera:users(name)').eq('id', id).single();
-    if (error) throw error;
-    return data;
+    if (isSupabaseActive()) {
+      const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+      if (isUuid) {
+        const { data, error } = await supabase.from('social_projects').select('*, petrolera:users(name)').eq('id', id).single();
+        if (!error && data) return data;
+      }
+    }
   } catch (error) {
-    console.error(`getSocialProjectById for '${id}' failed:`, error);
-    return null;
+    console.warn(`getSocialProjectById for '${id}' failed:`, error);
   }
+  return MOCK_SOCIAL_PROJECTS.find(p => p.id === id) || null;
 };
 
 // ==========================================

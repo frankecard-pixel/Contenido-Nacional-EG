@@ -100,6 +100,55 @@ app.post("/api/parse-cv", upload.single("cv"), async (req, res) => {
   }
 });
 
+// API route for Lex AI Assistant
+app.post("/api/lex-chat", async (req, res) => {
+  try {
+    const { prompt, history = [], systemInstruction } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    const client = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      } 
+    });
+
+    // Build contents from history and latest prompt
+    const contents: any[] = [];
+    if (Array.isArray(history)) {
+      history.forEach((msg: { role: string; text: string }) => {
+        contents.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text }]
+        });
+      });
+    }
+    contents.push({
+      role: 'user',
+      parts: [{ text: prompt }]
+    });
+
+    const response = await client.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents,
+      config: {
+        systemInstruction: systemInstruction || "Eres Lex, el Asistente de Inteligencia Jurídica oficial del Ministerio de Hidrocarburos, Minas y Electricidad de Guinea Ecuatorial. Responde siempre con rigor técnico y fundamento legal.",
+        temperature: 0.7,
+      }
+    });
+
+    res.json({ text: response.text || "No se ha generado respuesta." });
+  } catch (error: any) {
+    console.error("Error in /api/lex-chat:", error);
+    res.status(500).json({ error: error?.message || "Error procesando la consulta jurídica con Gemini." });
+  }
+});
+
 async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

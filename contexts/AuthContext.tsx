@@ -34,6 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         fetchUserRole(session.user.id);
       } else {
+        // If there is no real Supabase session, purge any stale mock or legacy u-1 session
+        const storedUserId = localStorage.getItem('user_id');
+        if (storedUserId === 'u-1' || !storedUserId) {
+          localStorage.removeItem('user_session');
+          localStorage.removeItem('user_id');
+          localStorage.removeItem('user_role');
+        }
+        setRole(null);
         setLoading(false);
       }
     });
@@ -62,26 +70,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) throw error;
-      setRole(data?.role as UserRole);
+      setRole((data?.role as UserRole) || UserRole.PERSONA);
     } catch (error) {
-      console.error('Error fetching user role:', error);
-      setRole(null);
+      console.warn('Could not fetch user role from database, falling back to persona:', error);
+      setRole(UserRole.PERSONA);
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = React.useCallback(async () => {
-    if (supabase) {
-      const currentUserId = user?.id;
-      await supabase.auth.signOut();
-      if (currentUserId) {
-        logLogout(currentUserId).catch(console.error);
+    try {
+      if (supabase) {
+        const currentUserId = user?.id;
+        await supabase.auth.signOut();
+        if (currentUserId) {
+          logLogout(currentUserId).catch(console.error);
+        }
       }
+    } catch (error) {
+      console.error('Error during signOut:', error);
+    } finally {
       localStorage.removeItem('user_session');
       localStorage.removeItem('user_role');
+      localStorage.removeItem('user_id');
+      setUser(null);
+      setSession(null);
+      setRole(null);
     }
-  }, []);
+  }, [user]);
 
   const value = React.useMemo(() => ({ user, session, role, loading, signOut }), [user, session, role, loading, signOut]);
 

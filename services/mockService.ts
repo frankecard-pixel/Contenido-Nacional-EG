@@ -2,7 +2,7 @@
 import { User, UserRole, Opportunity, JobOffer, SocialProject, Company, Message, BadgeType, Application, Language, CompanyDocument, AuditActivity, Conversation, PublicWork, HelpRequest, WebCategory, Contract, Milestone, CompanyExt, OpportunityExt, ApplicationExt, SocialProjectExt, NewsArticle } from '../types';
 
 export const MOCK_USERS: User[] = [
-  { id: 'u-1', email: 'carlos.mba@mmh.gob.gq', role: UserRole.SUPER_ADMIN, name: 'Carlos Mba', isOnline: true, permissions: ['*'], department: 'Dirección General', status: 'active', position: 'Super Admin' },
+  { id: 'u-1', email: 'admin.general@mmh.gob.gq', role: UserRole.SUPER_ADMIN, name: 'Administrador General', isOnline: false, permissions: ['*'], department: 'Dirección General', status: 'active', position: 'Super Admin' },
   { id: 'u-2', email: 'manuel.nguema@mmh.gob.gq', role: UserRole.FUNCIONARIO, name: 'Manuel Nguema', isOnline: true, permissions: ['verify_companies', 'view_reports'], department: 'Hidrocarburos', status: 'active', position: 'Revisor Técnico' },
   { id: 'u-3', email: 'sofia.obono@mmh.gob.gq', role: UserRole.CUERPO_TECNICO, name: 'Sofia Obono', isOnline: true, permissions: ['field_audit', 'safety_verify'], department: 'TI / Sistemas', status: 'active', position: 'Admin Sistema' },
   { id: 'u-4', email: 'j.pierre@mmh.gob.gq', role: UserRole.COMUNICACION, name: 'Jean Pierre', isOnline: false, permissions: ['manage_news'], department: 'Comunicaciones', status: 'pending', position: 'Editor Contenido' },
@@ -343,7 +343,60 @@ export const MOCK_JOBS: JobOffer[] = [
 ];
 
 export const MOCK_SOCIAL_PROJECTS: SocialProjectExt[] = [
-  { id: '1', title: { es: 'Electrificación Escolar Annobón', en: 'Annobon School Electrification', fr: '' }, description: { es: 'Instalación de paneles solares en 5 escuelas.', en: '', fr: '' }, impact: '500 Estudiantes', location: 'Annobón', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2132&auto=format&fit=crop', petroleraId: 'u-4', status: 'active', budget: 450000, progress: 65, endDate: '2025-04-15', investor: 'Noble Energy', lat: -1.43, lng: 5.63 },
+  {
+    id: '1',
+    title: { es: 'Electrificación Escolar Annobón', en: 'Annobon School Electrification', fr: 'Électrification de l\'école d\'Annobón' },
+    description: { es: 'Instalación de paneles solares fotovoltaicos con banco de baterías de litio de última generación para abastecer de energía limpia continua a 5 centros educativos.', en: 'Installation of high-efficiency solar panels and batteries.', fr: '' },
+    impact: '500 Estudiantes',
+    location: 'San Antonio de Palea, Annobón',
+    image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2132&auto=format&fit=crop',
+    petroleraId: 'u-4',
+    status: 'active',
+    budget: 450000,
+    progress: 65,
+    endDate: '2025-04-15',
+    investor: 'Noble Energy',
+    lat: -1.43,
+    lng: 5.63,
+    category: 'Educación',
+    beneficiaries: 1500
+  },
+  {
+    id: '2',
+    title: { es: 'Centro de Salud Comunitario Cogo', en: 'Cogo Community Health Center', fr: 'Centre de santé communautaire de Cogo' },
+    description: { es: 'Ampliación y equipamiento técnico del centro médico rural para la atención de urgencias y ginecología de la comunidad.', en: 'Expansion of local medical center.', fr: '' },
+    impact: '3,000 Habitantes',
+    location: 'Cogo, Litoral',
+    image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop',
+    petroleraId: 'u-4',
+    status: 'completed',
+    budget: 620000,
+    progress: 100,
+    endDate: '2024-11-20',
+    investor: 'Marathon Oil',
+    lat: 1.08,
+    lng: 9.69,
+    category: 'Salud',
+    beneficiaries: 3000
+  },
+  {
+    id: '3',
+    title: { es: 'Red Potabilizadora Rebola', en: 'Rebola Water Purification Network', fr: 'Réseau d\'eau potable de Rebola' },
+    description: { es: 'Construcción de estación potabilizadora por filtración de gravedad y extensión de red de suministro a todo el municipio.', en: 'Water filtration system construction.', fr: '' },
+    impact: '3,500 Habitantes',
+    location: 'Rebola, Bioko Norte',
+    image: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?q=80&w=2070&auto=format&fit=crop',
+    petroleraId: 'u-4',
+    status: 'active',
+    budget: 380000,
+    progress: 85,
+    endDate: '2025-02-10',
+    investor: 'Chevron',
+    lat: 3.73,
+    lng: 8.84,
+    category: 'Infraestructura',
+    beneficiaries: 3500
+  }
 ];
 
 export const MOCK_MESSAGES: Message[] = [
@@ -398,7 +451,7 @@ export const MOCK_COMPANY_DOCUMENTS: CompanyDocument[] = [
 ];
 
 export const MOCK_AUDIT_LOGS: AuditActivity[] = [
-  { id: 'l-1', userId: 'u-1', userName: 'Carlos Mba', userRole: 'Super Admin', action: 'Aprobación de Registro', entityId: 'c-1', timestamp: '15 Nov 2024, 10:30', status: 'success' },
+  { id: 'l-1', userId: 'u-1', userName: 'Administrador General', userRole: 'Super Admin', action: 'Aprobación de Registro', entityId: 'c-1', timestamp: '15 Nov 2024, 10:30', status: 'success' },
   { id: 'l-2', userId: 'u-2', userName: 'Manuel Nguema', userRole: 'Funcionario', action: 'Validación de Documento', entityId: 'doc-2', timestamp: '15 Nov 2024, 11:15', status: 'pending' },
   { id: 'l-3', userId: 'u-3', userName: 'Sofia Obono', userRole: 'Cuerpo Técnico', action: 'Rechazo de Aplicación', entityId: 'app-2', timestamp: '14 Nov 2024, 09:45', status: 'success' }
 ];

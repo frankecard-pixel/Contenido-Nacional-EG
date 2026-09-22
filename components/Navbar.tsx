@@ -11,7 +11,8 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAuthUser = Boolean(user) || (localStorage.getItem('user_session') === 'active');
+  const storedUserId = localStorage.getItem('user_id');
+  const isAuthUser = Boolean(user) || (localStorage.getItem('user_session') === 'active' && Boolean(storedUserId) && storedUserId !== 'u-1');
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);

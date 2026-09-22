@@ -45,7 +45,7 @@ const LoginForm: React.FC = () => {
         setLoading(false);
         return;
       }
-      setError('Modo Demostración: Por favor use un correo institucional registrado (ej: carlos.mba@mmh.gob.gq)');
+      setError('Modo Demostración: Por favor use un correo institucional registrado (ej: admin.general@mmh.gob.gq)');
       setLoading(false);
       return;
     }
