@@ -55,6 +55,7 @@ import OpportunityPostingForm from '../components/dashboard/opportunities/Opport
 import ContractCreationForm from '../components/public/contract-management/ContractCreationForm';
 import InternalJobs from '../components/dashboard/InternalJobs';
 import PortalNewsViewer from '../components/dashboard/PortalNewsViewer';
+import { NationalizationModule } from './NationalizationModule';
 import { UserRole, User, Company } from '../types';
 import { getUsers, getCompanies, getUserById } from '../services/supabaseApi';
 import { MOCK_USERS } from '../services/mockService';
@@ -380,6 +381,8 @@ const Dashboard: React.FC = () => {
             <Route path="advertiser/analytics" element={<AdAnalyticsManagement />} />
 
             {/* RUTAS GENÉRICAS COMPARTIDAS - FIXED ROUTING */}
+            <Route path="nacionalizacion" element={<NationalizationModule />} />
+            <Route path=":role/nacionalizacion" element={<NationalizationModule />} />
             <Route path=":role/notifications" element={<Notifications user={currentUser} />} />
             <Route path=":role/messages" element={<Messages user={currentUser} />} />
             <Route path=":role/settings" element={<Settings user={currentUser} onUpdate={() => {

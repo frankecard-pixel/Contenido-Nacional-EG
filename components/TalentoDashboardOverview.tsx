@@ -150,8 +150,9 @@ const TalentoDashboardOverview: React.FC<TalentoDashboardOverviewProps> = ({
       </div>
 
       {/* Interactive KPI Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         {[
+          { label: "Nacionalización", val: "Elegible", trend: "Talento Ecuatoguineano", icon: "shield_person", color: "text-amber-600", bg: "bg-amber-50", to: "/dashboard/nacionalizacion" },
           { label: "Candidaturas", val: applications.length.toString(), trend: "Procesos activos", icon: "work", color: "text-blue-600", bg: "bg-blue-50", to: "/dashboard/persona/jobs" },
           { label: "Certificaciones", val: certifications.length.toString(), trend: `${certifications.filter(c => c.verification_status === 'verified').length} validadas`, icon: "verified", color: "text-emerald-600", bg: "bg-emerald-50", to: "/dashboard/persona/certificates" },
           { label: "Fortaleza CV", val: `${profileScore}%`, trend: "Completitud", icon: "badge", color: "text-purple-600", bg: "bg-purple-50", to: "/dashboard/persona/profile" },

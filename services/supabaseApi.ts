@@ -8,6 +8,9 @@ import {
   JobOffer, 
   NewsArticle, 
   Contract, 
+  Milestone,
+  TenderEvaluation,
+  ContractComplianceReport,
   HelpRequest, 
   WebCategory,
   Message,
@@ -367,8 +370,8 @@ export const getUserById = async (id: string) => {
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || (typeof process !== 'undefined' && process.env?.VITE_SUPABASE_URL) || '';
+const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || (typeof process !== 'undefined' && process.env?.VITE_SUPABASE_ANON_KEY) || '';
 
 export const createUser = async (userData: Partial<User>, password?: string) => {
   try {
@@ -1449,7 +1452,28 @@ export const getApplicationsByCompany = async (companyId: string) => {
 export const createApplication = async (applicationData: Partial<Application>) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('applications').insert([applicationData]).select().single();
+    const dbPayload: any = {
+      opportunity_id: applicationData.opportunityId || (applicationData as any).opportunity_id,
+      company_id: applicationData.companyId || (applicationData as any).company_id,
+      status: applicationData.status || 'submitted',
+      documents: applicationData.documents || [],
+      feedback: applicationData.feedback,
+      ref: applicationData.ref || `APP-${Math.floor(100 + Math.random() * 900)}`,
+      project_name: applicationData.projectName || (applicationData as any).project_name || '',
+      step: applicationData.step || 1,
+      minister_comment: applicationData.ministerComment || (applicationData as any).minister_comment,
+      action_required: applicationData.actionRequired ?? false,
+      technical_proposal_url: applicationData.technicalProposalUrl || (applicationData as any).technical_proposal_url,
+      technical_summary: applicationData.technicalSummary || (applicationData as any).technical_summary,
+      financial_proposal_amount: applicationData.financialProposalAmount ?? (applicationData as any).financial_proposal_amount ?? 0,
+      currency: applicationData.currency || 'XAF',
+      local_content_percentage: applicationData.localContentPercentage ?? (applicationData as any).local_content_percentage ?? 0,
+      local_workforce_count: applicationData.localWorkforceCount ?? (applicationData as any).local_workforce_count ?? 0,
+      local_services_planned: applicationData.localServicesPlanned || (applicationData as any).local_services_planned || [],
+      local_subcontracting_planned: applicationData.localSubcontractingPlanned || (applicationData as any).local_subcontracting_planned || []
+    };
+
+    const { data, error } = await supabase.from('applications').insert([dbPayload]).select().single();
     if (error) throw error;
     return data;
   } catch (error) {
@@ -1459,9 +1483,60 @@ export const createApplication = async (applicationData: Partial<Application>) =
       ...applicationData, 
       submittedAt: new Date().toLocaleDateString(),
       ref: `APP-${Math.floor(100 + Math.random() * 900)}`,
-      projectName: 'Mantenimiento Plataforma Alba',
+      projectName: applicationData.projectName || 'Mantenimiento Plataforma Alba',
       step: 1
     };
+  }
+};
+
+export const updateApplication = async (id: string, updates: Partial<Application>) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload: any = {
+      updated_at: new Date().toISOString()
+    };
+    if (updates.status !== undefined) dbPayload.status = updates.status;
+    if (updates.feedback !== undefined) dbPayload.feedback = updates.feedback;
+    if (updates.documents !== undefined) dbPayload.documents = updates.documents;
+    if (updates.ministerComment !== undefined || (updates as any).minister_comment !== undefined) {
+      dbPayload.minister_comment = updates.ministerComment || (updates as any).minister_comment;
+    }
+    if (updates.actionRequired !== undefined) dbPayload.action_required = updates.actionRequired;
+    if (updates.technicalProposalUrl !== undefined || (updates as any).technical_proposal_url !== undefined) {
+      dbPayload.technical_proposal_url = updates.technicalProposalUrl || (updates as any).technical_proposal_url;
+    }
+    if (updates.technicalSummary !== undefined || (updates as any).technical_summary !== undefined) {
+      dbPayload.technical_summary = updates.technicalSummary || (updates as any).technical_summary;
+    }
+    if (updates.financialProposalAmount !== undefined || (updates as any).financial_proposal_amount !== undefined) {
+      dbPayload.financial_proposal_amount = updates.financialProposalAmount ?? (updates as any).financial_proposal_amount;
+    }
+    if (updates.currency !== undefined) dbPayload.currency = updates.currency;
+    if (updates.localContentPercentage !== undefined || (updates as any).local_content_percentage !== undefined) {
+      dbPayload.local_content_percentage = updates.localContentPercentage ?? (updates as any).local_content_percentage;
+    }
+    if (updates.localWorkforceCount !== undefined || (updates as any).local_workforce_count !== undefined) {
+      dbPayload.local_workforce_count = updates.localWorkforceCount ?? (updates as any).local_workforce_count;
+    }
+    if (updates.localServicesPlanned !== undefined || (updates as any).local_services_planned !== undefined) {
+      dbPayload.local_services_planned = updates.localServicesPlanned || (updates as any).local_services_planned;
+    }
+    if (updates.localSubcontractingPlanned !== undefined || (updates as any).local_subcontracting_planned !== undefined) {
+      dbPayload.local_subcontracting_planned = updates.localSubcontractingPlanned || (updates as any).local_subcontracting_planned;
+    }
+    if (updates.awardDate !== undefined || (updates as any).award_date !== undefined) {
+      dbPayload.award_date = updates.awardDate || (updates as any).award_date;
+    }
+    if (updates.evaluationScore !== undefined || (updates as any).evaluation_score !== undefined) {
+      dbPayload.evaluation_score = updates.evaluationScore ?? (updates as any).evaluation_score;
+    }
+
+    const { data, error } = await supabase.from('applications').update(dbPayload).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('updateApplication failed:', error);
+    return null;
   }
 };
 
@@ -1471,7 +1546,9 @@ export const createApplication = async (applicationData: Partial<Application>) =
 export const getContracts = async () => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('contracts').select('*, company:companies(*), opportunity:opportunities(title, project:projects(name))');
+    const { data, error } = await supabase
+      .from('contracts')
+      .select('*, company:companies(*), contracting_company:contracting_company_id(id, name), opportunity:opportunities(title, project:projects(name))');
     if (error) throw error;
     
     if (data) {
@@ -1480,17 +1557,45 @@ export const getContracts = async () => {
         ref: c.ref || `CTR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         title: typeof c.title === 'string' ? c.title : (c.title?.es || c.title?.en || 'Contrato de Registro'),
         awardedTo: c.awarded_to || (c.company ? c.company.name : ''),
+        awarded_to: c.awarded_to,
         companyId: c.company_id,
+        company_id: c.company_id,
+        opportunityId: c.opportunity_id,
+        opportunity_id: c.opportunity_id,
+        contractingCompanyId: c.contracting_company_id,
+        contracting_company_id: c.contracting_company_id,
+        contractingCompany: c.contracting_company ? { id: c.contracting_company.id, name: c.contracting_company.name } : undefined,
+        applicationId: c.application_id,
+        application_id: c.application_id,
         status: c.status || 'pending',
         value: c.value ? Number(c.value) : 0,
+        currency: c.currency || 'XAF',
         startDate: c.start_date || new Date().toISOString().split('T')[0],
+        start_date: c.start_date,
         endDate: c.end_date || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+        end_date: c.end_date,
+        signedDate: c.signed_date,
+        signed_date: c.signed_date,
+        completionDate: c.completion_date,
+        completion_date: c.completion_date,
         location: c.location || 'Malabo, Guinea Ecuatorial',
         progress: c.progress || 0,
+        scopeOfWork: c.scope_of_work,
+        scope_of_work: c.scope_of_work,
+        targetLocalWorkforcePct: c.target_local_workforce_pct ?? 0,
+        target_local_workforce_pct: c.target_local_workforce_pct ?? 0,
+        targetLocalProcurementPct: c.target_local_procurement_pct ?? 0,
+        target_local_procurement_pct: c.target_local_procurement_pct ?? 0,
+        technologyTransferPlan: c.technology_transfer_plan,
+        technology_transfer_plan: c.technology_transfer_plan,
+        trainingPlan: c.training_plan,
+        training_plan: c.training_plan,
+        localSubcontractors: c.local_subcontractors || [],
+        local_subcontractors: c.local_subcontractors || [],
         nationalCompliance: c.national_compliance || {
-          localStaff: 80,
+          localStaff: c.target_local_workforce_pct || 80,
           localStaffReq: 80,
-          localGoods: 50,
+          localGoods: c.target_local_procurement_pct || 50,
           localGoodsReq: 50
         },
         company: c.company ? { name: c.company.name } : undefined,
@@ -1504,6 +1609,42 @@ export const getContracts = async () => {
   }
 };
 
+export const getContractById = async (id: string) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const { data, error } = await supabase
+      .from('contracts')
+      .select('*, company:companies(*), contracting_company:contracting_company_id(id, name), opportunity:opportunities(title, project:projects(name)), milestones:contract_milestones(*)')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    if (data) {
+      return {
+        ...data,
+        companyId: data.company_id,
+        contractingCompanyId: data.contracting_company_id,
+        opportunityId: data.opportunity_id,
+        applicationId: data.application_id,
+        startDate: data.start_date,
+        endDate: data.end_date,
+        signedDate: data.signed_date,
+        completionDate: data.completion_date,
+        scopeOfWork: data.scope_of_work,
+        targetLocalWorkforcePct: data.target_local_workforce_pct,
+        targetLocalProcurementPct: data.target_local_procurement_pct,
+        technologyTransferPlan: data.technology_transfer_plan,
+        trainingPlan: data.training_plan,
+        localSubcontractors: data.local_subcontractors || [],
+        nationalCompliance: data.national_compliance || {}
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error(`getContractById for '${id}' failed:`, error);
+    return null;
+  }
+};
+
 export const createContract = async (contractData: any) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
@@ -1513,17 +1654,28 @@ export const createContract = async (contractData: any) => {
       title: typeof contractData.title === 'string' ? contractData.title : (contractData.title?.es || 'Contrato de Registro'),
       awarded_to: contractData.awardedTo || contractData.awarded_to || '',
       company_id: contractData.companyId || contractData.company_id || null,
+      contracting_company_id: contractData.contractingCompanyId || contractData.contracting_company_id || null,
       opportunity_id: contractData.opportunityId || contractData.opportunity_id || null,
+      application_id: contractData.applicationId || contractData.application_id || null,
       status: contractData.status || 'pending',
       value: contractData.value || 0,
+      currency: contractData.currency || 'XAF',
       start_date: contractData.startDate || contractData.start_date || new Date().toISOString().split('T')[0],
       end_date: contractData.endDate || contractData.end_date || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+      signed_date: contractData.signedDate || contractData.signed_date || null,
+      completion_date: contractData.completionDate || contractData.completion_date || null,
       location: contractData.location || 'Malabo, Guinea Ecuatorial',
       progress: contractData.progress || 0,
+      scope_of_work: contractData.scopeOfWork || contractData.scope_of_work || '',
+      target_local_workforce_pct: contractData.targetLocalWorkforcePct ?? contractData.target_local_workforce_pct ?? 0,
+      target_local_procurement_pct: contractData.targetLocalProcurementPct ?? contractData.target_local_procurement_pct ?? 0,
+      technology_transfer_plan: contractData.technologyTransferPlan || contractData.technology_transfer_plan || '',
+      training_plan: contractData.trainingPlan || contractData.training_plan || '',
+      local_subcontractors: contractData.localSubcontractors || contractData.local_subcontractors || [],
       national_compliance: contractData.nationalCompliance || contractData.national_compliance || {
-        localStaff: 80,
+        localStaff: contractData.targetLocalWorkforcePct || 80,
         localStaffReq: 80,
-        localGoods: 50,
+        localGoods: contractData.targetLocalProcurementPct || 50,
         localGoodsReq: 50
       }
     };
@@ -1537,15 +1689,375 @@ export const createContract = async (contractData: any) => {
   }
 };
 
+export const updateContract = async (contractId: string, updates: Partial<Contract>) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload: any = {
+      updated_at: new Date().toISOString()
+    };
+    if (updates.status !== undefined) dbPayload.status = updates.status;
+    if (updates.value !== undefined) dbPayload.value = updates.value;
+    if (updates.currency !== undefined) dbPayload.currency = updates.currency;
+    if (updates.progress !== undefined) dbPayload.progress = updates.progress;
+    if (updates.startDate !== undefined || (updates as any).start_date !== undefined) {
+      dbPayload.start_date = updates.startDate || (updates as any).start_date;
+    }
+    if (updates.endDate !== undefined || (updates as any).end_date !== undefined) {
+      dbPayload.end_date = updates.endDate || (updates as any).end_date;
+    }
+    if (updates.signedDate !== undefined || (updates as any).signed_date !== undefined) {
+      dbPayload.signed_date = updates.signedDate || (updates as any).signed_date;
+    }
+    if (updates.completionDate !== undefined || (updates as any).completion_date !== undefined) {
+      dbPayload.completion_date = updates.completionDate || (updates as any).completion_date;
+    }
+    if (updates.scopeOfWork !== undefined || (updates as any).scope_of_work !== undefined) {
+      dbPayload.scope_of_work = updates.scopeOfWork || (updates as any).scope_of_work;
+    }
+    if (updates.targetLocalWorkforcePct !== undefined || (updates as any).target_local_workforce_pct !== undefined) {
+      dbPayload.target_local_workforce_pct = updates.targetLocalWorkforcePct ?? (updates as any).target_local_workforce_pct;
+    }
+    if (updates.targetLocalProcurementPct !== undefined || (updates as any).target_local_procurement_pct !== undefined) {
+      dbPayload.target_local_procurement_pct = updates.targetLocalProcurementPct ?? (updates as any).target_local_procurement_pct;
+    }
+    if (updates.technologyTransferPlan !== undefined || (updates as any).technology_transfer_plan !== undefined) {
+      dbPayload.technology_transfer_plan = updates.technologyTransferPlan || (updates as any).technology_transfer_plan;
+    }
+    if (updates.trainingPlan !== undefined || (updates as any).training_plan !== undefined) {
+      dbPayload.training_plan = updates.trainingPlan || (updates as any).training_plan;
+    }
+    if (updates.localSubcontractors !== undefined || (updates as any).local_subcontractors !== undefined) {
+      dbPayload.local_subcontractors = updates.localSubcontractors || (updates as any).local_subcontractors;
+    }
+    if (updates.nationalCompliance !== undefined || (updates as any).national_compliance !== undefined) {
+      dbPayload.national_compliance = updates.nationalCompliance || (updates as any).national_compliance;
+    }
+
+    const { data, error } = await supabase.from('contracts').update(dbPayload).eq('id', contractId).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`updateContract for '${contractId}' failed:`, error);
+    return null;
+  }
+};
+
 export const getContractMilestones = async (contractId: string) => {
   try {
     if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
-    const { data, error } = await supabase.from('contract_milestones').select('*').eq('contract_id', contractId);
+    const { data, error } = await supabase
+      .from('contract_milestones')
+      .select('*')
+      .eq('contract_id', contractId)
+      .order('deadline', { ascending: true });
     if (error) throw error;
-    return data || [];
+    return (data || []).map((m: any) => ({
+      ...m,
+      contractId: m.contract_id,
+      completionDate: m.completion_date,
+      progressPercentage: m.progress_percentage ?? 0,
+      nationalContentVerified: m.national_content_verified ?? false,
+      verificationNotes: m.verification_notes,
+      verifiedBy: m.verified_by,
+      verifiedAt: m.verified_at,
+      deliverables: m.deliverables || []
+    }));
   } catch (error) {
     console.error(`getContractMilestones for '${contractId}' failed:`, error);
     return [];
+  }
+};
+
+export const createContractMilestone = async (milestoneData: Partial<Milestone>) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload = {
+      contract_id: milestoneData.contractId || (milestoneData as any).contract_id,
+      title: milestoneData.title || milestoneData.description,
+      description: milestoneData.description || '',
+      deadline: milestoneData.deadline,
+      status: milestoneData.status || 'pending',
+      amount: milestoneData.amount || 0,
+      currency: milestoneData.currency || 'XAF',
+      progress_percentage: milestoneData.progressPercentage ?? (milestoneData as any).progress_percentage ?? 0,
+      deliverables: milestoneData.deliverables || [],
+      national_content_verified: milestoneData.nationalContentVerified ?? (milestoneData as any).national_content_verified ?? false,
+      verification_notes: milestoneData.verificationNotes || (milestoneData as any).verification_notes || null
+    };
+
+    const { data, error } = await supabase.from('contract_milestones').insert([dbPayload]).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('createContractMilestone failed:', error);
+    return null;
+  }
+};
+
+export const updateContractMilestoneWithDeliverables = async (
+  milestoneId: string, 
+  data: Partial<Milestone>
+) => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload: any = {};
+    if (data.status !== undefined) dbPayload.status = data.status;
+    if (data.title !== undefined) dbPayload.title = data.title;
+    if (data.description !== undefined) dbPayload.description = data.description;
+    if (data.deadline !== undefined) dbPayload.deadline = data.deadline;
+    if (data.completionDate !== undefined || (data as any).completion_date !== undefined) {
+      dbPayload.completion_date = data.completionDate || (data as any).completion_date;
+    }
+    if (data.amount !== undefined) dbPayload.amount = data.amount;
+    if (data.currency !== undefined) dbPayload.currency = data.currency;
+    if (data.progressPercentage !== undefined || (data as any).progress_percentage !== undefined) {
+      dbPayload.progress_percentage = data.progressPercentage ?? (data as any).progress_percentage;
+    }
+    if (data.deliverables !== undefined) dbPayload.deliverables = data.deliverables;
+    if (data.nationalContentVerified !== undefined || (data as any).national_content_verified !== undefined) {
+      dbPayload.national_content_verified = data.nationalContentVerified ?? (data as any).national_content_verified;
+    }
+    if (data.verificationNotes !== undefined || (data as any).verification_notes !== undefined) {
+      dbPayload.verification_notes = data.verificationNotes || (data as any).verification_notes;
+    }
+    if (data.verifiedBy !== undefined || (data as any).verified_by !== undefined) {
+      dbPayload.verified_by = data.verifiedBy || (data as any).verified_by;
+    }
+    if (data.verifiedAt !== undefined || (data as any).verified_at !== undefined) {
+      dbPayload.verified_at = data.verifiedAt || (data as any).verified_at;
+    }
+
+    const { data: result, error } = await supabase
+      .from('contract_milestones')
+      .update(dbPayload)
+      .eq('id', milestoneId)
+      .select()
+      .single();
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error(`updateContractMilestoneWithDeliverables for '${milestoneId}' failed:`, error);
+    return null;
+  }
+};
+
+// ==========================================
+// TENDER EVALUATIONS (Fase 4)
+// ==========================================
+export const getTenderEvaluations = async (opportunityId?: string, applicationId?: string): Promise<TenderEvaluation[]> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    let query = supabase
+      .from('tender_evaluations')
+      .select('*, application:applications(*), evaluator:users(id, name, email, role)');
+
+    if (opportunityId) {
+      query = query.eq('opportunity_id', opportunityId);
+    }
+    if (applicationId) {
+      query = query.eq('application_id', applicationId);
+    }
+
+    const { data, error } = await query.order('evaluated_at', { ascending: false });
+    if (error) throw error;
+
+    return (data || []).map((e: any) => ({
+      ...e,
+      applicationId: e.application_id,
+      opportunityId: e.opportunity_id,
+      evaluatorUserId: e.evaluator_user_id,
+      evaluatorName: e.evaluator_name,
+      technicalScore: e.technical_score,
+      financialScore: e.financial_score,
+      localContentScore: e.local_content_score,
+      complianceScore: e.compliance_score,
+      totalWeightedScore: e.total_weighted_score,
+      operatorVerdict: e.operator_verdict,
+      operatorNotes: e.operator_notes,
+      ministryOversightNotes: e.ministry_oversight_notes,
+      criteriaBreakdown: e.criteria_breakdown || {},
+      evaluatedAt: e.evaluated_at
+    })) as TenderEvaluation[];
+  } catch (error) {
+    console.error('getTenderEvaluations failed:', error);
+    return [];
+  }
+};
+
+export const saveTenderEvaluation = async (evaluationData: Partial<TenderEvaluation>): Promise<TenderEvaluation | null> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload = {
+      application_id: evaluationData.applicationId || evaluationData.application_id,
+      opportunity_id: evaluationData.opportunityId || evaluationData.opportunity_id,
+      evaluator_user_id: evaluationData.evaluatorUserId || evaluationData.evaluator_user_id || null,
+      evaluator_name: evaluationData.evaluatorName || evaluationData.evaluator_name || '',
+      technical_score: evaluationData.technicalScore ?? evaluationData.technical_score ?? 0,
+      financial_score: evaluationData.financialScore ?? evaluationData.financial_score ?? 0,
+      local_content_score: evaluationData.localContentScore ?? evaluationData.local_content_score ?? 0,
+      compliance_score: evaluationData.complianceScore ?? evaluationData.compliance_score ?? 0,
+      total_weighted_score: evaluationData.totalWeightedScore ?? evaluationData.total_weighted_score ?? 0,
+      operator_verdict: evaluationData.operatorVerdict || evaluationData.operator_verdict || 'under_evaluation',
+      operator_notes: evaluationData.operatorNotes || evaluationData.operator_notes || '',
+      ministry_oversight_notes: evaluationData.ministryOversightNotes || evaluationData.ministry_oversight_notes || '',
+      criteria_breakdown: evaluationData.criteriaBreakdown || evaluationData.criteria_breakdown || {},
+      evaluated_at: evaluationData.evaluatedAt || evaluationData.evaluated_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('tender_evaluations')
+      .upsert(dbPayload, { onConflict: 'application_id,evaluator_user_id' })
+      .select('*, application:applications(*), evaluator:users(id, name, email, role)')
+      .single();
+
+    if (error) throw error;
+    return data as TenderEvaluation;
+  } catch (error) {
+    console.error('saveTenderEvaluation failed:', error);
+    return null;
+  }
+};
+
+// ==========================================
+// CONTRACT COMPLIANCE REPORTS (Fase 4)
+// ==========================================
+export const getContractComplianceReports = async (
+  contractId?: string, 
+  companyId?: string
+): Promise<ContractComplianceReport[]> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    let query = supabase
+      .from('contract_compliance_reports')
+      .select('*, contract:contracts(id, ref, title, value), company:company_id(id, name), contracting_company:contracting_company_id(id, name)');
+
+    if (contractId) {
+      query = query.eq('contract_id', contractId);
+    }
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    }
+
+    const { data, error } = await query.order('submission_date', { ascending: false });
+    if (error) throw error;
+
+    return (data || []).map((r: any) => ({
+      ...r,
+      contractId: r.contract_id,
+      companyId: r.company_id,
+      contractingCompanyId: r.contracting_company_id,
+      reportingPeriod: r.reporting_period,
+      submissionDate: r.submission_date,
+      localWorkforceDirect: r.local_workforce_direct,
+      localWorkforceIndirect: r.local_workforce_indirect,
+      expatriateWorkforce: r.expatriate_workforce,
+      localWorkforceActualPct: r.local_workforce_actual_pct,
+      localExpenditureAmount: r.local_expenditure_amount,
+      totalExpenditurePeriod: r.total_expenditure_period,
+      currency: r.currency || 'XAF',
+      localExpenditureActualPct: r.local_expenditure_actual_pct,
+      trainingsConducted: r.trainings_conducted || [],
+      techTransferMilestones: r.tech_transfer_milestones || [],
+      localSubcontractorsUtilized: r.local_subcontractors_utilized || [],
+      discrepanciesDetected: r.discrepancies_detected,
+      complianceEvaluation: r.compliance_evaluation,
+      evidenceDocuments: r.evidence_documents || [],
+      ministryReviewStatus: r.ministry_review_status,
+      ministryReviewerId: r.ministry_reviewer_id,
+      ministryOpinionNotes: r.ministry_opinion_notes,
+      reviewedAt: r.reviewed_at
+    })) as ContractComplianceReport[];
+  } catch (error) {
+    console.error('getContractComplianceReports failed:', error);
+    return [];
+  }
+};
+
+export const createContractComplianceReport = async (
+  reportData: Partial<ContractComplianceReport>
+): Promise<ContractComplianceReport | null> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload = {
+      contract_id: reportData.contractId || reportData.contract_id,
+      company_id: reportData.companyId || reportData.company_id,
+      contracting_company_id: reportData.contractingCompanyId || reportData.contracting_company_id || null,
+      reporting_period: reportData.reportingPeriod || reportData.reporting_period,
+      submission_date: reportData.submissionDate || reportData.submission_date || new Date().toISOString(),
+      local_workforce_direct: reportData.localWorkforceDirect ?? reportData.local_workforce_direct ?? 0,
+      local_workforce_indirect: reportData.localWorkforceIndirect ?? reportData.local_workforce_indirect ?? 0,
+      expatriate_workforce: reportData.expatriateWorkforce ?? reportData.expatriate_workforce ?? 0,
+      local_workforce_actual_pct: reportData.localWorkforceActualPct ?? reportData.local_workforce_actual_pct ?? 0,
+      local_expenditure_amount: reportData.localExpenditureAmount ?? reportData.local_expenditure_amount ?? 0,
+      total_expenditure_period: reportData.totalExpenditurePeriod ?? reportData.total_expenditure_period ?? 0,
+      currency: reportData.currency || 'XAF',
+      local_expenditure_actual_pct: reportData.localExpenditureActualPct ?? reportData.local_expenditure_actual_pct ?? 0,
+      trainings_conducted: reportData.trainingsConducted || reportData.trainings_conducted || [],
+      tech_transfer_milestones: reportData.techTransferMilestones || reportData.tech_transfer_milestones || [],
+      local_subcontractors_utilized: reportData.localSubcontractorsUtilized || reportData.local_subcontractors_utilized || [],
+      discrepancies_detected: reportData.discrepanciesDetected || reportData.discrepancies_detected || '',
+      compliance_evaluation: reportData.complianceEvaluation || reportData.compliance_evaluation || 'REQUIERE_REVISION',
+      evidence_documents: reportData.evidenceDocuments || reportData.evidence_documents || [],
+      ministry_review_status: reportData.ministryReviewStatus || reportData.ministry_review_status || 'PRESENTADO',
+      ministry_reviewer_id: reportData.ministryReviewerId || reportData.ministry_reviewer_id || null,
+      ministry_opinion_notes: reportData.ministryOpinionNotes || reportData.ministry_opinion_notes || ''
+    };
+
+    const { data, error } = await supabase
+      .from('contract_compliance_reports')
+      .insert([dbPayload])
+      .select('*, contract:contracts(id, ref, title), company:company_id(id, name), contracting_company:contracting_company_id(id, name)')
+      .single();
+
+    if (error) throw error;
+    return data as ContractComplianceReport;
+  } catch (error) {
+    console.error('createContractComplianceReport failed:', error);
+    return null;
+  }
+};
+
+export const updateContractComplianceReport = async (
+  reportId: string, 
+  updates: Partial<ContractComplianceReport>
+): Promise<ContractComplianceReport | null> => {
+  try {
+    if (!isSupabaseActive()) throw new Error('Supabase client is not initialized');
+    const dbPayload: any = {
+      updated_at: new Date().toISOString()
+    };
+    if (updates.complianceEvaluation !== undefined || (updates as any).compliance_evaluation !== undefined) {
+      dbPayload.compliance_evaluation = updates.complianceEvaluation || (updates as any).compliance_evaluation;
+    }
+    if (updates.ministryReviewStatus !== undefined || (updates as any).ministry_review_status !== undefined) {
+      dbPayload.ministry_review_status = updates.ministryReviewStatus || (updates as any).ministry_review_status;
+    }
+    if (updates.ministryReviewerId !== undefined || (updates as any).ministry_reviewer_id !== undefined) {
+      dbPayload.ministry_reviewer_id = updates.ministryReviewerId || (updates as any).ministry_reviewer_id;
+    }
+    if (updates.ministryOpinionNotes !== undefined || (updates as any).ministry_opinion_notes !== undefined) {
+      dbPayload.ministry_opinion_notes = updates.ministryOpinionNotes || (updates as any).ministry_opinion_notes;
+    }
+    if (updates.reviewedAt !== undefined || (updates as any).reviewed_at !== undefined) {
+      dbPayload.reviewed_at = updates.reviewedAt || (updates as any).reviewed_at;
+    }
+    if (updates.evidenceDocuments !== undefined || (updates as any).evidence_documents !== undefined) {
+      dbPayload.evidence_documents = updates.evidenceDocuments || (updates as any).evidence_documents;
+    }
+
+    const { data, error } = await supabase
+      .from('contract_compliance_reports')
+      .update(dbPayload)
+      .eq('id', reportId)
+      .select('*, contract:contracts(id, ref, title), company:company_id(id, name), contracting_company:contracting_company_id(id, name)')
+      .single();
+
+    if (error) throw error;
+    return data as ContractComplianceReport;
+  } catch (error) {
+    console.error(`updateContractComplianceReport for '${reportId}' failed:`, error);
+    return null;
   }
 };
 

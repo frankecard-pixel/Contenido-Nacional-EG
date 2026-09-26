@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { OpportunityExt, Company, Application } from '../../types';
+import { OpportunityExt, Company, Application, OpportunityShortlist, LocalCompanyMatchResult, CompanyService, User } from '../../types';
 import { updateOpportunity, deleteOpportunity } from '../../services/supabaseApi';
+import { 
+  matchLocalCompaniesForOpportunity, 
+  getOpportunityShortlists, 
+  createOpportunityShortlistEntry, 
+  remitShortlistToOperator,
+  getCompanyServices 
+} from '../../services/localBusinessService';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { 
   Building2, 
@@ -20,7 +28,14 @@ import {
   FileText, 
   ExternalLink, 
   Save, 
-  X 
+  X,
+  Target,
+  Send,
+  Award,
+  Sparkles,
+  ShieldCheck,
+  Check,
+  ArrowRight
 } from 'lucide-react';
 
 interface ManageOpportunityModalProps {
@@ -41,7 +56,8 @@ const ManageOpportunityModal: React.FC<ManageOpportunityModalProps> = ({
   applications
 }) => {
   const { i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'details' | 'edit' | 'applications'>('details');
+  const { user: authUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<'details' | 'edit' | 'applications' | 'shortlist'>('details');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -57,7 +73,43 @@ const ManageOpportunityModal: React.FC<ManageOpportunityModalProps> = ({
   const [editRequirements, setEditRequirements] = useState<string[]>([]);
   const [newReq, setNewReq] = useState('');
 
-  React.useEffect(() => {
+  // Phase 3 Shortlisting state
+  const [shortlists, setShortlists] = useState<OpportunityShortlist[]>([]);
+  const [matchResults, setMatchResults] = useState<LocalCompanyMatchResult[]>([]);
+  const [allServices, setAllServices] = useState<CompanyService[]>([]);
+  const [isMatchingRunning, setIsMatchingRunning] = useState(false);
+  const [isRemitting, setIsRemitting] = useState(false);
+  const [remitNotes, setRemitNotes] = useState('');
+  const [minExpYears, setMinExpYears] = useState(2);
+  const [minLocalContent, setMinLocalContent] = useState(35);
+
+  const currentUserObj: User = {
+    id: authUser?.id || 'u-admin-dgcn',
+    email: authUser?.email || 'admin@mmh.gob.gq',
+    name: authUser?.user_metadata?.full_name || 'Dirección General de Contenido Nacional',
+    role: (authUser as any)?.role || 'admin',
+    isOnline: true,
+    permissions: ['*']
+  };
+
+  const loadShortlistData = async (oppId: string) => {
+    try {
+      const sl = await getOpportunityShortlists(oppId, currentUserObj);
+      setShortlists(sl);
+
+      // Collect services of all local companies for matching
+      const servicesAcc: CompanyService[] = [];
+      for (const comp of companies.slice(0, 15)) {
+        const s = await getCompanyServices(comp.id);
+        servicesAcc.push(...s);
+      }
+      setAllServices(servicesAcc);
+    } catch (e) {
+      console.warn('Error loading shortlists:', e);
+    }
+  };
+
+  useEffect(() => {
     if (opportunity) {
       const getTitle = (t: any) => (typeof t === 'object' ? t?.es || t?.en || '' : t || '');
       const getDesc = (d: any) => (typeof d === 'object' ? d?.es || d?.en || '' : d || '');
@@ -71,9 +123,92 @@ const ManageOpportunityModal: React.FC<ManageOpportunityModalProps> = ({
       setEditStatus(opportunity.status || 'published');
       setEditScopeOfWork(opportunity.scopeOfWork || '');
       setEditRequirements(opportunity.requirements || []);
+      setMinExpYears(opportunity.minimumExperienceYears || 2);
+      setMinLocalContent(opportunity.minimumLocalContentScore || 35);
       setActiveTab('details');
+
+      loadShortlistData(opportunity.id);
     }
   }, [opportunity]);
+
+  const handleRunMatching = () => {
+    if (!opportunity) return;
+    setIsMatchingRunning(true);
+    try {
+      const oppWithCriteria: OpportunityExt = {
+        ...opportunity,
+        category: editCategory || opportunity.category,
+        minimumExperienceYears: minExpYears,
+        minimumLocalContentScore: minLocalContent,
+        requiredServices: [editCategory || opportunity.category]
+      };
+      const results = matchLocalCompaniesForOpportunity(oppWithCriteria, companies, allServices);
+      setMatchResults(results);
+      toast.success(`Motor de matching finalizado: ${results.length} empresas analizadas.`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al ejecutar el motor de matching');
+    } finally {
+      setIsMatchingRunning(false);
+    }
+  };
+
+  const handlePreselectCompany = async (match: LocalCompanyMatchResult) => {
+    if (!opportunity) return;
+    try {
+      const criteria = {
+        meetsService: match.meetsServiceRequirement,
+        meetsExperience: match.meetsExperienceRequirement,
+        meetsCertification: match.meetsCertificationRequirement,
+        meetsLocalContent: match.meetsLocalContentRequirement,
+        score: match.matchScore
+      };
+
+      const entry = await createOpportunityShortlistEntry({
+        opportunityId: opportunity.id,
+        companyId: match.company.id,
+        companyName: match.company.name,
+        matchScore: match.matchScore,
+        criteriaEvaluated: criteria,
+        matchExplanation: match.explanation,
+        recommendationNotes: `Empresa evaluada con ${match.matchScore}% de compatibilidad técnica y de contenido nacional.`,
+        user: currentUserObj
+      });
+
+      setShortlists(prev => [...prev.filter(s => s.company_id !== match.company.id), entry]);
+      toast.success(`Empresa '${match.company.name}' preseleccionada exitosamente.`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al registrar la preselección');
+    }
+  };
+
+  const handleRemitToOperator = async () => {
+    if (!opportunity) return;
+    if (shortlists.length === 0) {
+      toast.error('Debe preseleccionar al menos una empresa antes de remitir la lista corta.');
+      return;
+    }
+
+    try {
+      setIsRemitting(true);
+      await remitShortlistToOperator({
+        opportunityId: opportunity.id,
+        contractingCompanyId: opportunity.contractingCompanyId || opportunity.petroleraId,
+        notes: remitNotes || 'Lista corta ministerial remitida oficialmente para el proceso de licitación de la operadora.',
+        user: currentUserObj
+      });
+
+      await loadShortlistData(opportunity.id);
+      toast.success('Lista corta ministerial remitida con éxito a la empresa contratante.');
+      onUpdated();
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al remitir la lista corta');
+    } finally {
+      setIsRemitting(false);
+    }
+  };
 
   if (!isOpen || !opportunity) return null;
 
@@ -259,6 +394,17 @@ const ManageOpportunityModal: React.FC<ManageOpportunityModalProps> = ({
           >
             <Users className="size-4 shrink-0" /> 
             <span>Postulaciones ({oppApplications.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('shortlist')}
+            className={`py-3.5 sm:py-4 px-3 sm:px-4 text-xs font-black uppercase tracking-wider border-b-2 flex items-center gap-2 transition-all shrink-0 whitespace-nowrap ${
+              activeTab === 'shortlist'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            }`}
+          >
+            <Target className="size-4 shrink-0 text-amber-500" /> 
+            <span>Preselección y Matching ({shortlists.length})</span>
           </button>
         </div>
 
@@ -557,6 +703,228 @@ const ManageOpportunityModal: React.FC<ManageOpportunityModalProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: PRESELECCIÓN Y MATCHING MINISTERIAL (FASE 3) */}
+          {activeTab === 'shortlist' && (
+            <div className="space-y-6">
+              {/* Institutional Notice */}
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-3">
+                <ShieldCheck className="size-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1">
+                  <span className="font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider block">
+                    Protocolo Ministerial de Preselección (Ley de Contenido Nacional)
+                  </span>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    El Ministerio identifica y preselecciona empresas locales con base en criterios reglados de capacidad y solvencia. 
+                    <strong> La adjudicación final corresponde exclusivamente a la empresa contratante</strong> dentro del proceso de licitación.
+                  </p>
+                </div>
+              </div>
+
+              {/* Criteria Bar & Matching Engine Trigger */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
+                      <Target className="size-4 text-primary" /> Criterios Reglados de Matching
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Parámetros de ponderación técnica objetiva</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRunMatching}
+                    disabled={isMatchingRunning}
+                    className="px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-blue-600 transition-all shadow-md shadow-primary/20 disabled:opacity-50 active:scale-95"
+                  >
+                    <Sparkles className="size-3.5" />
+                    <span>{isMatchingRunning ? 'Analizando...' : 'Ejecutar Motor de Matching'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Sector Requerido</span>
+                    <p className="font-black text-slate-800 dark:text-slate-200">{opportunity.category || 'General'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Experiencia Mínima</span>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        min={0}
+                        max={30}
+                        value={minExpYears} 
+                        onChange={(e) => setMinExpYears(Number(e.target.value))}
+                        className="w-16 px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700" 
+                      />
+                      <span className="text-[10px] font-bold text-slate-500">años en el sector</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Mínimo Contenido Nacional</span>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        min={0}
+                        max={100}
+                        value={minLocalContent} 
+                        onChange={(e) => setMinLocalContent(Number(e.target.value))}
+                        className="w-16 px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700" 
+                      />
+                      <span className="text-[10px] font-bold text-slate-500">% cuota de empleo/gasto</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* LISTA CORTA ACTUAL (PRESELECCIÓN REGISTRADA) */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
+                      <Award className="size-4 text-emerald-500" /> Lista Corta Preseleccionada ({shortlists.length})
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Empresas locales seleccionadas para remisión oficial</p>
+                  </div>
+
+                  {shortlists.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleRemitToOperator}
+                      disabled={isRemitting}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                    >
+                      <Send className="size-3.5" />
+                      <span>{isRemitting ? 'Remitiendo...' : 'Remitir a la Operadora'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {shortlists.length === 0 ? (
+                  <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <Target className="size-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aún no se han preseleccionado empresas para esta oportunidad.</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Haga clic en "Ejecutar Motor de Matching" para analizar y preseleccionar proveedores locales.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
+                    {shortlists.map((sl) => (
+                      <div key={sl.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-900 dark:text-white uppercase">{sl.company_name || sl.company?.name || 'Empresa Local'}</span>
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-50 text-primary dark:bg-primary/20">
+                              {sl.match_score}% Compatibilidad
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">{sl.match_explanation || sl.ministry_recommendation_notes}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg ${
+                            sl.status === 'remitida_a_operadora'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          }`}>
+                            {sl.status === 'remitida_a_operadora' ? 'Remitida a Operadora' : 'Preseleccionada (Borrador)'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* RESULTADOS DEL MOTOR DE MATCHING (PROVEEDORES LOCALES COMPATIBLES) */}
+              {matchResults.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
+                    <Sparkles className="size-4 text-amber-500" /> Empresas Locales Evaluadas por el Motor ({matchResults.length})
+                  </h4>
+
+                  <div className="space-y-3">
+                    {matchResults.slice(0, 10).map((match, idx) => {
+                      const isAlreadyPreselected = shortlists.some(s => s.company_id === match.company.id);
+
+                      return (
+                        <div 
+                          key={match.company.id || idx} 
+                          className={`p-4 rounded-2xl border transition-all ${
+                            isAlreadyPreselected 
+                              ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40' 
+                              : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-800'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h5 className="text-xs font-black text-slate-900 dark:text-white uppercase">{match.company.name}</h5>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                  match.matchScore >= 70 
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                    : match.matchScore >= 40
+                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                                }`}>
+                                  {match.matchScore}% Compatibilidad
+                                </span>
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                  RUGE: {match.company.rugeId}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{match.explanation}</p>
+                            </div>
+
+                            <div className="shrink-0">
+                              {isAlreadyPreselected ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 text-[10px] font-black uppercase tracking-wider">
+                                  <Check className="size-3" /> Preseleccionada
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePreselectCompany(match)}
+                                  className="px-3.5 py-1.5 bg-primary hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-xs"
+                                >
+                                  <span>Preseleccionar</span>
+                                  <ArrowRight className="size-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Breakdown Badges */}
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-[9px] font-black uppercase tracking-wider">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${
+                              match.meetsServiceRequirement ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                            }`}>
+                              {match.meetsServiceRequirement ? '✓' : '✗'} Servicio Acreditado
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${
+                              match.meetsExperienceRequirement ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                            }`}>
+                              {match.meetsExperienceRequirement ? '✓' : '✗'} Experiencia Requerida
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${
+                              match.meetsCertificationRequirement ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                            }`}>
+                              {match.meetsCertificationRequirement ? '✓' : '✗'} Certificada RUGE
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${
+                              match.meetsLocalContentRequirement ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                            }`}>
+                              {match.meetsLocalContentRequirement ? '✓' : '✗'} Cuota Contenido Nacional
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

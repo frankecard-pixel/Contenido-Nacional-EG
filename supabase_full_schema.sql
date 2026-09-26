@@ -435,11 +435,76 @@ ALTER TABLE public.login_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create basic permissive policies for development (Replace with strict policies in production)
 CREATE POLICY "Allow all for authenticated users" ON public.users FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated users" ON public.companies FOR ALL USING (true);
+-- Hardened RLS policies for companies and applications (multi-tenant isolation)
+-- Note: see supabase_phase3_rls_hardening.sql for the complete security policies
+CREATE POLICY "View companies" ON public.companies FOR SELECT USING (true);
+CREATE POLICY "Authorized users can update company" ON public.companies FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.user_organizations uo
+    WHERE uo.organization_id = public.companies.id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role = 'admin'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+);
 CREATE POLICY "Allow all for authenticated users" ON public.registration_requests FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.user_groups FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.opportunities FOR ALL USING (true);
-CREATE POLICY "Allow all for authenticated users" ON public.applications FOR ALL USING (true);
+CREATE POLICY "View applications isolated" ON public.applications FOR SELECT USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario', 'cuerpo_tecnico')
+  )
+);
+CREATE POLICY "Create applications isolated" ON public.applications FOR INSERT WITH CHECK (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+);
+CREATE POLICY "Update applications isolated" ON public.applications FOR UPDATE USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario')
+  )
+);
 CREATE POLICY "Allow all for authenticated users" ON public.job_offers FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.job_applications FOR ALL USING (true);
 CREATE POLICY "Allow all for authenticated users" ON public.certifications FOR ALL USING (true);

@@ -131,8 +131,9 @@ const CompanyDashboardOverview: React.FC<CompanyDashboardOverviewProps> = ({ com
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         {[
+          { label: "Nacionalización", val: "Plan Activo", trend: "Nivel MMH", icon: "shield_person", color: "text-amber-600", bg: "bg-amber-50", to: "/dashboard/nacionalizacion" },
           { label: "Aplicaciones", val: "12", trend: "+2 este mes", icon: "send", color: "text-blue-600", bg: "bg-blue-50", to: "../applications" },
           { label: "Ganados", val: "2", trend: "Total histórico", icon: "trophy", color: "text-purple-600", bg: "bg-purple-50", to: "../contracts" },
           { label: "Oportunidades", val: "8", trend: "3 nuevas", icon: "visibility", color: "text-orange-600", bg: "bg-orange-50", to: "../opportunities" },

@@ -445,7 +445,22 @@ DROP POLICY IF EXISTS "Allow all for web_categories" ON public.web_categories;
 CREATE POLICY "Allow all for web_categories" ON public.web_categories FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Allow all for companies" ON public.companies;
-CREATE POLICY "Allow all for companies" ON public.companies FOR ALL USING (true);
+-- Companies policies hardened for multi-tenant isolation
+CREATE POLICY "View companies" ON public.companies FOR SELECT USING (true);
+CREATE POLICY "Authorized users can update company" ON public.companies FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.user_organizations uo
+    WHERE uo.organization_id = public.companies.id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role = 'admin'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+);
 
 DROP POLICY IF EXISTS "Allow all for user_groups" ON public.user_groups;
 CREATE POLICY "Allow all for user_groups" ON public.user_groups FOR ALL USING (true);
@@ -472,7 +487,67 @@ DROP POLICY IF EXISTS "Allow all for opportunities" ON public.opportunities;
 CREATE POLICY "Allow all for opportunities" ON public.opportunities FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Allow all for applications" ON public.applications;
-CREATE POLICY "Allow all for applications" ON public.applications FOR ALL USING (true);
+-- Applications policies hardened for multi-tenant isolation
+CREATE POLICY "View applications isolated" ON public.applications FOR SELECT USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    WHERE o.id = applications.opportunity_id
+    AND o.petrolera_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario', 'cuerpo_tecnico')
+  )
+);
+CREATE POLICY "Create applications isolated" ON public.applications FOR INSERT WITH CHECK (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+);
+CREATE POLICY "Update applications isolated" ON public.applications FOR UPDATE USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    WHERE o.id = applications.opportunity_id
+    AND o.petrolera_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario')
+  )
+);
 
 DROP POLICY IF EXISTS "Allow all for job_offers" ON public.job_offers;
 CREATE POLICY "Allow all for job_offers" ON public.job_offers FOR ALL USING (true);

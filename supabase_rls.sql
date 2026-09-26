@@ -34,12 +34,54 @@ CREATE POLICY "Admins can update all users" ON public.users FOR UPDATE USING (tr
 -- ==========================================
 -- COMPANIES
 -- ==========================================
--- Anyone can view companies
+-- Anyone can view companies (public directory)
+DROP POLICY IF EXISTS "Anyone can view companies" ON public.companies;
+DROP POLICY IF EXISTS "Companies can update own profile" ON public.companies;
+DROP POLICY IF EXISTS "Users can create their company" ON public.companies;
+DROP POLICY IF EXISTS "Authorized users can update company" ON public.companies;
+DROP POLICY IF EXISTS "Admins can delete companies" ON public.companies;
+
 CREATE POLICY "Anyone can view companies" ON public.companies FOR SELECT USING (true);
--- Companies can update their own profile
-CREATE POLICY "Companies can update own profile" ON public.companies FOR UPDATE USING (true);
--- Only admins can insert companies (or users creating their company profile)
-CREATE POLICY "Users can create their company" ON public.companies FOR INSERT WITH CHECK (true);
+
+-- Only authenticated users can register a company
+CREATE POLICY "Users can create their company" ON public.companies FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Company update allowed ONLY for organization admin or authorized ministry staff
+CREATE POLICY "Authorized users can update company" ON public.companies FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM public.user_organizations uo
+    WHERE uo.organization_id = public.companies.id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role = 'admin'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+) WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.user_organizations uo
+    WHERE uo.organization_id = public.companies.id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role = 'admin'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+);
+
+CREATE POLICY "Admins can delete companies" ON public.companies FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin')
+  )
+);
 
 -- ==========================================
 -- OPPORTUNITIES
@@ -54,15 +96,116 @@ CREATE POLICY "Companies can manage own opportunities" ON public.opportunities F
 -- ==========================================
 -- APPLICATIONS
 -- ==========================================
--- Companies can view applications for their opportunities
--- Applicants can view their own applications
-CREATE POLICY "View applications" ON public.applications FOR SELECT USING (
-  company_id = auth.uid() OR
-  opportunity_id IN (SELECT id FROM public.opportunities WHERE petrolera_id = auth.uid())
+-- Multi-tenant isolation based on user_organizations:
+-- Applicant company members view their company's applications,
+-- Contracting operator members view applications to their opportunities,
+-- Ministry officials view all applications.
+DROP POLICY IF EXISTS "View applications" ON public.applications;
+DROP POLICY IF EXISTS "Companies can apply" ON public.applications;
+DROP POLICY IF EXISTS "View applications isolated" ON public.applications;
+DROP POLICY IF EXISTS "Create applications isolated" ON public.applications;
+DROP POLICY IF EXISTS "Update applications isolated" ON public.applications;
+DROP POLICY IF EXISTS "Delete applications isolated" ON public.applications;
+
+CREATE POLICY "View applications isolated" ON public.applications FOR SELECT USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    WHERE o.id = applications.opportunity_id
+    AND o.petrolera_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario', 'cuerpo_tecnico')
+  )
 );
--- Companies can apply
-CREATE POLICY "Companies can apply" ON public.applications FOR INSERT WITH CHECK (
-  company_id = auth.uid()
+
+-- Companies can apply via active members with admin, hr, or technical role
+CREATE POLICY "Create applications isolated" ON public.applications FOR INSERT WITH CHECK (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
+);
+
+CREATE POLICY "Update applications isolated" ON public.applications FOR UPDATE USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    WHERE o.id = applications.opportunity_id
+    AND o.petrolera_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario')
+  )
+) WITH CHECK (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'hr', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    JOIN public.user_organizations uo ON uo.organization_id = o.contracting_company_id
+    WHERE o.id = applications.opportunity_id
+    AND uo.user_id = auth.uid()
+    AND uo.status = 'active'
+    AND uo.org_role IN ('admin', 'technical')
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.opportunities o
+    WHERE o.id = applications.opportunity_id
+    AND o.petrolera_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director', 'responsable_seccion', 'funcionario')
+  )
+);
+
+CREATE POLICY "Delete applications isolated" ON public.applications FOR DELETE USING (
+  applications.company_id IN (
+    SELECT uo.organization_id FROM public.user_organizations uo
+    WHERE uo.user_id = auth.uid() AND uo.status = 'active'
+    AND uo.org_role = 'admin'
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid()
+    AND u.role IN ('super_admin', 'admin', 'director')
+  )
 );
 
 -- ==========================================

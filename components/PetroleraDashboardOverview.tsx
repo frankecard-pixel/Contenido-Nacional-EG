@@ -63,8 +63,9 @@ const PetroleraDashboardOverview: React.FC<PetroleraDashboardOverviewProps> = ({
       </div>
 
       {/* Main KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
         {[
+          { label: "Plan Nacionalización", val: "Fase 2", icon: "shield_person", color: "text-amber-600", to: "/dashboard/nacionalizacion" },
           { label: "Licitaciones Abiertas", val: opportunities.filter(o => o.status === 'published').length.toString(), icon: "campaign", color: "text-blue-600", to: "/dashboard/petrolera/opportunities" },
           { label: "Propuestas Recibidas", val: "124", icon: "group", color: "text-indigo-600", to: "/dashboard/petrolera/network" },
           { label: "Cumplimiento Local", val: "92%", icon: "verified", color: "text-emerald-600", to: "/dashboard/petrolera/opportunities" },

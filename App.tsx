@@ -30,7 +30,9 @@ import CompanyProfileView from './pages/CompanyProfileView';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
-  React.useEffect(() => window.scrollTo(0, 0), [pathname]);
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   return null;
 };
 

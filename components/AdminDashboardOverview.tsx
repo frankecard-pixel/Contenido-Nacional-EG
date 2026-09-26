@@ -98,7 +98,25 @@ const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ user })
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+        {/* Nacionalizacion Card */}
+        <Link 
+          to="/dashboard/nacionalizacion"
+          className="flex flex-col bg-gradient-to-br from-amber-500/10 to-amber-600/5 dark:bg-slate-800 rounded-[1.5rem] sm:rounded-[2.5rem] border border-amber-200 dark:border-amber-800/40 p-4 sm:p-6 shadow-sm hover:shadow-xl hover:border-amber-500 transition-all group cursor-pointer active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 p-2 sm:p-3 rounded-xl sm:rounded-2xl group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-lg sm:text-2xl">shield_person</span>
+            </div>
+            <span className="text-[8px] sm:text-[9px] font-black bg-amber-500 text-slate-950 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full uppercase tracking-widest">
+              MMH FASE 2
+            </span>
+          </div>
+          <div className="flex items-end gap-1.5 mb-2">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">Nacionalización</span>
+          </div>
+          <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300">Talento, Expatriados y Reemplazos</span>
+        </Link>
         {/* Empresas Card */}
         <Link 
           to={`${basePath}/companies`}

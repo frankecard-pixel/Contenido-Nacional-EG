@@ -66,6 +66,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
     {
       title: 'Operaciones',
       items: [
+        { path: '/dashboard/nacionalizacion', label: 'Nacionalización y Talento', icon: '🛡️' },
         { path: '/dashboard/super_admin/opportunities', label: 'dashboard.tenders', icon: '📜' },
         { path: '/dashboard/super_admin/jobs', label: 'Gestión de Vacantes', icon: '💼' },
         { path: '/dashboard/super_admin/contracts', label: 'dashboard.contracts', icon: '📑' },
@@ -164,6 +165,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ forcedUser, isOpen, onClose 
       {
         title: 'Responsabilidad y Regulación',
         items: [
+          { path: '/dashboard/nacionalizacion', label: 'Nacionalización y Talento', icon: '🛡️' },
           { path: '/dashboard/petrolera/documents', label: 'dashboard.document_management', icon: '📁' },
           { path: '/dashboard/petrolera/csr', label: 'dashboard.csr_projects', icon: '🌱' },
           { path: '/dashboard/petrolera/lex', label: 'dashboard.lex_legal', icon: '⚖️' },
